@@ -7,7 +7,7 @@ import datetime
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Zynte Coach", page_icon="logo.png", layout="wide")
 
-# Estilos CSS (Modo Oscuro/Pro)
+# Estilos CSS
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -25,7 +25,7 @@ except:
     st.error("Error: API Key no configurada.")
     st.stop()
 
-# Modelo estable
+# Modelo
 MODELO_USADO = 'models/gemini-flash-latest'
 
 # --- 3. MOTOR PDF ---
@@ -57,7 +57,7 @@ def crear_pdf(historial, nombre, peso, objetivo):
     
     for mensaje in historial:
         if mensaje["role"] == "model":
-            # Limpiamos símbolos de markdown para el PDF
+            # Limpieza de texto
             texto_limpio = mensaje["content"].replace("**", "").replace("*", "-").replace("##", "")
             pdf.multi_cell(0, 7, txt=texto_limpio)
             pdf.ln(5)
@@ -79,43 +79,4 @@ with st.sidebar:
         edad = st.slider("Edad", 16, 80, 25)
             
     with st.expander("Planificación", expanded=True):
-        objetivo = st.selectbox("Objetivo:", ["Ganar Masa Muscular", "Perder Grasa", "Fuerza", "Resistencia"])
-        nivel = st.select_slider("Nivel:", options=["Principiante", "Intermedio", "Avanzado"])
-
-    # ZONA DE DESCARGA
-    st.write("---")
-    st.subheader("📂 Zona de Descargas")
-    if "history" in st.session_state and len(st.session_state.history) > 1:
-        pdf_bytes = crear_pdf(st.session_state.history, nombre, peso, objetivo)
-        st.download_button("📄 DESCARGAR PDF", pdf_bytes, f"Plan_Zynte_{nombre}.pdf", "application/pdf")
-    else:
-        st.info("ℹ️ Habla con Zynte para generar tu PDF.")
-
-    st.write("---")
-    if st.button("Reiniciar Chat"):
-        st.session_state.history = []
-        st.rerun()
-
-# --- 5. DASHBOARD VISUAL ---
-imc = peso / ((altura/100)**2)
-estado_imc = "Normal"
-if imc >= 25: estado_imc = "Sobrepeso"
-if imc >= 30: estado_imc = "Obesidad"
-elif imc < 18.5: estado_imc = "Bajo peso"
-
-try: st.image("banner.jpg", use_column_width=True)
-except: st.title("ZYNTE COACH")
-
-col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
-with col1: st.metric("IMC", f"{imc:.1f}", estado_imc)
-with col2: st.metric("Peso", f"{peso} kg")
-with col3: st.metric("Objetivo", objetivo)
-with col4: st.metric("Nivel", nivel)
-st.divider()
-
-# --- 6. CHAT CON SISTEMA "ANTI-CAÍDAS" AMABLE ---
-if "history" not in st.session_state:
-    st.session_state.history = []
-    mensaje = f"Bienvenido {nombre}. Listo para el objetivo: {objetivo}. ¿Empezamos?"
-    st.session_state.history.append({"role": "model", "content": mensaje})
-
+        objetivo = st.selectbox("Objet
