@@ -7,6 +7,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import sqlite3
 import re
+import pandas as pd  
 
 # --- 1. CONFIGURACIÓN INICIAL ---
 st.set_page_config(
@@ -16,11 +17,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. GESTIÓN DE BASE DE DATOS Y PERFIL (V9.1) ---
+# --- 2. GESTIÓN DE BASE DE DATOS Y PERFIL (V10.0 - Con Historial) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
-    # Creamos tabla con columnas extra para el perfil del atleta
+    # Tabla de Usuarios
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             email TEXT PRIMARY KEY,
@@ -34,24 +35,55 @@ def init_db():
             nivel TEXT
         )
     ''')
+    # NUEVA TABLA: Historial de Peso
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS historial (
+            email TEXT,
+            fecha DATE,
+            peso REAL
+        )
+    ''')
     conn.commit()
     conn.close()
     migrar_db()
 
 def migrar_db():
-    """Actualiza la tabla si es antigua"""
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
-    cols = ['peso REAL', 'altura INTEGER', 'edad INTEGER', 'objetivo TEXT', 'nivel TEXT']
-    for col in cols:
-        try:
-            c.execute(f'ALTER TABLE users ADD COLUMN {col}')
-        except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN peso REAL'); except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN altura INTEGER'); except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN edad INTEGER'); except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN objetivo TEXT'); except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN nivel TEXT'); except: pass
     conn.commit()
     conn.close()
 
+# --- FUNCIONES DE DATOS ---
+def registrar_peso_historico(email, peso):
+    """Guarda el peso de hoy en el historial"""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        fecha = str(datetime.date.today())
+        # Primero borramos si ya había un registro hoy para no duplicar
+        c.execute('DELETE FROM historial WHERE email = ? AND fecha = ?', (email, fecha))
+        c.execute('INSERT INTO historial VALUES (?, ?, ?)', (email, fecha, peso))
+        conn.commit()
+        conn.close()
+        return True
+    except: return False
+
+def obtener_historial_df(email):
+    """Devuelve los datos listos para la gráfica"""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        # Pandas lee directamente SQL y lo convierte en tabla
+        df = pd.read_sql_query("SELECT fecha, peso FROM historial WHERE email = ? ORDER BY fecha ASC", conn, params=(email,))
+        conn.close()
+        return df
+    except: return None
+
 def cargar_perfil(email):
-    """Carga datos del usuario"""
     try:
         conn = sqlite3.connect('zynte_users.db')
         c = conn.cursor()
@@ -65,8 +97,7 @@ def cargar_perfil(email):
             "objetivo": data[3] if data[3] else "Hipertrofia",
             "nivel": data[4] if data[4] else "Intermedio"
         }
-    except:
-        return {"peso": 70.0, "altura": 175, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
+    except: return {"peso": 70.0, "altura": 175, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
 
 def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
     try:
@@ -76,6 +107,8 @@ def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
                  (peso, altura, edad, objetivo, nivel, email))
         conn.commit()
         conn.close()
+        # También guardamos en el historial automáticamente
+        registrar_peso_historico(email, peso) 
         return True
     except: return False
 
@@ -441,39 +474,20 @@ def mostrar_pricing():
             st.rerun()
 
 def app_principal():
-    # 1. Cargar Memoria del Usuario
     email_actual = st.session_state.get('user_email', 'invitado')
     datos_usuario = cargar_perfil(email_actual)
 
-    # --- LÓGICA DE NUTRICIÓN (Cálculos Matemáticos) ---
+    # Lógica Nutrición
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
-        # Fórmula Harris-Benedict Revisada
-        if genero == "Hombre":
-            tmb = 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
-        else:
-            tmb = 447.6 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad)
-        
-        # Factor de actividad
+        if genero == "Hombre": tmb = 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
+        else: tmb = 447.6 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad)
         factores = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
         tdee = tmb * factores.get(nivel, 1.2)
-        
-        # Ajuste según objetivo
-        if objetivo == "Pérdida de Grasa":
-            calorias = tdee - 400
-            proteina = peso * 2.2
-            grasas = peso * 0.9
-        elif objetivo == "Hipertrofia" or objetivo == "Fuerza Máxima":
-            calorias = tdee + 300
-            proteina = peso * 2.0
-            grasas = peso * 1.0
-        else: # Resistencia / Mantenimiento
-            calorias = tdee
-            proteina = peso * 1.6
-            grasas = peso * 1.0
-            
-        carbos = (calorias - (proteina * 4) - (grasas * 9)) / 4
-        return int(calorias), int(proteina), int(carbos), int(grasas)
+        if "Grasa" in objetivo: return int(tdee - 400), int(peso*2.2), int((tdee-400 - peso*2.2*4 - peso*0.9*9)/4), int(peso*0.9)
+        elif "Hipertrofia" in objetivo: return int(tdee + 300), int(peso*2.0), int((tdee+300 - peso*2*4 - peso*1*9)/4), int(peso*1)
+        else: return int(tdee), int(peso*1.6), int((tdee - peso*1.6*4 - peso*1*9)/4), int(peso*1)
 
+    # PDF Class
     class PDF(FPDF):
         def header(self):
             try: self.image('logo.png', 10, 8, 33)
@@ -486,40 +500,35 @@ def app_principal():
         pdf.cell(0, 10, txt=f"PERFIL: {peso}kg | META: {objetivo}", ln=1, align='L', fill=True)
         pdf.ln(10); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1); pdf.set_font("Arial", size=11)
         for mensaje in historial:
-            if mensaje["role"] == "model":
-                pdf.multi_cell(0, 7, txt=mensaje["content"].replace("**", "").replace("*", "-")); pdf.ln(5)
+            if mensaje["role"] == "model": pdf.multi_cell(0, 7, txt=mensaje["content"].replace("**", "").replace("*", "-")); pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
 
+    # SIDEBAR
     with st.sidebar:
         try: st.image("logo.png", width=180)
         except: st.header("ZYNTE")
-        
-        if st.session_state.get('is_premium', False): st.success("🌟 PRO")
+        if st.session_state.get('is_premium'): st.success("🌟 PRO")
         else: st.info("🌱 FREE"); st.button("⬆️ Mejorar", use_container_width=True, on_click=lambda: setattr(st.session_state, 'page', 'pricing'))
         
         st.write("---"); st.caption("PERFIL BIOMÉTRICO")
         nombre = st.text_input("Alias", "Atleta")
-        
-        # Sliders con memoria
         peso = st.slider("Peso (kg)", 40.0, 150.0, float(datos_usuario['peso']), 0.5)
         altura = st.slider("Altura (cm)", 120, 220, int(datos_usuario['altura']), 1)
         edad = st.slider("Edad", 16, 80, int(datos_usuario['edad']))
-        genero = st.radio("Género (para cálculo calórico):", ["Hombre", "Mujer"], horizontal=True) # Nuevo, no se guarda en DB para simplificar, pero se usa en vivo
+        genero = st.radio("Género:", ["Hombre", "Mujer"], horizontal=True)
         
-        obj_options = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
-        niv_options = ["Principiante", "Intermedio", "Avanzado"]
-        
-        try: idx_obj = obj_options.index(datos_usuario['objetivo'])
-        except: idx_obj = 0
-        try: idx_niv = niv_options.index(datos_usuario['nivel'])
-        except: idx_niv = 1
-
-        objetivo = st.selectbox("Objetivo:", obj_options, index=idx_obj)
-        nivel = st.select_slider("Experiencia:", options=niv_options, value=niv_options[idx_niv])
+        obj_ops = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
+        niv_ops = ["Principiante", "Intermedio", "Avanzado"]
+        try: idx_o = obj_ops.index(datos_usuario['objetivo'])
+        except: idx_o = 0
+        try: idx_n = niv_ops.index(datos_usuario['nivel'])
+        except: idx_n = 1
+        objetivo = st.selectbox("Objetivo:", obj_ops, index=idx_o)
+        nivel = st.select_slider("Experiencia:", options=niv_ops, value=niv_ops[idx_n])
         
         if st.button("💾 Guardar Perfil", use_container_width=True):
-            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel): st.toast("Guardado")
-            else: st.toast("Error al guardar")
+            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel): st.toast("Datos y Gráfica Actualizados")
+            else: st.toast("Error")
 
         st.write("---")
         if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
@@ -527,104 +536,83 @@ def app_principal():
              st.download_button("📥 PDF", pdf, "Rutina.pdf")
         st.write("---"); st.button("Cerrar Sesión", on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'))
 
-    # --- INTERFAZ PRINCIPAL CON PESTAÑAS ---
+    # MAIN TABS
     try: st.image("banner.jpg", use_column_width=True)
     except: st.title("ZYNTE COACH")
     
-    tab_train, tab_nutri = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN"])
+    # --- AQUÍ ESTÁ LA NUEVA PESTAÑA DE PROGRESO ---
+    tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
-    # === PESTAÑA 1: ENTRENAMIENTO (CHAT) ===
     with tab_train:
-        imc = peso / ((altura/100)**2); estado_imc = "Normal"
-        if imc >= 25: estado_imc = "Sobrepeso"
-        if imc < 18.5: estado_imc = "Bajo peso"
-        
+        imc = peso / ((altura/100)**2)
         col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
-        with col1: st.metric("IMC", f"{imc:.1f}", estado_imc)
+        with col1: st.metric("IMC", f"{imc:.1f}", "Normal" if 18.5 < imc < 25 else "Atención")
         with col2: st.metric("Peso", f"{peso} kg")
         with col3: st.metric("Meta", objetivo)
         with col4: st.metric("Nivel", nivel)
         st.divider()
 
-        if "history" not in st.session_state:
-            st.session_state.history = [{"role": "model", "content": f"Hola. Veo que pesas {peso}kg y buscas {objetivo}. He cargado tu perfil."}]
-        
-        for msg in st.session_state.history:
-            st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-
-        if prompt := st.chat_input("Pregunta sobre tu rutina..."):
+        if "history" not in st.session_state: st.session_state.history = [{"role": "model", "content": f"Hola. Perfil cargado: {peso}kg, {objetivo}."}]
+        for msg in st.session_state.history: st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
+        if prompt := st.chat_input("Pregunta al coach..."):
             st.chat_message("user").markdown(prompt)
             st.session_state.history.append({"role": "user", "content": prompt})
             try:
-                ctx = f"Eres Zynte, coach experto. Atleta: {peso}kg, {altura}cm, {nivel}. Objetivo: {objetivo}."
-                model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
-                chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
-                chat = model.start_chat(history=chat_history)
+                model = genai.GenerativeModel(MODELO_USADO, system_instruction=f"Eres Zynte. Cliente: {peso}kg, {objetivo}.")
+                chat = model.start_chat(history=[{"role": "user" if m["role"]=="user" else "model", "parts":[m["content"]]} for m in st.session_state.history[:-1]])
                 response = chat.send_message(prompt)
                 st.chat_message("assistant").markdown(response.text)
                 st.session_state.history.append({"role": "model", "content": response.text})
             except: st.error("Error IA")
 
-    # === PESTAÑA 2: NUTRICIÓN ===
     with tab_nutri:
-        st.header("Plan Nutricional Inteligente")
-        st.write(f"Cálculos personalizados para: **{objetivo}**")
-        
-        # 1. CALCULADORA AUTOMÁTICA
-        cals, prot, carb, gras = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
-        
+        st.header("Plan Nutricional")
+        c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
         nc1, nc2, nc3, nc4 = st.columns(4)
-        nc1.metric("Calorías Diarias", f"{cals} kcal")
-        nc2.metric("Proteína", f"{prot} g")
-        nc3.metric("Carbohidratos", f"{carb} g")
-        nc4.metric("Grasas", f"{gras} g")
-        
+        nc1.metric("Kcal", c); nc2.metric("Prot", f"{p}g"); nc3.metric("Carb", f"{ch}g"); nc4.metric("Grasa", f"{g}g")
         st.divider()
-        
-        col_diet1, col_diet2 = st.columns([1, 2])
-        
-        with col_diet1:
-            st.markdown("### 📋 Preferencias")
-            tipo_dieta = st.selectbox("Tipo de dieta", ["Omnívora (Todo)", "Vegetariana", "Vegana", "Paleo", "Keto"])
-            comidas = st.slider("Comidas al día", 2, 6, 4)
-            alergias = st.text_input("Alergias / No me gusta", placeholder="Ej: Sin gluten, odio el brócoli...")
-            
-            st.write("")
-            if st.button("🥑 GENERAR DIETA + COMPRA", type="primary", use_container_width=True):
-                with st.spinner("Diseñando menú semanal..."):
-                    prompt_nutri = f"""
-                    Actúa como nutricionista deportivo de élite. Crea un plan para:
-                    - Perfil: {peso}kg, {altura}cm, {edad} años, {genero}.
-                    - Objetivo: {objetivo} ({cals} kcal/día).
-                    - Preferencia: {tipo_dieta}, {comidas} comidas/día.
-                    - Restricciones: {alergias}.
-                    
-                    FORMATO DE SALIDA OBLIGATORIO:
-                    1. Tabla de MACROS REALES del plan.
-                    2. Ejemplo de UN DÍA COMPLETO de comida (Desayuno, Comida, Cena, Snacks) con cantidades exactas en gramos.
-                    3. LISTA DE LA COMPRA organizada por pasillos del supermercado (Proteínas, Verduras, Granos, Varios).
-                    
-                    Sé directo y práctico.
-                    """
+        col_d1, col_d2 = st.columns([1, 2])
+        with col_d1:
+            dieta = st.selectbox("Tipo", ["Omnívora", "Vegetariana", "Vegana", "Keto"])
+            if st.button("🥑 GENERAR DIETA", type="primary"):
+                with st.spinner("Creando menú..."):
                     try:
                         model = genai.GenerativeModel(MODELO_USADO)
-                        response_nutri = model.generate_content(prompt_nutri)
-                        st.session_state.plan_nutri = response_nutri.text
-                    except: st.error("Error conectando con el nutricionista IA.")
+                        res = model.generate_content(f"Crea dieta {dieta} de {c}kcal para {objetivo}. Incluye lista compra.")
+                        st.session_state.plan_nutri = res.text
+                    except: st.error("Error IA")
+        with col_d2:
+            if "plan_nutri" in st.session_state: st.markdown(st.session_state.plan_nutri)
+            else: st.info("Configura y genera tu plan.")
 
-        with col_diet2:
-            if "plan_nutri" in st.session_state:
-                st.markdown("### 🍽️ Tu Menú Personalizado")
-                st.markdown(st.session_state.plan_nutri)
-                st.button("🔄 Regenerar Dieta", on_click=lambda: st.session_state.pop("plan_nutri", None))
-            else:
-                st.info("👈 Configura tus preferencias a la izquierda y pulsa 'Generar' para obtener tu plan nutricional completo y la lista de la compra.")
-                st.markdown("""
-                **¿Qué incluye el plan?**
-                * ⚖️ Cantidades exactas en gramos.
-                * 🛒 Lista de la compra lista para usar.
-                * 🔥 Ajuste calórico perfecto para tu objetivo.
-                """)
+    # --- PESTAÑA PROGRESO ---
+    with tab_prog:
+        st.header("📈 Tu Evolución")
+        st.write("Visualiza cómo te acercas a tu objetivo sesión tras sesión.")
+        
+        # Obtenemos los datos
+        df_progreso = obtener_historial_df(email_actual)
+        
+        if df_progreso is not None and not df_progreso.empty:
+            # 1. Métrica de cambio total
+            peso_inicial = df_progreso.iloc[0]['peso']
+            peso_actual = df_progreso.iloc[-1]['peso']
+            delta = peso_actual - peso_inicial
+            
+            pc1, pc2, pc3 = st.columns(3)
+            pc1.metric("Peso Inicial", f"{peso_inicial} kg")
+            pc2.metric("Peso Actual", f"{peso_actual} kg")
+            pc3.metric("Cambio Total", f"{delta:.1f} kg", delta, delta_color="inverse" if "Grasa" in objetivo else "normal")
+            
+            st.write("")
+            # 2. La Gráfica
+            st.area_chart(df_progreso.set_index('fecha'), color="#33ffaa")
+            
+            # 3. Tabla de datos (en un expander por si no quieren verla)
+            with st.expander("Ver historial detallado"):
+                st.dataframe(df_progreso, use_container_width=True)
+        else:
+            st.info("👋 Aún no tenemos suficientes datos. Guarda tu perfil hoy para ver tu primer punto en la gráfica.")
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -646,6 +634,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
