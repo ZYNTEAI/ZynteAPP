@@ -15,7 +15,7 @@ MODELO_USADO = "gemini-1.5-flash"
 try:
     api_key = st.secrets["GOOGLE_API_KEY"]
 except:
-    api_key = "TU_CLAVE_AQUI" # Pon tu clave real aquí
+    api_key = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE" # Pon tu clave real aquí
 
 genai.configure(api_key=api_key)
 
@@ -778,6 +778,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
