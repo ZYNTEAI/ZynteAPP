@@ -292,7 +292,7 @@ try:
 except:
     pass
 
-MODELO_USADO = 'models/gemini-2.0-flash'
+MODELO_USADO = 'models/gemini-flash-latest'
 
 # ==============================================================================
 # ℹ️ PÁGINAS DE INFORMACIÓN 
@@ -760,6 +760,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
