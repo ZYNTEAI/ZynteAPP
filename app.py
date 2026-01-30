@@ -17,7 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. GESTIÓN DE BASE DE DATOS Y PERFIL (V10.0 - Con Historial) ---
+# --- 2. GESTIÓN DE BASE DE DATOS Y PERFIL (V10.1 - CORREGIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
@@ -48,16 +48,86 @@ def init_db():
     migrar_db()
 
 def migrar_db():
+    """Actualiza la tabla evitando errores de sintaxis"""
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
-    try: c.execute('ALTER TABLE users ADD COLUMN peso REAL'); except: pass
-    try: c.execute('ALTER TABLE users ADD COLUMN altura INTEGER'); except: pass
-    try: c.execute('ALTER TABLE users ADD COLUMN edad INTEGER'); except: pass
-    try: c.execute('ALTER TABLE users ADD COLUMN objetivo TEXT'); except: pass
-    try: c.execute('ALTER TABLE users ADD COLUMN nivel TEXT'); except: pass
+    
+    # Lo hacemos en bloques separados para evitar el SyntaxError
+    try:
+        c.execute('ALTER TABLE users ADD COLUMN peso REAL')
+    except:
+        pass
+        
+    try:
+        c.execute('ALTER TABLE users ADD COLUMN altura INTEGER')
+    except:
+        pass
+        
+    try:
+        c.execute('ALTER TABLE users ADD COLUMN edad INTEGER')
+    except:
+        pass
+        
+    try:
+        c.execute('ALTER TABLE users ADD COLUMN objetivo TEXT')
+    except:
+        pass
+        
+    try:
+        c.execute('ALTER TABLE users ADD COLUMN nivel TEXT')
+    except:
+        pass
+
     conn.commit()
     conn.close()
 
+# --- FUNCIONES DE DATOS ---
+def registrar_peso_historico(email, peso):
+    """Guarda el peso de hoy en el historial"""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        fecha = str(datetime.date.today())
+        # Primero borramos si ya había un registro hoy para no duplicar
+        c.execute('DELETE FROM historial WHERE email = ? AND fecha = ?', (email, fecha))
+        c.execute('INSERT INTO historial VALUES (?, ?, ?)', (email, fecha, peso))
+        conn.commit()
+        conn.close()
+        return True
+    except: return False
+
+def obtener_historial_df(email):
+    """Devuelve los datos listos para la gráfica"""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        # Pandas lee directamente SQL y lo convierte en tabla
+        df = pd.read_sql_query("SELECT fecha, peso FROM historial WHERE email = ? ORDER BY fecha ASC", conn, params=(email,))
+        conn.close()
+        return df
+    except: return None
+
+def cargar_perfil(email):
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute('SELECT peso, altura, edad, objetivo, nivel FROM users WHERE email = ?', (email,))
+        data = c.fetchone()
+        conn.close()
+        return {
+            "peso": data[0] if data[0] else 70.0,
+            "altura": data[1] if data[1] else 175,
+            "edad": data[2] if data[2] else 25,
+            "objetivo": data[3] if data[3] else "Hipertrofia",
+            "nivel": data[4] if data[4] else "Intermedio"
+        }
+    except: return {"peso": 70.0, "altura": 175, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
+
+def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute('UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?', 
+                 (peso, altura, edad, objetivo,
 # --- FUNCIONES DE DATOS ---
 def registrar_peso_historico(email, peso):
     """Guarda el peso de hoy en el historial"""
@@ -634,6 +704,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
