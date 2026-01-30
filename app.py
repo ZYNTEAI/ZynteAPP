@@ -96,7 +96,7 @@ elif imc < 18.5:
 try: st.image("banner.jpg", use_column_width=True)
 except: st.title("ZYNTE COACH")
 
-col1, col2, col3, col4 = st.columns([1, 1, 2.5, 1])
+col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
 with col1: st.metric("IMC Actual", f"{imc:.1f}", estado_imc, delta_color=color_delta)
 with col2: st.metric("Peso", f"{peso} kg")
 with col3: st.metric("Objetivo", objetivo)
@@ -160,6 +160,7 @@ if prompt := st.chat_input("Consulta a Zynte..."):
             
         except Exception as e:
             placeholder.error(f"Error de conexión: {e}")
+
 
 
 
