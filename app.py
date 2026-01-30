@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 from fpdf import FPDF
 import datetime
+import time  # <--- AÑADIDO: Necesario para hacer la pausa de espera
 
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Zynte Coach", page_icon="logo.png", layout="wide")
@@ -120,6 +121,7 @@ st.divider()
 # --- 6. CHAT ---
 if "history" not in st.session_state:
     st.session_state.history = []
+    # Usamos una frase corta y segura para evitar errores de corte de línea
     inicio = f"Sesión iniciada. Usuario: {nombre}. Objetivo: {objetivo}. Esperando comandos."
     st.session_state.history.append({"role": "model", "content": inicio})
 
@@ -129,13 +131,16 @@ for msg in st.session_state.history:
     try: st.chat_message(role, avatar=avatar).markdown(msg["content"])
     except: st.chat_message(role).markdown(msg["content"])
 
+# --- 7. INPUT CON SISTEMA DE ESPERA AMABLE ---
 if prompt := st.chat_input("Consulta a Zynte..."):
+    
     st.chat_message("user").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
     
     with st.chat_message("assistant", avatar="logo.png"):
         placeholder = st.empty()
         placeholder.markdown("...")
+        
         try:
             ctx = f"""
             Eres Zynte, entrenador de élite. Habla de TÚ a TÚ con {nombre}.
@@ -145,8 +150,28 @@ if prompt := st.chat_input("Consulta a Zynte..."):
             model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
             chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
             chat = model.start_chat(history=chat_history)
-            response = chat.send_message(prompt)
+            
+            # --- AQUÍ EMPIEZA LA MAGIA DE LA ESPERA ---
+            try:
+                # Intento 1: Enviar mensaje normal
+                response = chat.send_message(prompt)
+            except Exception as e:
+                # Si falla por cuota (Error 429), entramos aquí
+                if "429" in str(e):
+                    placeholder.warning("⏳ Estoy pensando intensamente, dame unos segundos...")
+                    time.sleep(6) # Esperamos 6 segundos
+                    try:
+                        # Intento 2: Reintentar automáticamente
+                        response = chat.send_message(prompt)
+                    except:
+                        placeholder.error("🐢 Sigo saturado. Por favor espera 1 minuto y vuelve a preguntar.")
+                        st.stop()
+                else:
+                    raise e # Si es otro error distinto, que avise
+            # ------------------------------------------
+
             placeholder.markdown(response.text)
             st.session_state.history.append({"role": "model", "content": response.text})
+            
         except Exception as e:
-            placeholder.error(f"Error: {e}")
+            placeholder.error(f"Error técnico: {e}")
