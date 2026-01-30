@@ -16,62 +16,81 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 # --- GESTIÓN DE BASE DE DATOS Y SEGURIDAD ---
+# --- 2. GESTIÓN DE BASE DE DATOS Y PERFIL (V9.0) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
+    # Creamos tabla con columnas extra para el perfil del atleta
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             email TEXT PRIMARY KEY,
             password TEXT,
             fecha_registro TEXT,
-            plan TEXT
+            plan TEXT,
+            peso REAL,
+            altura INTEGER,
+            edad INTEGER,
+            objetivo TEXT,
+            nivel TEXT
         )
     ''')
     conn.commit()
     conn.close()
+    migrar_db() # Importante: Actualiza tu DB actual sin borrar nada
 
-def validar_email_estricto(email):
-    # 1. Validación Matemática (Regex)
-    patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    if not re.match(patron, email):
-        return False, "Formato inválido. Ejemplo: usuario@gmail.com"
-    
-    # 2. Lista de Dominios Permitidos
-    dominios_validos = ["gmail.com", "yahoo.com", "yahoo.es", "hotmail.com", "outlook.com", "icloud.com", "protonmail.com"]
-    try:
-        dominio_usuario = email.split('@')[-1]
-    except:
-        return False, "Error en el formato del dominio."
-    
-    if dominio_usuario not in dominios_validos:
-        return False, f"Solo aceptamos proveedores seguros: {', '.join(dominios_validos)}"
-        
-    return True, "OK"
+def migrar_db():
+    """Si la base de datos es vieja, le añade las columnas nuevas automáticamente"""
+    conn = sqlite3.connect('zynte_users.db')
+    c = conn.cursor()
+    cols_nuevas = ['peso REAL', 'altura INTEGER', 'edad INTEGER', 'objetivo TEXT', 'nivel TEXT']
+    for col in cols_nuevas:
+        try:
+            nombre = col.split()[0]
+            c.execute(f'ALTER TABLE users ADD COLUMN {col}')
+        except: pass
+    conn.commit()
+    conn.close()
 
-def verificar_login(email, password):
+def cargar_perfil(email):
+    """Recupera los datos guardados del atleta"""
     try:
         conn = sqlite3.connect('zynte_users.db')
         c = conn.cursor()
-        c.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password))
-        usuario = c.fetchone()
+        c.execute('SELECT peso, altura, edad, objetivo, nivel FROM users WHERE email = ?', (email,))
+        data = c.fetchone()
         conn.close()
-        return usuario is not None
+        # Si devuelve datos vacíos (None), ponemos valores por defecto
+        return {
+            "peso": data[0] if data[0] else 70.0,
+            "altura": data[1] if data[1] else 175,
+            "edad": data[2] if data[2] else 25,
+            "objetivo": data[3] if data[3] else "Hipertrofia",
+            "nivel": data[4] if data[4] else "Intermedio"
+        }
     except:
-        return False
+        return {"peso": 70.0, "altura": 175, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
 
-def registrar_usuario_sql(email, password):
+def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
+    """Guarda los cambios en la base de datos"""
     try:
         conn = sqlite3.connect('zynte_users.db')
         c = conn.cursor()
-        fecha = str(datetime.date.today())
-        c.execute('INSERT INTO users (email, password, fecha_registro, plan) VALUES (?, ?, ?, ?)', 
-                  (email, password, fecha, "Free"))
+        c.execute('''
+            UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?
+        ''', (peso, altura, edad, objetivo, nivel, email))
         conn.commit()
         conn.close()
         return True
-    except sqlite3.IntegrityError:
-        return False
+    except: return False
 
+def validar_email_estricto(email):
+    email = email.strip().lower()
+    patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(patron, email): return False, "Formato inválido."
+    dominios = ["gmail.com", "yahoo.com", "yahoo.es", "hotmail.com", "outlook.com", "icloud.com", "protonmail.com"]
+    try: dom = email.split('@')[-1]
+    except: return False, "Error dominio."
+    if
 # Iniciamos la DB al arrancar
 init_db()
 # --- 3. ESTILOS CSS PREMIUM (FONDO NUEVO) ---
@@ -562,6 +581,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
