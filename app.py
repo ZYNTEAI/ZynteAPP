@@ -717,32 +717,40 @@ def app_principal():
             
             with st.spinner("El entrenador está pensando..."):
                 try:
-                    # --- LÓGICA DE CHAT DIRECTA (EVITA EL ERROR 404) ---
-if prompt := st.chat_input("¿En qué puedo ayudarte hoy?"):
-    st.session_state.history.append({"role": "user", "content": prompt})
-    
-    with st.chat_message("user"):
-        st.markdown(prompt)
+                   # --- BUSCA ESTA PARTE EN TU CÓDIGO ---
+        st.write("---")
+        st.subheader("💬 Chat con Zynte AI")
 
-    with st.chat_message("assistant"):
-        with st.spinner("Zynte está pensando..."):
-            try:
-                # FORZAMOS LA RUTA V1 DIRECTAMENTE
-                url = f"https://generativelanguage.googleapis.com/v1/models/{MODELO_USADO}:generateContent?key={api_key}"
-                payload = {
-                    "contents": [{"parts": [{"text": prompt}]}]
-                }
-                
-                res = requests.post(url, json=payload)
-                
-                if res.status_code == 200:
-                    respuesta_texto = res.json()['candidates'][0]['content']['parts'][0]['text']
-                    st.markdown(respuesta_texto)
-                    st.session_state.history.append({"role": "model", "content": respuesta_texto})
-                else:
-                    st.error(f"Error de Google: {res.status_code} - Revisa tu API Key")
-            except Exception as e:
-                st.error(f"Fallo de red: {e}")
+        # 1. Definimos el input (Asegúrate de que NO haya un 'try:' vacío arriba)
+        prompt = st.chat_input("¿En qué puedo ayudarte hoy?")
+
+        if prompt:
+            if "history" not in st.session_state:
+                st.session_state.history = []
+            
+            st.session_state.history.append({"role": "user", "content": prompt})
+            
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                with st.spinner("Zynte está pensando..."):
+                    try:
+                        # Método directo para evitar el error 404 de v1beta
+                        url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+                        
+                        import requests
+                        res = requests.post(url_estable, json=payload)
+                        
+                        if res.status_code == 200:
+                            respuesta_texto = res.json()['candidates'][0]['content']['parts'][0]['text']
+                            st.markdown(respuesta_texto)
+                            st.session_state.history.append({"role": "model", "content": respuesta_texto})
+                        else:
+                            st.error(f"Error de Google: {res.status_code}")
+                    except Exception as e:
+                        st.error(f"Error técnico: {e}")
             
             # El rerun debe ir SIEMPRE fuera del try/except
             if not error_ocurrido:
@@ -822,6 +830,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
