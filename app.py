@@ -9,6 +9,25 @@ import sqlite3
 import re
 import pandas as pd  
 
+# --- BLOQUE DE DIAGNÓSTICO (BORRAR LUEGO) ---
+st.write("--- 🕵️‍♂️ BUSCANDO MODELOS DISPONIBLES ---")
+try:
+    # Asegúrate de que aquí está tu clave real o la coge de secrets
+    # genai.configure(api_key="TU_CLAVE_AQUI") 
+    
+    lista_modelos = []
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            lista_modelos.append(m.name)
+            st.write(f"✅ Disponible: **{m.name}**")
+            
+    if not lista_modelos:
+        st.error("❌ No se encontraron modelos. Revisa tu API KEY.")
+except Exception as e:
+    st.error(f"❌ Error de conexión: {e}")
+st.write("---------------------------------------")
+# ---------------------------------------------
+
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
@@ -760,6 +779,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
