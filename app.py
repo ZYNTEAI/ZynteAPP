@@ -234,16 +234,22 @@ def mostrar_landing():
         if st.button("Ver ejemplo", key="btn_pdf"):
             st.session_state.page = 'info_pdf'
             st.rerun()
-# --- FUNCIÓN DE CONEXIÓN A BASE DE DATOS ---
+# --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
 def conectar_db():
     try:
         scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        # Usamos los secrets de Streamlit
         creds_dict = dict(st.secrets["gcp_service_account"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
-        sheet = client.open("Zynte_Users").sheet1
+        
+        # ESTE ES EL ID DE TU HOJA (NO TOCAR)
+        SHEET_ID = "1KZR8mmuRPTSaqlDi1VyRdG_ZaC20UUMqZd0jDdKE-OM" 
+        
+        sheet = client.open_by_key(SHEET_ID).sheet1
         return sheet
     except Exception as e:
+        st.error(f"Error de conexión: {e}")
         return None
 def mostrar_login():
     st.markdown("## 🔐 Área de Miembros")
@@ -493,6 +499,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
