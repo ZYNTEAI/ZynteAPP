@@ -2,15 +2,15 @@ import streamlit as st
 import google.generativeai as genai
 import time
 
-# --- 1. CONFIGURACIÓN DE PÁGINA (Sobria) ---
+# --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="Zynte Coach",
-    page_icon="logo.png", # Usamos tu logo como icono de pestaña
+    page_icon="logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Estilos CSS para limpiar la interfaz al máximo
+# Estilos CSS (Modo Oscuro/Pro)
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -26,76 +26,75 @@ try:
     api_key = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=api_key)
 except:
-    st.error("Error de configuración: API Key no encontrada.")
+    st.error("Error: API Key no configurada.")
     st.stop()
 
-# Modelo IA
 MODELO_USADO = 'models/gemini-flash-latest'
 
-# --- 3. BARRA LATERAL (PANEL DE CONTROL) ---
+# --- 3. BARRA LATERAL ---
 with st.sidebar:
-    # Logo corporativo
     try: st.image("logo.png", width=180)
     except: st.header("ZYNTE")
     
-    st.write("---") # Línea separadora simple
-    st.subheader("Datos del Cliente")
+    st.write("---")
+    st.caption("DATOS DEL CLIENTE")
     
     nombre = st.text_input("Nombre", "Usuario")
     
-    # Secciones limpias sin emojis
     with st.expander("Biometría", expanded=True):
-        peso = st.slider("Peso (kg)", 40.0, 150.0, 70.0, 0.5)
-        altura = st.slider("Altura (cm)", 120, 220, 175, 1)
+        peso = st.slider("Peso (kg)", 40.0, 150.0, 72.5, 0.5)
+        altura = st.slider("Altura (cm)", 120, 220, 176, 1)
         edad = st.slider("Edad", 16, 80, 25)
             
     with st.expander("Planificación", expanded=True):
-        objetivo = st.selectbox("Objetivo Principal:", 
-                              ["Ganar Masa Muscular", "Perder Grasa", "Fuerza", "Resistencia", "Salud General"])
-        nivel = st.select_slider("Nivel de Experiencia:", options=["Principiante", "Intermedio", "Avanzado"])
+        objetivo = st.selectbox("Objetivo:", 
+                              ["Ganar Masa Muscular", "Perder Grasa", "Fuerza", "Resistencia", "Salud"])
+        nivel = st.select_slider("Nivel:", options=["Principiante", "Intermedio", "Avanzado"])
 
     st.write("---")
-    if st.button("Reiniciar Sesión"):
+    if st.button("Reiniciar Chat"):
         st.session_state.history = []
         st.rerun()
 
-# --- 4. CÁLCULOS (BACKEND) ---
+# --- 4. CÁLCULOS ---
 imc = peso / ((altura/100)**2)
 estado_imc = "Normal"
-# Lógica simple para colores de métrica (usando palabras clave de Streamlit)
-color_delta = "off" 
+color_delta = "off"
 if imc >= 25: 
     estado_imc = "Sobrepeso"
-    color_delta = "off" # Gris/Neutro para ser más serio
 if imc >= 30:
     estado_imc = "Obesidad"
-    color_delta = "inverse" # Rojo si es crítico
+    color_delta = "inverse"
 elif imc < 18.5: 
     estado_imc = "Bajo peso"
 
-# --- 5. INTERFAZ PRINCIPAL (DASHBOARD) ---
+# --- 5. DASHBOARD VISUAL ---
 try: st.image("banner.jpg", use_column_width=True)
-except: st.title(f"Zynte Coach | {objetivo}")
+except: st.title("ZYNTE COACH")
 
-# Métricas limpias (Estilo Dashboard Financiero/Datos)
 col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric("IMC Actual", f"{imc:.1f}", estado_imc, delta_color=color_delta)
-with col2:
-    st.metric("Peso", f"{peso} kg")
-with col3:
-    st.metric("Objetivo", objetivo)
-with col4:
-    st.metric("Nivel", nivel)
+with col1: st.metric("IMC Actual", f"{imc:.1f}", estado_imc, delta_color=color_delta)
+with col2: st.metric("Peso", f"{peso} kg")
+with col3: st.metric("Objetivo", objetivo)
+with col4: st.metric("Nivel", nivel)
 
 st.divider()
 
-# --- 6. CHAT PROFESIONAL ---
+# --- 6. CHAT (RECUPERADO) ---
 
 if "history" not in st.session_state:
     st.session_state.history = []
-    # Mensaje inicial puramente funcional, sin saludos excesivos
-   # Bloque arreglado (Copia y pega esto en lugar de la línea que da error)
-    mensaje_inicio = f"Bienvenido {nombre}. Datos: {peso}kg | {objetivo}. Esperando consulta."
-    st.session_state.history.append({"role": "model", "content": mensaje_inicio})
+    # Línea corregida y corta para evitar errores
+    inicio = f"Sesión iniciada. Usuario: {nombre}. Objetivo: {objetivo}. Esperando comandos."
+    st.session_state.history.append({"role": "model", "content": inicio})
+
+# Pintar historial
+for msg in st.session_state.history:
+    role = "assistant" if msg["role"] == "model" else "user"
+    avatar = "logo.png" if role == "assistant" else None
+    try: st.chat_message(role, avatar=avatar).markdown(msg["content"])
+    except: st.chat_message(role).markdown(msg["content"])
+
+# --- CAJA DE TEXTO (LO QUE FALTABA) ---
+if prompt := st.chat_input("Consulta a Zynte..."):
 
