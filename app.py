@@ -96,10 +96,9 @@ for msg in st.session_state.history:
     except: st.chat_message(role).markdown(msg["content"])
 
 # --- CAJA DE TEXTO (LO QUE FALTABA) ---
-# --- CAJA DE TEXTO (PARTE FINAL CORREGIDA) ---
+# --- CAJA DE TEXTO (CON PERSONALIDAD "TÚ A TÚ") ---
 if prompt := st.chat_input("Consulta a Zynte..."):
     
-    # Fíjate que estas líneas tienen espacio a la izquierda
     st.chat_message("user").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
     
@@ -108,18 +107,25 @@ if prompt := st.chat_input("Consulta a Zynte..."):
         placeholder.markdown("...")
         
         try:
-            # Contexto
+            # NUEVAS INSTRUCCIONES: Trato directo y cercano
             ctx = f"""
-            Eres Zynte, IA deportiva avanzada.
-            CLIENTE: {nombre}, {peso}kg, {altura}cm, IMC {imc:.1f}.
-            OBJETIVO: {objetivo} ({nivel}).
+            Eres Zynte, entrenador personal de élite de la marca ZYNTE.
+            Estás hablando directamente con tu cliente: {nombre}.
             
-            Responde de forma técnica, directa y estructurada (listas/negritas).
-            Sin saludos innecesarios. Ve al grano.
+            SUS DATOS ACTUALES:
+            - Peso: {peso} kg, Altura: {altura} cm.
+            - Objetivo: {objetivo}. Nivel: {nivel}.
+            
+            REGLAS DE COMUNICACIÓN OBLIGATORIAS:
+            1. HÁBLALE DE "TÚ": Usa la segunda persona (ej: "Tu plan...", "Debes hacer...", "Te recomiendo...").
+            2. PROHIBIDO hablar en tercera persona (Nunca digas "El usuario" o "El cliente").
+            3. TONO: Profesional, técnico, pero cercano y motivador. Eres su coach, no un libro.
+            4. ESTRUCTURA: Usa negritas para resaltar claves y listas para pasos. Sé conciso.
             """
             
             model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
-            # Construcción del historial para la IA
+            
+            # Construcción del historial correcta
             chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
             chat = model.start_chat(history=chat_history)
             
@@ -130,5 +136,6 @@ if prompt := st.chat_input("Consulta a Zynte..."):
             
         except Exception as e:
             placeholder.error(f"Error de conexión: {e}")
+
 
 
