@@ -716,15 +716,15 @@ def app_principal():
             error_ocurrido = False
             
             with st.spinner("El entrenador está pensando..."):
-                try:
-                   # --- BUSCA ESTA PARTE EN TU CÓDIGO ---
-        st.write("---")
+        # --- SECCIÓN DE CHAT ---
+        st.write("---") # Fíjate que ahora NO hay un 'try:' suelto arriba
         st.subheader("💬 Chat con Zynte AI")
 
-        # 1. Definimos el input (Asegúrate de que NO haya un 'try:' vacío arriba)
+        # Definimos el input del chat
         prompt = st.chat_input("¿En qué puedo ayudarte hoy?")
 
         if prompt:
+            # Si el usuario escribe algo, entramos aquí
             if "history" not in st.session_state:
                 st.session_state.history = []
             
@@ -830,6 +830,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
