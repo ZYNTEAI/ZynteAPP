@@ -5,6 +5,8 @@ import datetime
 import time
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import sqlite3
+import re
 
 # --- 1. CONFIGURACIÓN INICIAL ---
 st.set_page_config(
@@ -13,7 +15,65 @@ st.set_page_config(
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
+# --- GESTIÓN DE BASE DE DATOS Y SEGURIDAD ---
+def init_db():
+    conn = sqlite3.connect('zynte_users.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            email TEXT PRIMARY KEY,
+            password TEXT,
+            fecha_registro TEXT,
+            plan TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
+def validar_email_estricto(email):
+    # 1. Validación Matemática (Regex)
+    patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(patron, email):
+        return False, "Formato inválido. Ejemplo: usuario@gmail.com"
+    
+    # 2. Lista de Dominios Permitidos
+    dominios_validos = ["gmail.com", "yahoo.com", "yahoo.es", "hotmail.com", "outlook.com", "icloud.com", "protonmail.com"]
+    try:
+        dominio_usuario = email.split('@')[-1]
+    except:
+        return False, "Error en el formato del dominio."
+    
+    if dominio_usuario not in dominios_validos:
+        return False, f"Solo aceptamos proveedores seguros: {', '.join(dominios_validos)}"
+        
+    return True, "OK"
+
+def verificar_login(email, password):
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password))
+        usuario = c.fetchone()
+        conn.close()
+        return usuario is not None
+    except:
+        return False
+
+def registrar_usuario_sql(email, password):
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        fecha = str(datetime.date.today())
+        c.execute('INSERT INTO users (email, password, fecha_registro, plan) VALUES (?, ?, ?, ?)', 
+                  (email, password, fecha, "Free"))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+# Iniciamos la DB al arrancar
+init_db()
 # --- 2. ESTILOS CSS PREMIUM ---
 st.markdown("""
     <style>
@@ -260,53 +320,48 @@ def mostrar_login():
     with lc2:
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Nuevo Registro"])
         
-        # PESTAÑA 1: LOGIN
+        # --- LOGIN REAL ---
         with tab1:
             st.write("")
-            email_login = st.text_input("Correo Electrónico", key="login_email")
-            pass_login = st.text_input("Contraseña", type="password", key="login_pass")
+            email_login = st.text_input("Correo Electrónico", key="login_email").strip().lower()
+            pass_login = st.text_input("Contraseña", type="password", key="login_pass").strip()
             st.write("")
             if st.button("ENTRAR AL SISTEMA ▶", type="primary", use_container_width=True):
-                st.session_state.logged_in = True
-                st.session_state.page = 'pricing'
-                st.success("Credenciales verificadas. Redirigiendo...")
-                time.sleep(0.5)
-                st.rerun()
-        
-        # PESTAÑA 2: REGISTRO (Aquí estaba el error)
+                # Verificamos DB
+                if verificar_login(email_login, pass_login):
+                    st.session_state.logged_in = True
+                    st.session_state.page = 'pricing'
+                    st.success("Credenciales verificadas. Redirigiendo...")
+                    time.sleep(0.5); st.rerun()
+                else:
+                    st.error("❌ Credenciales incorrectas o usuario no registrado.")
+                
+        # --- REGISTRO SEGURO ---
         with tab2:
             st.write("")
-            new_email = st.text_input("Tu Mejor Email", key="reg_email")
+            new_email = st.text_input("Tu Mejor Email", key="reg_email", placeholder="ejemplo@gmail.com")
             new_pass = st.text_input("Elige Contraseña", type="password", key="reg_pass")
             st.write("")
             
             if st.button("Crear Cuenta Gratuita", use_container_width=True):
-                if new_email and new_pass:
-                    with st.spinner("Registrando usuario en la base de datos..."):
-                        sheet = conectar_db() 
-                        if sheet:
-                            try:
-                                fecha = str(datetime.date.today())
-                                sheet.append_row([new_email, fecha, "Free"])
-                                st.success("¡Registro completado con éxito!")
-                                # --- LÍNEA DE RASTREO (Solo para depurar) ---
-                                st.write(f"📍 Datos escritos en: {sheet.spreadsheet.title}")
-                                st.link_button("📂 ABRIR HOJA DE CÁLCULO", f"https://docs.google.com/spreadsheets/d/{sheet.spreadsheet.id}")
-                                # --------------------------------------------
-                                time.sleep(5) # Damos tiempo para leer
-                                st.session_state.logged_in = True
-                                st.session_state.page = 'pricing'
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error al guardar: {e}")
-                        else:
-                            st.warning("Nota: Usuario registrado localmente (Error de conexión DB).")
-                            time.sleep(1)
+                email_limpio = new_email.strip().lower()
+                pass_limpio = new_pass.strip()
+
+                if not email_limpio or not pass_limpio:
+                    st.warning("⚠️ Rellena todos los campos para continuar.")
+                else:
+                    es_valido, mensaje = validar_email_estricto(email_limpio)
+                    if not es_valido:
+                        st.error(f"❌ {mensaje}")
+                    else:
+                        if registrar_usuario_sql(email_limpio, pass_limpio):
+                            st.success("✅ ¡Cuenta creada con éxito!")
+                            time.sleep(1.5)
                             st.session_state.logged_in = True
                             st.session_state.page = 'pricing'
                             st.rerun()
-                else:
-                    st.warning("Por favor rellena todos los campos.")
+                        else:
+                            st.error("⛔ Este email ya está registrado en el sistema.")
 
     st.write(""); st.write("---")
     if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
@@ -499,4 +554,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
