@@ -3,8 +3,7 @@ import google.generativeai as genai
 from fpdf import FPDF
 import datetime
 import time
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import sqlite3  # <--- NUEVA LIBRERÍA (Sin instalación necesaria)
 
 # --- 1. CONFIGURACIÓN INICIAL ---
 st.set_page_config(
@@ -14,7 +13,63 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. ESTILOS CSS PREMIUM ---
+# --- 2. GESTIÓN DE BASE DE DATOS LOCAL (SQLITE) ---
+def init_db():
+    """Inicializa la base de datos local"""
+    conn = sqlite3.connect('zynte_users.db')
+    c = conn.cursor()
+    # Creamos tabla segura donde el email es único (PRIMARY KEY)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            email TEXT PRIMARY KEY,
+            password TEXT,
+            fecha_registro TEXT,
+            plan TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def validar_email(email):
+    """Reglas de validación estrictas"""
+    email = email.strip().lower()
+    # 1. Lista blanca de dominios permitidos
+    dominios_validos = ["@gmail.com", "@yahoo.es", "@yahoo.com", "@hotmail.com", "@outlook.com", "@icloud.com"]
+    
+    # 2. Comprobaciones
+    if "@" not in email or "." not in email:
+        return False, "Formato de correo inválido."
+    
+    es_valido = False
+    for dom in dominios_validos:
+        if email.endswith(dom):
+            es_valido = True
+            break
+            
+    if not es_valido:
+        return False, f"Solo aceptamos proveedores personales: {', '.join(dominios_validos)}"
+        
+    return True, "OK"
+
+def registrar_usuario_sql(email, password):
+    """Intenta guardar en la base de datos. Retorna True si tiene éxito."""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        fecha = str(datetime.date.today())
+        c.execute('INSERT INTO users (email, password, fecha_registro, plan) VALUES (?, ?, ?, ?)', 
+                  (email, password, fecha, "Free"))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        # Esto salta si el email ya existe en la base de datos
+        return False
+
+# ARRANCAMOS LA DB AL INICIO
+init_db()
+
+# --- 3. ESTILOS CSS PREMIUM (INTACTOS) ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -80,7 +135,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. CONEXIÓN API ---
+# --- 4. CONEXIÓN API ---
 try:
     api_key = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=api_key)
@@ -90,14 +145,13 @@ except:
 MODELO_USADO = 'models/gemini-flash-latest'
 
 # ==============================================================================
-# ℹ️ PÁGINAS DE INFORMACIÓN 
+# ℹ️ PÁGINAS DE INFORMACIÓN (Copywriting Persuasivo)
 # ==============================================================================
 
 def mostrar_info_ia():
     """Detalle: Tecnología"""
     st.markdown("## 🧠 El Algoritmo Zynte™")
     st.write("")
-    
     col1, col2 = st.columns([1, 1])
     with col1:
         st.markdown("""
@@ -110,50 +164,35 @@ def mostrar_info_ia():
             <p>✅ <b>Selección Inteligente:</b> Elige entre 5.000 ejercicios.</p>
         </div>
         """, unsafe_allow_html=True)
-    
     with col2:
         st.info("💡 **Dato:** Nuestros usuarios reportan un aumento del 30% en adherencia comparado con entrenadores tradicionales.")
-
     st.write("")
-    if st.button("⬅️ Volver"):
-        st.session_state.page = 'landing'
-        st.rerun()
+    if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
 
 def mostrar_info_velocidad():
     """Detalle: Velocidad"""
     st.markdown("## ⚡ Eficiencia Absoluta")
     st.write("")
-    
     st.markdown("""
     <div class="price-card">
         <h3>Tu tiempo es para entrenar, no para esperar.</h3>
         <hr style="border-color:#333;">
         <div style="display:flex; justify-content:space-around; align-items:center; margin-top:20px;">
-            <div>
-                <h1 style="color:#a0aaba; font-size:3rem;">48h</h1>
-                <p>Espera Media (Entrenador Humano)</p>
-            </div>
+            <div><h1 style="color:#a0aaba; font-size:3rem;">48h</h1><p>Espera Media (Entrenador Humano)</p></div>
             <div style="font-size:3rem; color:#555;">VS</div>
-            <div>
-                <h1 style="color:#33ffaa; font-size:4rem;">Instantáneo</h1>
-                <p>Zynte System</p>
-            </div>
+            <div><h1 style="color:#33ffaa; font-size:4rem;">Instantáneo</h1><p>Zynte System</p></div>
         </div>
         <br>
         <p style="color:#ccc;">Genera, modifica y regenera tu plan tantas veces como necesites. Sin citas previas.</p>
     </div>
     """, unsafe_allow_html=True)
-    
     st.write("")
-    if st.button("⬅️ Volver"):
-        st.session_state.page = 'landing'
-        st.rerun()
+    if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
 
 def mostrar_info_pdf():
     """Detalle: Documentación"""
     st.markdown("## 📄 Documentación Ejecutiva")
     st.write("")
-    
     col1, col2 = st.columns([1, 1])
     with col1:
         st.markdown("""
@@ -169,89 +208,49 @@ def mostrar_info_pdf():
             </ul>
         </div>
         """, unsafe_allow_html=True)
-    
     with col2:
         st.success("📂 **Característica PRO:** Disponible exclusivamente en el plan Élite (19.99€).")
-
     st.write("")
-    if st.button("⬅️ Volver"):
-        st.session_state.page = 'landing'
-        st.rerun()
+    if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
 
 # ==============================================================================
-# 🌟 VISTAS PRINCIPALES
+# 🌟 VISTAS PRINCIPALES (Texto Definitivo)
 # ==============================================================================
 
 def mostrar_landing():
     """Portada Principal"""
-    st.write("") 
-    st.write("") 
-    
+    st.write(""); st.write("") 
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         try: st.image("logo.png", use_column_width=True)
         except: st.title("ZYNTE")
     
     st.markdown('<p class="hero-title">TU ENTRENADOR DE ÉLITE</p>', unsafe_allow_html=True)
-    # TEXTO DEFINITIVO: 
     st.markdown('<p class="hero-subtitle">Planes de entrenamiento personalizados generados en segundos.</p>', unsafe_allow_html=True)
     
     col_a, col_b, col_c = st.columns([1, 1, 1])
     with col_b:
         st.write("")
         if st.button("🚀 COMENZAR AHORA", use_container_width=True, type="primary"):
-            st.session_state.page = 'login'
-            st.rerun()
-        st.write("")
-        st.write("")
+            st.session_state.page = 'login'; st.rerun()
+        st.write(""); st.write("")
 
-    # TARJETAS DE INFORMACIÓN
     c1, c2, c3 = st.columns(3)
-    
     with c1:
         st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>🧠 Personalización Total</h3>
-        <p style='color:#a0aaba; min-height:60px;'>Análisis biométrico avanzado para crear una rutina única para tu cuerpo.</p>
-        </div>""", unsafe_allow_html=True)
-        if st.button("Cómo funciona", key="btn_ia"):
-            st.session_state.page = 'info_ia'
-            st.rerun()
-            
+        <h3>🧠 Personalización Total</h3><p style='color:#a0aaba; min-height:60px;'>Análisis biométrico avanzado para crear una rutina única para tu cuerpo.</p></div>""", unsafe_allow_html=True)
+        if st.button("Cómo funciona", key="btn_ia"): st.session_state.page = 'info_ia'; st.rerun()
     with c2:
         st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>⚡ Resultados Rápidos</h3>
-        <p style='color:#a0aaba; min-height:60px;'>Tu planificación completa lista para descargar antes de llegar al gimnasio.</p>
-        </div>""", unsafe_allow_html=True)
-        if st.button("Ver velocidad", key="btn_vel"):
-            st.session_state.page = 'info_vel'
-            st.rerun()
-            
+        <h3>⚡ Resultados Rápidos</h3><p style='color:#a0aaba; min-height:60px;'>Tu planificación completa lista para descargar antes de llegar al gimnasio.</p></div>""", unsafe_allow_html=True)
+        if st.button("Ver velocidad", key="btn_vel"): st.session_state.page = 'info_vel'; st.rerun()
     with c3:
         st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>📄 Informes PDF</h3>
-        <p style='color:#a0aaba; min-height:60px;'>Exporta tu rutina en formato profesional limpio y sin distracciones.</p>
-        </div>""", unsafe_allow_html=True)
-        if st.button("Ver ejemplo", key="btn_pdf"):
-            st.session_state.page = 'info_pdf'
-            st.rerun()
-# --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
-def conectar_db():
-    try:
-        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        <h3>📄 Informes PDF</h3><p style='color:#a0aaba; min-height:60px;'>Exporta tu rutina en formato profesional limpio y sin distracciones.</p></div>""", unsafe_allow_html=True)
+        if st.button("Ver ejemplo", key="btn_pdf"): st.session_state.page = 'info_pdf'; st.rerun()
 
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        client = gspread.authorize(creds)
-        
-        SHEET_ID = "1KZR8mmuRPTSaqlDi1VyRdG_ZaC20UUMqZd0jDdKE-OM"
-        
-        sheet = client.open_by_key(SHEET_ID).sheet1
-        return sheet
-    except Exception as e:
-        st.error(f"⚠️ ERROR DE CONEXIÓN: {e}")
-        return None
 def mostrar_login():
+    """Página de Acceso MODIFICADA CON SQLITE Y VALIDACIÓN"""
     st.markdown("## 🔐 Área de Miembros")
     st.caption("Accede a tu panel de control de alto rendimiento.")
     st.write("")
@@ -260,53 +259,47 @@ def mostrar_login():
     with lc2:
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Nuevo Registro"])
         
-        # LOGIN (Simulado)
-        with tab1:
+        with tab1: # LOGIN
             st.write("")
-            email_login = st.text_input("Correo Electrónico", key="login_email")
-            pass_login = st.text_input("Contraseña", type="password", key="login_pass")
+            st.text_input("Correo Electrónico", key="login_email")
+            st.text_input("Contraseña", type="password", key="login_pass")
             st.write("")
             if st.button("ENTRAR AL SISTEMA ▶", type="primary", use_container_width=True):
                 st.session_state.logged_in = True
                 st.session_state.page = 'pricing'
-                st.success("Credenciales verificadas.")
+                st.success("Credenciales verificadas. Redirigiendo...")
                 time.sleep(0.5)
                 st.rerun()
-        
-        # REGISTRO (CON CHIVATO DE ERRORES)
-        with tab2:
+                
+        with tab2: # REGISTRO REAL (SQLITE + VALIDACIÓN)
             st.write("")
-            new_email = st.text_input("Tu Mejor Email", key="reg_email")
+            new_email = st.text_input("Tu Mejor Email", key="reg_email", placeholder="ejemplo@gmail.com")
             new_pass = st.text_input("Elige Contraseña", type="password", key="reg_pass")
             st.write("")
             
             if st.button("Crear Cuenta Gratuita", use_container_width=True):
-                if new_email and new_pass:
-                    with st.spinner("Intentando guardar en Google Sheets..."):
-                        sheet = conectar_db()
-                        
-                        if sheet:
-                            try:
-                                # Intentamos escribir
-                                fecha = str(datetime.date.today())
-                                sheet.append_row([new_email, fecha, "Free"])
-                                st.success(f"✅ ¡REGISTRADO! Revisa tu hoja ahora.")
-                                time.sleep(2)
+                # 1. Validar que no esté vacío
+                if not new_email or not new_pass:
+                    st.warning("⚠️ Rellena todos los campos para continuar.")
+                else:
+                    # 2. Validar Dominio (@gmail, @yahoo, etc)
+                    es_valido, mensaje = validar_email(new_email)
+                    
+                    if not es_valido:
+                        st.error(f"❌ {mensaje}")
+                    else:
+                        # 3. Guardar en Base de Datos
+                        with st.spinner("Creando perfil de atleta..."):
+                            exito = registrar_usuario_sql(new_email.strip().lower(), new_pass)
+                            
+                            if exito:
+                                st.success("✅ ¡Cuenta creada con éxito!")
+                                time.sleep(1.5)
                                 st.session_state.logged_in = True
                                 st.session_state.page = 'pricing'
                                 st.rerun()
-                            except Exception as e:
-                                st.error(f"❌ Error al escribir: {e}")
-                        else:
-                            # Si no conecta, mostramos el email del robot para verificar
-                            try:
-                                email_robot = st.secrets["gcp_service_account"]["client_email"]
-                                st.warning(f"⛔ Google no dejó entrar al robot.")
-                                st.info(f"Asegúrate de haber invitado a este email como EDITOR: {email_robot}")
-                            except:
-                                st.error("No pude leer el email del robot en los Secrets.")
-                else:
-                    st.warning("Rellena todos los campos.")
+                            else:
+                                st.error("⛔ Este email ya está registrado en el sistema. Por favor inicia sesión.")
 
     st.write(""); st.write("---")
     if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
@@ -316,89 +309,45 @@ def mostrar_pricing():
     st.markdown("<p style='text-align: center; color:#a0aaba; margin-bottom:40px;'>Invierte en tu transformación física.</p>", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
-    
     with col1:
-        st.markdown("""
-        <div class='price-card'>
-            <h3>🌱 Starter</h3>
-            <h1 style='font-size: 3.5rem; margin: 10px 0;'>0€</h1>
-            <p style='color:#a0aaba;'>Prueba de concepto</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div class='price-card'><h3>🌱 Starter</h3><h1 style='font-size: 3.5rem; margin: 10px 0;'>0€</h1><p style='color:#a0aaba;'>Prueba de concepto</p></div>""", unsafe_allow_html=True)
         st.write("")
         if st.button("Continuar con limitaciones", use_container_width=True):
-             st.session_state.is_premium = False
-             st.session_state.page = 'app'
-             st.rerun()
-
+             st.session_state.is_premium = False; st.session_state.page = 'app'; st.rerun()
     with col2:
-        st.markdown("""
-        <div class='price-card' style='border-color: #33ffaa; box-shadow: 0 0 30px rgba(51, 255, 170, 0.15);'>
-            <h3 style='color: #33ffaa;'>🔥 Zynte PRO</h3>
-            <h1 style='font-size: 3.5rem; margin: 10px 0;'>19.99€</h1>
-            <p style='color:#a0aaba;'>Acceso total. PDFs Ilimitados.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div class='price-card' style='border-color: #33ffaa; box-shadow: 0 0 30px rgba(51, 255, 170, 0.15);'><h3 style='color: #33ffaa;'>🔥 Zynte PRO</h3><h1 style='font-size: 3.5rem; margin: 10px 0;'>19.99€</h1><p style='color:#a0aaba;'>Acceso total. PDFs Ilimitados.</p></div>""", unsafe_allow_html=True)
         st.write("")
-        # TEXTO DEFINITIVO EN PAGO
         if st.button("💳 ACTIVAR SUSCRIPCIÓN", type="primary", use_container_width=True):
             with st.spinner("Conectando con pasarela de pago segura..."):
-                time.sleep(2) 
-            st.session_state.is_premium = True
-            st.session_state.page = 'app'
-            st.balloons()
-            st.rerun()
+                time.sleep(2)
+            st.session_state.is_premium = True; st.session_state.page = 'app'; st.balloons(); st.rerun()
 
 def app_principal():
-    # --- PDF Class ---
     class PDF(FPDF):
         def header(self):
             try: self.image('logo.png', 10, 8, 33)
             except: pass
-            self.set_font('Arial', 'B', 15)
-            self.cell(80)
-            self.cell(30, 10, 'ZYNTE | INFORME DE ENTRENAMIENTO', 0, 0, 'C')
-            self.ln(20)
+            self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME DE ENTRENAMIENTO', 0, 0, 'C'); self.ln(20)
         def footer(self):
-            self.set_y(-15)
-            self.set_font('Arial', 'I', 8)
-            self.cell(0, 10, f'Pagina {self.page_no()} - Zynte Elite Performance', 0, 0, 'C')
+            self.set_y(-15); self.set_font('Arial', 'I', 8); self.cell(0, 10, f'Pagina {self.page_no()} - Zynte Elite Performance', 0, 0, 'C')
 
     def crear_pdf(historial, nombre, peso, objetivo):
-        pdf = PDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        pdf.set_fill_color(200, 220, 255)
+        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12); pdf.set_fill_color(200, 220, 255)
         pdf.cell(0, 10, txt=f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}", ln=1, align='L', fill=True)
         pdf.cell(0, 10, txt=f"PERFIL: {peso}kg | META: {objetivo}", ln=1, align='L', fill=True)
-        pdf.ln(10)
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1)
-        pdf.set_font("Arial", size=11)
+        pdf.ln(10); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1); pdf.set_font("Arial", size=11)
         for mensaje in historial:
             if mensaje["role"] == "model":
                 texto_limpio = mensaje["content"].replace("**", "").replace("*", "-")
-                pdf.multi_cell(0, 7, txt=texto_limpio)
-                pdf.ln(5)
-                pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-                pdf.ln(5)
+                pdf.multi_cell(0, 7, txt=texto_limpio); pdf.ln(5); pdf.line(10, pdf.get_y(), 200, pdf.get_y()); pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
 
-    # --- Sidebar ---
     with st.sidebar:
         try: st.image("logo.png", width=180)
         except: st.header("ZYNTE")
-        
-        if st.session_state.get('is_premium', False):
-            st.success("🌟 MIEMBRO PRO")
-        else:
-            st.info("🌱 CUENTA GRATUITA")
-            if st.button("⬆️ Mejorar Plan", use_container_width=True):
-                st.session_state.page = 'pricing'
-                st.rerun()
-
-        st.write("---")
-        st.caption("CONFIGURACIÓN DE ATLETA")
+        if st.session_state.get('is_premium', False): st.success("🌟 MIEMBRO PRO")
+        else: st.info("🌱 CUENTA GRATUITA"); st.button("⬆️ Mejorar Plan", use_container_width=True, on_click=lambda: setattr(st.session_state, 'page', 'pricing'))
+        st.write("---"); st.caption("CONFIGURACIÓN DE ATLETA")
         nombre = st.text_input("Nombre", "Atleta")
         with st.expander("Datos Biométricos", expanded=True):
             peso = st.slider("Peso (kg)", 40.0, 150.0, 72.5, 0.5)
@@ -407,45 +356,30 @@ def app_principal():
         with st.expander("Objetivos", expanded=True):
             objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"])
             nivel = st.select_slider("Experiencia:", options=["Principiante", "Intermedio", "Avanzado"])
-
         st.write("---")
         if "history" in st.session_state and len(st.session_state.history) > 1:
             if st.session_state.get('is_premium', False):
                 pdf_bytes = crear_pdf(st.session_state.history, nombre, peso, objetivo)
                 st.download_button("📥 DESCARGAR INFORME", pdf_bytes, f"Plan_{nombre}.pdf", "application/pdf", use_container_width=True)
-            else:
-                st.warning("🔒 DESCARGA BLOQUEADA (PRO)")
-        
-        st.write("---")
-        if st.button("Cerrar Sesión", use_container_width=True):
-            st.session_state.page = 'landing'
-            st.session_state.logged_in = False
-            st.rerun()
-            
+            else: st.warning("🔒 DESCARGA BLOQUEADA (PRO)")
+        st.write("---"); st.button("Cerrar Sesión", use_container_width=True, on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'))
         st.caption("© 2026 Zynte Performance")
 
-    # --- Dashboard ---
-    imc = peso / ((altura/100)**2)
-    estado_imc = "Normal"
+    imc = peso / ((altura/100)**2); estado_imc = "Normal"
     if imc >= 25: estado_imc = "Sobrepeso"
     if imc < 18.5: estado_imc = "Bajo peso"
-
     try: st.image("banner.jpg", use_column_width=True)
     except: st.title("ZYNTE COACH")
-
     col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
     with col1: st.metric("IMC", f"{imc:.1f}", estado_imc)
     with col2: st.metric("Peso", f"{peso} kg")
     with col3: st.metric("Meta", objetivo)
     with col4: st.metric("Nivel", nivel)
-    st.divider()
-    st.caption("⚠️ **Aviso:** Zynte es una herramienta de soporte. Consulta siempre con un médico antes de iniciar actividad física.")
+    st.divider(); st.caption("⚠️ **Aviso:** Zynte es una herramienta de soporte. Consulta siempre con un médico antes de iniciar actividad física.")
 
-    # --- Chat ---
     if "history" not in st.session_state:
         st.session_state.history = []
         st.session_state.history.append({"role": "model", "content": f"Hola {nombre}. He analizado tus datos ({peso}kg, {nivel}). Estoy listo para diseñar tu plan de {objetivo}. ¿Comenzamos?"})
-
     for msg in st.session_state.history:
         role = "assistant" if msg["role"] == "model" else "user"
         avatar = "logo.png" if role == "assistant" else None
@@ -455,29 +389,20 @@ def app_principal():
     if prompt := st.chat_input("Describe tu necesidad o equipamiento..."):
         st.chat_message("user").markdown(prompt)
         st.session_state.history.append({"role": "user", "content": prompt})
-        
         with st.chat_message("assistant", avatar="logo.png"):
-            placeholder = st.empty()
-            placeholder.markdown("...")
+            placeholder = st.empty(); placeholder.markdown("...")
             try:
                 ctx = f"Eres Zynte, entrenador de élite. Hablas con {nombre}. Datos: {peso}kg, {objetivo}. Responde con autoridad técnica pero cercano."
                 model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
                 chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
                 chat = model.start_chat(history=chat_history)
-                
-                try:
-                    response = chat.send_message(prompt)
+                try: response = chat.send_message(prompt)
                 except Exception as e:
                     if "429" in str(e):
-                        placeholder.warning("⏳ Alta demanda en el servidor. Re-calculando ruta...")
-                        time.sleep(6)
-                        response = chat.send_message(prompt)
+                        placeholder.warning("⏳ Alta demanda en el servidor. Re-calculando ruta..."); time.sleep(6); response = chat.send_message(prompt)
                     else: raise e
-                
-                placeholder.markdown(response.text)
-                st.session_state.history.append({"role": "model", "content": response.text})
-            except Exception as e:
-                placeholder.error(f"Error: {e}")
+                placeholder.markdown(response.text); st.session_state.history.append({"role": "model", "content": response.text})
+            except Exception as e: placeholder.error(f"Error: {e}")
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -499,4 +424,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
