@@ -430,13 +430,12 @@ def mostrar_info_pdf():
 # ==============================================================================
 # 🌟 VISTAS PRINCIPALES
 # ==============================================================================
-
 def mostrar_landing():
-    """Portada Principal - Versión Ultra Fit con Auto-Ajuste"""
+    """Portada Principal - Versión Final Corregida y Cuadrada"""
     st.write("") 
     st.write("") 
     
-    # 1. Logo centrado con contenedor flexible
+    # 1. Logo centrado
     col_l1, col_l2, col_l3 = st.columns([0.8, 1.5, 0.8])
     with col_l2:
         try: 
@@ -447,7 +446,7 @@ def mostrar_landing():
     st.markdown('<p class="hero-title">TU ENTRENADOR DE ÉLITE</p>', unsafe_allow_html=True)
     st.markdown('<p class="hero-subtitle">Planes de entrenamiento personalizados generados en segundos.</p>', unsafe_allow_html=True)
     
-    # 2. Botón de acceso directo
+    # 2. Botón central
     _, col_btn, _ = st.columns([1.2, 1, 1.2])
     with col_btn:
         if st.button("🚀 COMENZAR AHORA", use_container_width=True, type="primary"):
@@ -456,49 +455,35 @@ def mostrar_landing():
 
     st.write("---")
 
-    # 3. TARJETAS DE INFORMACIÓN - REPARACIÓN DE ALINEACIÓN
-    # Usamos gap="medium" para dar aire entre las cajas
+    # 3. TARJETAS DE INFORMACIÓN - REPARACIÓN TOTAL
     c1, c2, c3 = st.columns(3, gap="medium")
     
-    # Estilo común para todas las tarjetas para que queden cuadradas
-    card_style = """
-        <div style='
-            background-color: rgba(20, 20, 20, 0.6); 
-            backdrop-filter: blur(15px); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            border-radius: 15px; 
-            padding: 20px; 
-            min-height: 280px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: flex-start;
-            text-align: center;
-        '>
-    """
+    # Estilo base corregido para evitar que el código se muestre como texto
+    estilo_tarjeta = "background-color:rgba(20,20,20,0.6);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,0.1);border-radius:15px;padding:20px;min-height:280px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;"
 
     with c1:
-        st.markdown(f"{card_style}" + """
-            <span style='font-size: 2rem;'>🧠</span>
-            <h3 style='color:#33ffaa; font-size: 1.1rem; margin: 10px 0; line-height: 1.2;'>Personalización<br>Total</h3>
-            <p style='color:#a0aaba; font-size: 0.85rem; line-height: 1.4;'>Análisis biométrico avanzado para crear una rutina única basada en tu perfil y objetivos.</p>
+        st.markdown(f"""<div style='{estilo_tarjeta}'>
+            <div style='font-size:2rem;margin-bottom:10px;'>🧠</div>
+            <h3 style='color:#33ffaa;font-size:1.1rem;margin:0;line-height:1.2;'>Personalización<br>Total</h3>
+            <p style='color:#a0aaba;font-size:0.85rem;margin-top:10px;'>Análisis biométrico avanzado para crear una rutina única para tu cuerpo.</p>
         </div>""", unsafe_allow_html=True)
-        st.button("Cómo funciona", key="btn_ia_fixed", use_container_width=True)
+        st.button("Cómo funciona", key="btn_fix_1", use_container_width=True)
             
     with c2:
-        st.markdown(f"{card_style}" + """
-            <span style='font-size: 2rem;'>⚡</span>
-            <h3 style='color:#33ffaa; font-size: 1.1rem; margin: 10px 0; line-height: 1.2;'>Resultados<br>Rápidos</h3>
-            <p style='color:#a0aaba; font-size: 0.85rem; line-height: 1.4;'>Tu planificación completa lista para descargar antes de entrar al gimnasio. Sin esperas.</p>
+        st.markdown(f"""<div style='{estilo_tarjeta}'>
+            <div style='font-size:2rem;margin-bottom:10px;'>⚡</div>
+            <h3 style='color:#33ffaa;font-size:1.1rem;margin:0;line-height:1.2;'>Resultados<br>Rápidos</h3>
+            <p style='color:#a0aaba;font-size:0.85rem;margin-top:10px;'>Tu planificación completa lista para descargar antes de ir al gimnasio.</p>
         </div>""", unsafe_allow_html=True)
-        st.button("Ver velocidad", key="btn_vel_fixed", use_container_width=True)
+        st.button("Ver velocidad", key="btn_fix_2", use_container_width=True)
             
     with c3:
-        st.markdown(f"{card_style}" + """
-            <span style='font-size: 2rem;'>📄</span>
-            <h3 style='color:#33ffaa; font-size: 1.1rem; margin: 10px 0; line-height: 1.2;'>Informes<br>PDF</h3>
-            <p style='color:#a0aaba; font-size: 0.85rem; line-height: 1.4;'>Exporta tu rutina en un formato profesional y limpio, optimizado para leer en tu móvil.</p>
+        st.markdown(f"""<div style='{estilo_tarjeta}'>
+            <div style='font-size:2rem;margin-bottom:10px;'>📄</div>
+            <h3 style='color:#33ffaa;font-size:1.1rem;margin:0;line-height:1.2;'>Informes<br>PDF</h3>
+            <p style='color:#a0aaba;font-size:0.85rem;margin-top:10px;'>Exporta tu rutina en formato profesional limpio y sin distracciones.</p>
         </div>""", unsafe_allow_html=True)
-        st.button("Ver ejemplo", key="btn_pdf_fixed", use_container_width=True)
+        st.button("Ver ejemplo", key="btn_fix_3", use_container_width=True)
 # --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
 def conectar_db():
     try:
@@ -847,6 +832,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
