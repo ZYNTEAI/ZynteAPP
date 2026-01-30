@@ -499,6 +499,31 @@ def main():
 
 if __name__ == "__main__":
     main()
+# --- HERRAMIENTA DE DIAGNÓSTICO (Borrar cuando funcione) ---
+with st.sidebar:
+    st.write("---")
+    st.subheader("🕵️‍♂️ DETECTIVE DE ERRORES")
+    
+    if st.button("🔍 PROBAR CONEXIÓN"):
+        try:
+            # 1. Ver quién se cree que es el robot
+            if "gcp_service_account" in st.secrets:
+                email_robot = st.secrets["gcp_service_account"]["client_email"]
+                st.info(f"🤖 El robot es: {email_robot}")
+                st.code(email_robot) # Para que lo copies fácil
+                st.warning("👆 ¿ESTE EMAIL ES EDITOR EN TU HOJA?")
+            else:
+                st.error("❌ NO detecto los Secrets en Streamlit.")
+            
+            # 2. Intentar tocar la puerta
+            sheet = conectar_db()
+            if sheet:
+                st.success(f"✅ ¡CONEXIÓN EXITOSA! Hoja: {sheet.title}")
+            else:
+                st.error("❌ La función devolvió 'None'.")
+                
+        except Exception as e:
+            st.error(f"💥 ERROR REAL: {e}")
 
 
 
