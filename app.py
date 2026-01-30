@@ -595,7 +595,36 @@ def app_principal():
                     prompt_nutri = f"""
                     Actúa como nutricionista deportivo de élite. Crea un plan para:
                     - Perfil: {peso}kg, {altura}cm, {edad} años, {genero}.
-                    - Objetivo: {objetivo} ({cals} kcal
+                    - Objetivo: {objetivo} ({cals} kcal/día).
+                    - Preferencia: {tipo_dieta}, {comidas} comidas/día.
+                    - Restricciones: {alergias}.
+                    
+                    FORMATO DE SALIDA OBLIGATORIO:
+                    1. Tabla de MACROS REALES del plan.
+                    2. Ejemplo de UN DÍA COMPLETO de comida (Desayuno, Comida, Cena, Snacks) con cantidades exactas en gramos.
+                    3. LISTA DE LA COMPRA organizada por pasillos del supermercado (Proteínas, Verduras, Granos, Varios).
+                    
+                    Sé directo y práctico.
+                    """
+                    try:
+                        model = genai.GenerativeModel(MODELO_USADO)
+                        response_nutri = model.generate_content(prompt_nutri)
+                        st.session_state.plan_nutri = response_nutri.text
+                    except: st.error("Error conectando con el nutricionista IA.")
+
+        with col_diet2:
+            if "plan_nutri" in st.session_state:
+                st.markdown("### 🍽️ Tu Menú Personalizado")
+                st.markdown(st.session_state.plan_nutri)
+                st.button("🔄 Regenerar Dieta", on_click=lambda: st.session_state.pop("plan_nutri", None))
+            else:
+                st.info("👈 Configura tus preferencias a la izquierda y pulsa 'Generar' para obtener tu plan nutricional completo y la lista de la compra.")
+                st.markdown("""
+                **¿Qué incluye el plan?**
+                * ⚖️ Cantidades exactas en gramos.
+                * 🛒 Lista de la compra lista para usar.
+                * 🔥 Ajuste calórico perfecto para tu objetivo.
+                """)
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -617,6 +646,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
