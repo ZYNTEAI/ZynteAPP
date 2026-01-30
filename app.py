@@ -9,19 +9,27 @@ import sqlite3
 import re
 import pandas as pd  
 
-MODELO_USADO = "gemini-1.5-flash" 
+# 1. Asegúrate de que el nombre sea el estándar
+MODELO_USADO = "gemini-1.5-flash"
 
-# Configuración de seguridad
+# 2. Reemplaza la creación del modelo por esto:
 try:
-    api_key = st.secrets["GOOGLE_API_KEY"]
-except:
-    api_key = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE" # Pon tu clave real aquí
+    # Creamos el modelo forzando que NO use v1beta
+    model = genai.GenerativeModel(model_name=MODELO_USADO)
+    
+    # TRUCO FINAL: Forzamos la versión de la API en el cliente
+    import google.ai.generativelanguage as gag
+    model._client = gag.GenerativeServiceClient(
+        client_options={"api_endpoint": "generativelanguage.googleapis.com", "api_version": "v1"}
+    )
 
-genai.configure(api_key=api_key)
+    # Ahora intentamos enviar el mensaje
+    response = model.generate_content(prompt_rapido)
+    st.session_state.history.append({"role": "model", "content": response.text})
+    st.rerun()
 
-# 2. Busca donde creas el modelo (dentro de tab_train o donde envíes el mensaje)
-# Y asegúrate de que NO tenga prefijos raros. Debe ser así:
-model = genai.GenerativeModel(MODELO_USADO)
+except Exception as e:
+    st.error(f"Error técnico: {e}")
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
@@ -778,6 +786,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
