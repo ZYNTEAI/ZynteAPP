@@ -15,7 +15,7 @@ except:
 
 # --- MODELO INTELIGENTE (GEMINI 2.0) ---
 # Usamos uno de los modelos potentes que tienes en tu lista
-MODELO_USADO = 'models/gemini-1.5-flash' 
+MODELO_USADO = 'models/gemini-flash-latest' 
 
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3048/3048122.png", width=100)
@@ -72,4 +72,5 @@ if prompt := st.chat_input("Pregunta a tu entrenador..."):
         
     except Exception as e:
         st.error(f"Error de conexión: {e}")
+
 
