@@ -55,7 +55,31 @@ with st.sidebar:
     if st.button("Reiniciar Chat"):
         st.session_state.history = []
         st.rerun()
+# --- BOTÓN DE EXPORTAR (NUEVO) ---
+    st.write("---")
+    st.caption("HERRAMIENTAS")
+    
+    # Función mágica para convertir el chat en texto
+    def convertir_chat():
+        texto = f"⚡ PLAN DE ENTRENAMIENTO ZYNTE\n"
+        texto += f"👤 Cliente: {nombre} | Objetivo: {objetivo}\n"
+        texto += f"📅 Fecha: {time.strftime('%d/%m/%Y')}\n"
+        texto += "-" * 50 + "\n\n"
+        
+        for mensaje in st.session_state.history:
+            rol = "ENTRENADOR" if mensaje["role"] == "model" else "TÚ"
+            texto += f"[{rol}]:\n{mensaje['content']}\n\n"
+            texto += "-" * 20 + "\n\n"
+        return texto
 
+    # El botón de descarga
+    st.download_button(
+        label="💾 Descargar Mi Plan (TXT)",
+        data=convertir_chat(),
+        file_name=f"Plan_Zynte_{nombre}.txt",
+        mime="text/plain",
+        help="Guarda tu rutina en tu dispositivo para no perderla."
+    )
 # --- 4. CÁLCULOS ---
 imc = peso / ((altura/100)**2)
 estado_imc = "Normal"
@@ -136,6 +160,7 @@ if prompt := st.chat_input("Consulta a Zynte..."):
             
         except Exception as e:
             placeholder.error(f"Error de conexión: {e}")
+
 
 
 
