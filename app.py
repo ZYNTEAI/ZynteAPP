@@ -608,7 +608,7 @@ def app_principal():
 
     with tab_train:
         imc = peso / ((altura/100)**2)
-        col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
+        col1, col2, col3, col4 = st.columns([1, 1.3, 2, 1])
         with col1: st.metric("IMC", f"{imc:.1f}", "Normal" if 18.5 < imc < 25 else "Atención")
         with col2: st.metric("Peso", f"{peso} kg")
         with col3: st.metric("Meta", objetivo)
@@ -685,6 +685,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
