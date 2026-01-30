@@ -96,5 +96,39 @@ for msg in st.session_state.history:
     except: st.chat_message(role).markdown(msg["content"])
 
 # --- CAJA DE TEXTO (LO QUE FALTABA) ---
+# --- CAJA DE TEXTO (PARTE FINAL CORREGIDA) ---
 if prompt := st.chat_input("Consulta a Zynte..."):
+    
+    # Fíjate que estas líneas tienen espacio a la izquierda
+    st.chat_message("user").markdown(prompt)
+    st.session_state.history.append({"role": "user", "content": prompt})
+    
+    with st.chat_message("assistant", avatar="logo.png"):
+        placeholder = st.empty()
+        placeholder.markdown("...")
+        
+        try:
+            # Contexto
+            ctx = f"""
+            Eres Zynte, IA deportiva avanzada.
+            CLIENTE: {nombre}, {peso}kg, {altura}cm, IMC {imc:.1f}.
+            OBJETIVO: {objetivo} ({nivel}).
+            
+            Responde de forma técnica, directa y estructurada (listas/negritas).
+            Sin saludos innecesarios. Ve al grano.
+            """
+            
+            model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
+            # Construcción del historial para la IA
+            chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
+            chat = model.start_chat(history=chat_history)
+            
+            response = chat.send_message(prompt)
+            
+            placeholder.markdown(response.text)
+            st.session_state.history.append({"role": "model", "content": response.text})
+            
+        except Exception as e:
+            placeholder.error(f"Error de conexión: {e}")
+
 
