@@ -108,8 +108,30 @@ def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
     try:
         conn = sqlite3.connect('zynte_users.db')
         c = conn.cursor()
-        
-        # AQUÍ ESTABA EL ERROR: Ahora usamos una variable intermedia para evitar fallos de paréntesis
+def activar_plan_pro(email):
+    """Actualiza la cuenta del usuario a PRO permanentemente"""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute("UPDATE users SET plan = 'Pro' WHERE email = ?", (email,))
+        conn.commit()
+        conn.close()
+        return True
+    except: return False
+
+def comprobar_plan(email):
+    """Mira si el usuario es PRO o Free"""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute("SELECT plan FROM users WHERE email = ?", (email,))
+        resultado = c.fetchone()
+        conn.close()
+        if resultado and resultado[0] == 'Pro':
+            return True
+        return False
+    except: return False      
+       
         datos_a_guardar = (peso, altura, edad, objetivo, nivel, email)
         
         c.execute('UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?', datos_a_guardar)
@@ -372,7 +394,7 @@ def mostrar_login():
     with lc2:
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Nuevo Registro"])
         
-        # LOGIN
+        # LOGIN CON DETECCIÓN DE PLAN PRO
         with tab1:
             st.write("")
             email_login = st.text_input("Correo", key="login_email").strip().lower()
@@ -382,73 +404,72 @@ def mostrar_login():
                 if verificar_login(email_login, pass_login):
                     st.session_state.logged_in = True
                     st.session_state.user_email = email_login 
-                    st.session_state.page = 'pricing'
-                    st.success("Verificado."); time.sleep(0.5); st.rerun()
+                    
+                    # AQUÍ MIRAMOS SI YA PAGÓ ANTES
+                    es_pro = comprobar_plan(email_login)
+                    st.session_state.is_premium = es_pro # Guardamos el estado
+                    
+                    if es_pro:
+                        st.session_state.page = 'app' # Si es Pro, directo a entrenar
+                        st.success("¡Bienvenido de nuevo, Atleta Pro! 🌟")
+                    else:
+                        st.session_state.page = 'pricing' # Si es Free, a ver precios
+                        st.success("Verificado.")
+                    
+                    time.sleep(0.5); st.rerun()
                 else: st.error("Error de credenciales.")
         
-        # REGISTRO
         with tab2:
             st.write("")
             new_email = st.text_input("Email", key="reg_email").strip().lower()
             new_pass = st.text_input("Pass", type="password", key="reg_pass").strip()
             st.write("")
             if st.button("Crear Cuenta", use_container_width=True):
-                if not new_email or not new_pass: 
-                    st.warning("Rellena todo.")
+                if not new_email or not new_pass: st.warning("Rellena todo.")
                 else:
                     valido, msg = validar_email_estricto(new_email)
-                    if not valido: 
-                        st.error(msg)
+                    if not valido: st.error(msg)
                     else:
                         if registrar_usuario_sql(new_email, new_pass):
-                            st.success("Creado.")
-                            time.sleep(1)
-                            st.session_state.logged_in=True
-                            st.session_state.user_email=new_email
-                            st.session_state.page='pricing'
-                            st.rerun()
-                        else: 
-                            st.error("Email ocupado.")
-    
-    st.write("---")
-    if st.button("⬅️ Volver", on_click=lambda: setattr(st.session_state, 'page', 'landing')): pass
+                            st.success("Creado."); time.sleep(1); st.session_state.logged_in=True; st.session_state.user_email=new_email; st.session_state.page='pricing'; st.rerun()
+                        else: st.error("Email ocupado.")
+    st.write("---"); st.button("⬅️ Volver", on_click=lambda: setattr(st.session_state, 'page', 'landing'))
 def mostrar_pricing():
-    st.markdown("<h2 style='text-align: center; margin-top:20px;'>Selecciona tu Plan</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color:#a0aaba; margin-bottom:40px;'>Invierte en tu transformación física.</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>Selecciona tu Plan</h2>", unsafe_allow_html=True)
+    
+    # ENLACE DE PAGO (PON AQUÍ EL TUYO DE STRIPE) 👇
+    LINK_STRIPE = "https://buy.stripe.com/test_4gM00lgIK1x3b3l8Z9eZ200" 
     
     col1, col2 = st.columns(2)
-    
     with col1:
-        st.markdown("""
-        <div class='price-card'>
-            <h3>🌱 Starter</h3>
-            <h1 style='font-size: 3.5rem; margin: 10px 0;'>0€</h1>
-            <p style='color:#a0aaba;'>Prueba de concepto</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.write("")
-        if st.button("Continuar con limitaciones", use_container_width=True):
-             st.session_state.is_premium = False
-             st.session_state.page = 'app'
-             st.rerun()
-
+        st.markdown("<div class='price-card'><h3>🌱 Starter</h3><h1>0€</h1></div>", unsafe_allow_html=True)
+        if st.button("Continuar Gratis", use_container_width=True):
+             st.session_state.is_premium = False; st.session_state.page = 'app'; st.rerun()
+             
     with col2:
-        st.markdown("""
-        <div class='price-card' style='border-color: #33ffaa; box-shadow: 0 0 30px rgba(51, 255, 170, 0.15);'>
-            <h3 style='color: #33ffaa;'>🔥 Zynte PRO</h3>
-            <h1 style='font-size: 3.5rem; margin: 10px 0;'>19.99€</h1>
-            <p style='color:#a0aaba;'>Acceso total. PDFs Ilimitados.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div class='price-card' style='border-color:#33ffaa;'><h3>🔥 PRO</h3><h1>19.99€</h1></div>", unsafe_allow_html=True)
         st.write("")
-        # TEXTO DEFINITIVO EN PAGO
-        if st.button("💳 ACTIVAR SUSCRIPCIÓN", type="primary", use_container_width=True):
-            with st.spinner("Conectando con pasarela de pago segura..."):
-                time.sleep(2) 
-            st.session_state.is_premium = True
-            st.session_state.page = 'app'
-            st.balloons()
-            st.rerun()
+        
+        # 1. BOTÓN DE PAGO (Abre pestaña nueva)
+        st.link_button("💳 PAGAR CON TARJETA", LINK_STRIPE, type="primary", use_container_width=True)
+        
+        # 2. ÁREA DE CANJEO
+        with st.expander("¿Ya tienes tu código? Canjéalo aquí"):
+            codigo = st.text_input("Código de licencia:", placeholder="Ej: ZYNTE-PRO").strip()
+            if st.button("Validar Licencia"):
+                if codigo == "ZYNTE2026": # <--- ESTA ES TU CONTRASEÑA SECRETA
+                    email_actual = st.session_state.get('user_email')
+                    if activar_plan_pro(email_actual):
+                        st.balloons()
+                        st.success("✅ ¡PLAN PRO ACTIVADO!")
+                        st.session_state.is_premium = True
+                        time.sleep(2)
+                        st.session_state.page = 'app'
+                        st.rerun()
+                    else:
+                        st.error("Error al actualizar base de datos.")
+                else:
+                    st.error("❌ Código incorrecto.")
 
 def app_principal():
     email_actual = st.session_state.get('user_email', 'invitado')
@@ -611,6 +632,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
