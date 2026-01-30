@@ -3,6 +3,8 @@ import google.generativeai as genai
 from fpdf import FPDF
 import datetime
 import time
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 # --- 1. CONFIGURACIÓN INICIAL ---
 st.set_page_config(
@@ -88,7 +90,7 @@ except:
 MODELO_USADO = 'models/gemini-flash-latest'
 
 # ==============================================================================
-# ℹ️ PÁGINAS DE INFORMACIÓN (Copywriting Persuasivo)
+# ℹ️ PÁGINAS DE INFORMACIÓN 
 # ==============================================================================
 
 def mostrar_info_ia():
@@ -177,7 +179,7 @@ def mostrar_info_pdf():
         st.rerun()
 
 # ==============================================================================
-# 🌟 VISTAS PRINCIPALES (Texto Definitivo)
+# 🌟 VISTAS PRINCIPALES
 # ==============================================================================
 
 def mostrar_landing():
@@ -191,7 +193,7 @@ def mostrar_landing():
         except: st.title("ZYNTE")
     
     st.markdown('<p class="hero-title">TU ENTRENADOR DE ÉLITE</p>', unsafe_allow_html=True)
-    # TEXTO DEFINITIVO: Sin mención a IA, enfocado en resultado
+    # TEXTO DEFINITIVO: 
     st.markdown('<p class="hero-subtitle">Planes de entrenamiento personalizados generados en segundos.</p>', unsafe_allow_html=True)
     
     col_a, col_b, col_c = st.columns([1, 1, 1])
@@ -232,9 +234,19 @@ def mostrar_landing():
         if st.button("Ver ejemplo", key="btn_pdf"):
             st.session_state.page = 'info_pdf'
             st.rerun()
-
+# --- FUNCIÓN DE CONEXIÓN A BASE DE DATOS ---
+def conectar_db():
+    try:
+        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        client = gspread.authorize(creds)
+        sheet = client.open("Zynte_Users").sheet1
+        return sheet
+    except Exception as e:
+        return None
 def mostrar_login():
-    # TEXTO DEFINITIVO: Nada de "simulación"
+    # TEXTO DEFINITIVO: 
     st.markdown("## 🔐 Área de Miembros")
     st.caption("Accede a tu panel de control de alto rendimiento.")
     st.write("")
@@ -248,11 +260,11 @@ def mostrar_login():
             st.text_input("Correo Electrónico", key="login_email")
             st.text_input("Contraseña", type="password", key="login_pass")
             st.write("")
-            # Botón serio
+            
             if st.button("ENTRAR AL SISTEMA ▶", type="primary", use_container_width=True):
                 st.session_state.logged_in = True
                 st.session_state.page = 'pricing'
-                # Mensaje serio
+               
                 st.success("Credenciales verificadas. Redirigiendo...")
                 time.sleep(0.5)
                 st.rerun()
@@ -302,7 +314,7 @@ def mostrar_pricing():
         # TEXTO DEFINITIVO EN PAGO
         if st.button("💳 ACTIVAR SUSCRIPCIÓN", type="primary", use_container_width=True):
             with st.spinner("Conectando con pasarela de pago segura..."):
-                time.sleep(2) # Simula validación bancaria
+                time.sleep(2) 
             st.session_state.is_premium = True
             st.session_state.page = 'app'
             st.balloons()
@@ -458,3 +470,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
