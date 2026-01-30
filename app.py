@@ -333,7 +333,7 @@ try:
     )
 except:
     # Si estás en local sin secrets:
-    genai.configure(api_key="TU_CLAVE_AQUI")
+    genai.configure(api_key="AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE")
 
 # Usamos el nombre sin el prefijo "models/" para que la librería lo gestione
 MODELO_USADO = "gemini-1.5-flash-001"
@@ -831,6 +831,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
