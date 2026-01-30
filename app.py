@@ -710,70 +710,48 @@ def app_principal():
         if "history" not in st.session_state: 
             st.session_state.history = [{"role": "model", "content": f"Hola. Perfil cargado: {peso}kg, {objetivo}."}]
         
-  # --- LÓGICA DE ENVÍO DE RUTINAS RÁPIDAS ---
-    if prompt_rapido:
-        if "history" not in st.session_state:
-            st.session_state.history = []
-        st.session_state.history.append({"role": "user", "content": prompt_rapido})
-        # Aquí puedes añadir la llamada a la IA si quieres que los botones respondan
-
-# --- SECCIÓN DE CHAT PRINCIPAL ---
-    st.write("---") 
-    st.subheader("💬 Chat con Zynte AI")
-
-    # El input del chat
-    prompt = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_input_final")
-
-    if prompt:
-        if "history" not in st.session_state:
-            st.session_state.history = []
-        
-        st.session_state.history.append({"role": "user", "content": prompt})
-        
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        with st.chat_message("assistant"):
-            with st.spinner("Zynte está pensando..."):
-                try:
-                    # Usamos la URL v1 para evitar el error 404 de v1beta
-                    url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    payload = {"contents": [{"parts": [{"text": prompt}]}]}
-                    
-                    import requests
-                    res = requests.post(url_estable, json=payload, timeout=30)
-                    
-                    if res.status_code == 200:
-                        datos = res.json()
-                        respuesta_texto = datos['candidates'][0]['content']['parts'][0]['text']
-                        st.markdown(respuesta_texto)
-                        st.session_state.history.append({"role": "model", "content": respuesta_texto})
-                    else:
-                        st.error(f"Error de Google: {res.status_code}")
-                except Exception as e:
-                    st.error(f"Error de conexión: {e}")
-            
-            # El rerun debe ir SIEMPRE fuera del try/except
-            if not error_ocurrido:
-                st.rerun()
-
-        for msg in st.session_state.history: 
-            st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        # -------------------------------------------------------
-
-        for msg in st.session_state.history: 
-            st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        for msg in st.session_state.history: st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        if prompt := st.chat_input("Pregunta al coach..."):
-            st.chat_message("user").markdown(prompt)
-            st.session_state.history.append({"role": "user", "content": prompt})
+  # --- BLOQUE DE CHAT Y BOTONES (REEMPLAZA LÍNEAS 713-776) ---
+        # 1. Recuperamos la llave aquí mismo para evitar el NameError
         try:
-            # Todo lo que esté aquí dentro debe tener 4 espacios más que el 'try'
-            if prompt := st.chat_input("¿En qué puedo ayudarte hoy?"):
-                st.session_state.history.append({"role": "user", "content": prompt})
-                # ... resto del código del chat ...
-        except Exception as e:
-            st.error(f"Error: {e}")
+            llave_api_final = st.secrets["GOOGLE_API_KEY"]
+        except:
+            llave_api_final = "TU_CLAVE_AQUI" # Pon tu clave si pruebas en local
+
+        # 2. Capturamos el input del usuario (manual o por botón)
+        chat_input_principal = st.chat_input("¿En qué puedo ayudarte hoy?", key="zynte_chat_input_unique")
+        
+        # El mensaje que enviaremos será el del botón rápido o el del chat
+        mensaje_para_ia = prompt_rapido or chat_input_principal
+
+        if mensaje_para_ia:
+            if "history" not in st.session_state:
+                st.session_state.history = []
+            
+            # Guardamos la pregunta del usuario
+            st.session_state.history.append({"role": "user", "content": mensaje_para_ia})
+            
+            with st.chat_message("assistant"):
+                with st.spinner("Zynte está pensando..."):
+                    try:
+                        # PETICIÓN DIRECTA V1: Esto soluciona el Error 404 de v1beta
+                        url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={llave_api_final}"
+                        payload_json = {"contents": [{"parts": [{"text": mensaje_para_ia}]}]}
+                        
+                        res_ia = requests.post(url_estable, json=payload_json, timeout=30)
+                        
+                        if res_ia.status_code == 200:
+                            texto_respuesta = res_ia.json()['candidates'][0]['content']['parts'][0]['text']
+                            st.session_state.history.append({"role": "model", "content": texto_respuesta})
+                            st.rerun() # Recargamos para que el mensaje aparezca en el historial
+                        else:
+                            st.error(f"Error de Google: {res_ia.status_code}")
+                    except Exception as e_ia:
+                        st.error(f"Fallo de conexión: {e_ia}")
+
+        # 3. Mostrar el historial (solo una vez, corregimos tus repeticiones)
+        for msg_chat in reversed(st.session_state.history):
+            with st.chat_message("assistant" if msg_chat["role"] == "model" else "user"):
+                st.markdown(msg_chat["content"])
     with tab_nutri:
         st.header("Plan Nutricional")
         c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
@@ -831,6 +809,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
