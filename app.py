@@ -15,8 +15,8 @@ st.set_page_config(
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
-# --- GESTIÓN DE BASE DE DATOS Y SEGURIDAD ---
-# --- 2. GESTIÓN DE BASE DE DATOS Y PERFIL (V9.0) ---
+
+# --- 2. GESTIÓN DE BASE DE DATOS Y PERFIL (V9.1) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
@@ -36,30 +36,28 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    migrar_db() # Importante: Actualiza tu DB actual sin borrar nada
+    migrar_db()
 
 def migrar_db():
-    """Si la base de datos es vieja, le añade las columnas nuevas automáticamente"""
+    """Actualiza la tabla si es antigua"""
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
-    cols_nuevas = ['peso REAL', 'altura INTEGER', 'edad INTEGER', 'objetivo TEXT', 'nivel TEXT']
-    for col in cols_nuevas:
+    cols = ['peso REAL', 'altura INTEGER', 'edad INTEGER', 'objetivo TEXT', 'nivel TEXT']
+    for col in cols:
         try:
-            nombre = col.split()[0]
             c.execute(f'ALTER TABLE users ADD COLUMN {col}')
         except: pass
     conn.commit()
     conn.close()
 
 def cargar_perfil(email):
-    """Recupera los datos guardados del atleta"""
+    """Carga datos del usuario"""
     try:
         conn = sqlite3.connect('zynte_users.db')
         c = conn.cursor()
         c.execute('SELECT peso, altura, edad, objetivo, nivel FROM users WHERE email = ?', (email,))
         data = c.fetchone()
         conn.close()
-        # Si devuelve datos vacíos (None), ponemos valores por defecto
         return {
             "peso": data[0] if data[0] else 70.0,
             "altura": data[1] if data[1] else 175,
@@ -71,13 +69,11 @@ def cargar_perfil(email):
         return {"peso": 70.0, "altura": 175, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
 
 def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
-    """Guarda los cambios en la base de datos"""
     try:
         conn = sqlite3.connect('zynte_users.db')
         c = conn.cursor()
-        c.execute('''
-            UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?
-        ''', (peso, altura, edad, objetivo, nivel, email))
+        c.execute('UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?', 
+                 (peso, altura, edad, objetivo, nivel, email))
         conn.commit()
         conn.close()
         return True
@@ -90,8 +86,29 @@ def validar_email_estricto(email):
     dominios = ["gmail.com", "yahoo.com", "yahoo.es", "hotmail.com", "outlook.com", "icloud.com", "protonmail.com"]
     try: dom = email.split('@')[-1]
     except: return False, "Error dominio."
-    if
-# Iniciamos la DB al arrancar
+    if dom not in dominios: return False, "Dominio no permitido."
+    return True, "OK"
+
+def verificar_login(email, password):
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password))
+        return c.fetchone() is not None
+    except: return False
+
+def registrar_usuario_sql(email, password):
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        fecha = str(datetime.date.today())
+        c.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                  (email, password, fecha, "Free", 70.0, 175, 25, "Hipertrofia", "Intermedio"))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError: return False
+
 init_db()
 # --- 3. ESTILOS CSS PREMIUM (FONDO NUEVO) ---
 st.markdown("""
@@ -340,64 +357,51 @@ def conectar_db():
         return None
 def mostrar_login():
     st.markdown("## 🔐 Área de Miembros")
-    st.caption("Accede a tu panel de control de alto rendimiento.")
     st.write("")
-    
     lc1, lc2, lc3 = st.columns([1,2,1])
     with lc2:
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Nuevo Registro"])
         
-        # --- LOGIN ---
+        # LOGIN
         with tab1:
             st.write("")
-            email_login = st.text_input("Correo Electrónico", key="login_email").strip().lower()
+            email_login = st.text_input("Correo", key="login_email").strip().lower()
             pass_login = st.text_input("Contraseña", type="password", key="login_pass").strip()
             st.write("")
-            
-            if st.button("ENTRAR AL SISTEMA ▶", type="primary", use_container_width=True):
-                # Verificamos credenciales en la Base de Datos
+            if st.button("ENTRAR ▶", type="primary", use_container_width=True):
                 if verificar_login(email_login, pass_login):
                     st.session_state.logged_in = True
-                    st.session_state.user_email = email_login # <--- ESTA ES LA CLAVE DE LA MEMORIA
+                    st.session_state.user_email = email_login 
                     st.session_state.page = 'pricing'
-                    st.success("Credenciales verificadas. Redirigiendo...")
-                    time.sleep(0.5)
-                    st.rerun()
-                else:
-                    st.error("❌ Credenciales incorrectas o usuario no registrado.")
-                
-        # --- REGISTRO ---
+                    st.success("Verificado."); time.sleep(0.5); st.rerun()
+                else: st.error("Error de credenciales.")
+        
+        # REGISTRO
         with tab2:
             st.write("")
-            new_email = st.text_input("Tu Mejor Email", key="reg_email", placeholder="ejemplo@gmail.com")
-            new_pass = st.text_input("Elige Contraseña", type="password", key="reg_pass")
+            new_email = st.text_input("Email", key="reg_email").strip().lower()
+            new_pass = st.text_input("Pass", type="password", key="reg_pass").strip()
             st.write("")
-            
-            if st.button("Crear Cuenta Gratuita", use_container_width=True):
-                email_limpio = new_email.strip().lower()
-                pass_limpio = new_pass.strip()
-
-                if not email_limpio or not pass_limpio:
-                    st.warning("⚠️ Rellena todos los campos para continuar.")
+            if st.button("Crear Cuenta", use_container_width=True):
+                if not new_email or not new_pass: 
+                    st.warning("Rellena todo.")
                 else:
-                    # Validamos el email
-                    es_valido, mensaje = validar_email_estricto(email_limpio)
-                    if not es_valido:
-                        st.error(f"❌ {mensaje}")
+                    valido, msg = validar_email_estricto(new_email)
+                    if not valido: 
+                        st.error(msg)
                     else:
-                        # Intentamos registrar
-                        if registrar_usuario_sql(email_limpio, pass_limpio):
-                            st.success("✅ ¡Cuenta creada con éxito!")
-                            time.sleep(1.5)
-                            st.session_state.logged_in = True
-                            st.session_state.user_email = email_limpio # Guardamos email también al registrar
-                            st.session_state.page = 'pricing'
+                        if registrar_usuario_sql(new_email, new_pass):
+                            st.success("Creado.")
+                            time.sleep(1)
+                            st.session_state.logged_in=True
+                            st.session_state.user_email=new_email
+                            st.session_state.page='pricing'
                             st.rerun()
-                        else:
-                            st.error("⛔ Este email ya está registrado en el sistema.")
-
-    st.write(""); st.write("---")
-    if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
+                        else: 
+                            st.error("Email ocupado.")
+    
+    st.write("---")
+    if st.button("⬅️ Volver", on_click=lambda: setattr(st.session_state, 'page', 'landing')): pass
 def mostrar_pricing():
     st.markdown("<h2 style='text-align: center; margin-top:20px;'>Selecciona tu Plan</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color:#a0aaba; margin-bottom:40px;'>Invierte en tu transformación física.</p>", unsafe_allow_html=True)
@@ -661,6 +665,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
