@@ -432,66 +432,57 @@ def mostrar_info_pdf():
 # ==============================================================================
 
 def mostrar_landing():
-    """Portada Principal Optimizada para evitar cortes de texto"""
+    """Portada Principal - Versión Ultra Fit para evitar cortes"""
     st.write("") 
     st.write("") 
     
-    # 1. Logo centrado con mejor proporción
+    # 1. Logo centrado
     col_l1, col_l2, col_l3 = st.columns([0.8, 1.5, 0.8])
     with col_l2:
         try: 
             st.image("logo.png", use_container_width=True)
         except: 
-            st.markdown("<h1 style='text-align:center; color:white; margin-bottom:0;'>ZYNTE</h1>", unsafe_allow_html=True)
+            st.markdown("<h1 style='text-align:center; color:white;'>ZYNTE</h1>", unsafe_allow_html=True)
     
-    # 2. Títulos principales
     st.markdown('<p class="hero-title">TU ENTRENADOR DE ÉLITE</p>', unsafe_allow_html=True)
     st.markdown('<p class="hero-subtitle">Planes de entrenamiento personalizados generados en segundos.</p>', unsafe_allow_html=True)
     
-    # 3. Botón de acción con tamaño fijo para que no baile
+    # 2. Botón de acción
     _, col_btn, _ = st.columns([1.2, 1, 1.2])
     with col_btn:
-        st.write("")
         if st.button("🚀 COMENZAR AHORA", use_container_width=True, type="primary"):
             st.session_state.page = 'login'
             st.rerun()
-        st.write("")
 
     st.write("---")
 
-    # 4. TARJETAS DE INFORMACIÓN (Ajustadas para que NO se corte el texto)
-    # Usamos gap="medium" y un estilo de tarjeta con padding controlado
-    c1, c2, c3 = st.columns(3, gap="medium")
+    # 3. TARJETAS DE INFORMACIÓN - REPARACIÓN DE DISEÑO
+    # Usamos columnas con gap pequeño para ganar espacio horizontal
+    c1, c2, c3 = st.columns(3, gap="small")
     
     with c1:
         st.markdown("""
-        <div class='price-card' style='min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;'>
-            <div>
-                <h3 style='color:#33ffaa; margin-top:0;'>🧠 Personalización Total</h3>
-                <p style='color:#a0aaba; font-size:0.95rem; line-height:1.4;'>Análisis biométrico avanzado para crear una rutina única basada en tu peso, altura y objetivos específicos.</p>
-            </div>
+        <div class='price-card' style='min-height: 250px; padding: 15px; border-radius: 10px;'>
+            <h3 style='color:#33ffaa; font-size: 1.2rem; margin-bottom: 10px; white-space: nowrap;'>🧠 Personalización Total</h3>
+            <p style='color:#a0aaba; font-size: 0.85rem; line-height: 1.3;'>Análisis biométrico avanzado para crear una rutina única basada en tu peso, altura y objetivos específicos.</p>
         </div>""", unsafe_allow_html=True)
-        st.button("Cómo funciona", key="btn_ia_new", use_container_width=True)
+        st.button("Cómo funciona", key="btn_ia_final", use_container_width=True)
             
     with c2:
         st.markdown("""
-        <div class='price-card' style='min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;'>
-            <div>
-                <h3 style='color:#33ffaa; margin-top:0;'>⚡ Resultados Rápidos</h3>
-                <p style='color:#a0aaba; font-size:0.95rem; line-height:1.4;'>Tu planificación completa lista para descargar antes de que pongas un pie en el gimnasio. Sin esperas.</p>
-            </div>
+        <div class='price-card' style='min-height: 250px; padding: 15px; border-radius: 10px;'>
+            <h3 style='color:#33ffaa; font-size: 1.2rem; margin-bottom: 10px; white-space: nowrap;'>⚡ Resultados Rápidos</h3>
+            <p style='color:#a0aaba; font-size: 0.85rem; line-height: 1.3;'>Tu planificación completa lista para descargar antes de que pongas un pie en el gimnasio. Sin esperas.</p>
         </div>""", unsafe_allow_html=True)
-        st.button("Ver velocidad", key="btn_vel_new", use_container_width=True)
+        st.button("Ver velocidad", key="btn_vel_final", use_container_width=True)
             
     with c3:
         st.markdown("""
-        <div class='price-card' style='min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;'>
-            <div>
-                <h3 style='color:#33ffaa; margin-top:0;'>📄 Informes PDF</h3>
-                <p style='color:#a0aaba; font-size:0.95rem; line-height:1.4;'>Exporta tu rutina en un formato profesional y limpio, diseñado para leer cómodamente en tu móvil.</p>
-            </div>
+        <div class='price-card' style='min-height: 250px; padding: 15px; border-radius: 10px;'>
+            <h3 style='color:#33ffaa; font-size: 1.2rem; margin-bottom: 10px; white-space: nowrap;'>📄 Informes PDF</h3>
+            <p style='color:#a0aaba; font-size: 0.85rem; line-height: 1.3;'>Exporta tu rutina en un formato profesional y limpio, diseñado para leer cómodamente en tu móvil.</p>
         </div>""", unsafe_allow_html=True)
-        st.button("Ver ejemplo", key="btn_pdf_new", use_container_width=True)
+        st.button("Ver ejemplo", key="btn_pdf_final", use_container_width=True)
 # --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
 def conectar_db():
     try:
@@ -840,6 +831,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
