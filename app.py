@@ -520,10 +520,13 @@ def mostrar_pricing():
                     st.error("❌ Código incorrecto.")
 
 def app_principal():
+    # --- CONFIGURACIÓN DEL JEFE ---
+    EMAIL_JEFE = "pablonavarrorui@gmail.com" # <--- ¡PON AQUÍ TU EMAIL EXACTO!
+    
     email_actual = st.session_state.get('user_email', 'invitado')
     datos_usuario = cargar_perfil(email_actual)
 
-    # Lógica Nutrición
+    # ... (Resto de lógica nutricional y PDF igual que antes) ...
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
         if genero == "Hombre": tmb = 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
         else: tmb = 447.6 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad)
@@ -533,7 +536,6 @@ def app_principal():
         elif "Hipertrofia" in objetivo: return int(tdee + 300), int(peso*2.0), int((tdee+300 - peso*2*4 - peso*1*9)/4), int(peso*1)
         else: return int(tdee), int(peso*1.6), int((tdee - peso*1.6*4 - peso*1*9)/4), int(peso*1)
 
-    # PDF Class
     class PDF(FPDF):
         def header(self):
             try: self.image('logo.png', 10, 8, 33)
@@ -549,10 +551,11 @@ def app_principal():
             if mensaje["role"] == "model": pdf.multi_cell(0, 7, txt=mensaje["content"].replace("**", "").replace("*", "-")); pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
 
-    # SIDEBAR
+    # --- SIDEBAR ---
     with st.sidebar:
         try: st.image("logo.png", width=180)
         except: st.header("ZYNTE")
+        
         if st.session_state.get('is_premium'): st.success("🌟 PRO")
         else: st.info("🌱 FREE"); st.button("⬆️ Mejorar", use_container_width=True, on_click=lambda: setattr(st.session_state, 'page', 'pricing'))
         
@@ -573,8 +576,23 @@ def app_principal():
         nivel = st.select_slider("Experiencia:", options=niv_ops, value=niv_ops[idx_n])
         
         if st.button("💾 Guardar Perfil", use_container_width=True):
-            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel): st.toast("Datos y Gráfica Actualizados")
+            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel): st.toast("Datos Guardados")
             else: st.toast("Error")
+        
+        # ==========================================
+        # 🕵️‍♂️ AQUÍ ESTÁ TU "PANEL DE DIOS" SECRETO
+        # ==========================================
+        if email_actual == EMAIL_JEFE:
+            st.write("---")
+            with st.expander("🔐 ADMINISTRACIÓN (SOLO TÚ)"):
+                st.caption("Conceder licencia VIP gratis")
+                email_vip = st.text_input("Email del usuario a activar:").strip().lower()
+                if st.button("⚡ CONCEDER VIP"):
+                    if activar_plan_pro(email_vip):
+                        st.success(f"¡{email_vip} ahora es PRO!")
+                    else:
+                        st.error("Error: ¿Seguro que ese email está registrado?")
+        # ==========================================
 
         st.write("---")
         if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
@@ -582,11 +600,10 @@ def app_principal():
              st.download_button("📥 PDF", pdf, "Rutina.pdf")
         st.write("---"); st.button("Cerrar Sesión", on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'))
 
-    # MAIN TABS
+    # MAIN TABS (Igual que antes)
     try: st.image("banner.jpg", use_column_width=True)
     except: st.title("ZYNTE COACH")
     
-    # --- AQUÍ ESTÁ LA NUEVA PESTAÑA DE PROGRESO ---
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
     with tab_train:
@@ -631,34 +648,22 @@ def app_principal():
             if "plan_nutri" in st.session_state: st.markdown(st.session_state.plan_nutri)
             else: st.info("Configura y genera tu plan.")
 
-    # --- PESTAÑA PROGRESO ---
     with tab_prog:
         st.header("📈 Tu Evolución")
         st.write("Visualiza cómo te acercas a tu objetivo sesión tras sesión.")
-        
-        # Obtenemos los datos
         df_progreso = obtener_historial_df(email_actual)
-        
         if df_progreso is not None and not df_progreso.empty:
-            # 1. Métrica de cambio total
             peso_inicial = df_progreso.iloc[0]['peso']
             peso_actual = df_progreso.iloc[-1]['peso']
             delta = peso_actual - peso_inicial
-            
             pc1, pc2, pc3 = st.columns(3)
             pc1.metric("Peso Inicial", f"{peso_inicial} kg")
             pc2.metric("Peso Actual", f"{peso_actual} kg")
             pc3.metric("Cambio Total", f"{delta:.1f} kg", delta, delta_color="inverse" if "Grasa" in objetivo else "normal")
-            
-            st.write("")
-            # 2. La Gráfica
-            st.area_chart(df_progreso.set_index('fecha'), color="#33ffaa")
-            
-            # 3. Tabla de datos (en un expander por si no quieren verla)
-            with st.expander("Ver historial detallado"):
-                st.dataframe(df_progreso, use_container_width=True)
+            st.write(""); st.area_chart(df_progreso.set_index('fecha'), color="#33ffaa")
+            with st.expander("Ver historial detallado"): st.dataframe(df_progreso, use_container_width=True)
         else:
-            st.info("👋 Aún no tenemos suficientes datos. Guarda tu perfil hoy para ver tu primer punto en la gráfica.")
+            st.info("👋 Guarda tu perfil hoy para ver tu primer punto en la gráfica.")
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -680,6 +685,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
