@@ -431,11 +431,11 @@ def mostrar_info_pdf():
 # 🌟 VISTAS PRINCIPALES
 # ==============================================================================
 def mostrar_landing():
-    """Portada Principal Recuperada - Diseño Original Full"""
+    """Portada Principal - Versión de Tamaño Original y Alineación Perfecta"""
     st.write("") 
     st.write("") 
     
-    # 1. Logo centrado (usando el layout original)
+    # 1. Logo centrado (Mantiene la estructura de tus 800 líneas)
     col_l1, col_l2, col_l3 = st.columns([0.8, 1.5, 0.8])
     with col_l2:
         try: 
@@ -446,7 +446,7 @@ def mostrar_landing():
     st.markdown('<p class="hero-title">TU ENTRENADOR DE ÉLITE</p>', unsafe_allow_html=True)
     st.markdown('<p class="hero-subtitle">Planes de entrenamiento personalizados generados en segundos.</p>', unsafe_allow_html=True)
     
-    # 2. Botón central de acceso
+    # 2. Botón central
     _, col_btn, _ = st.columns([1.2, 1, 1.2])
     with col_btn:
         if st.button("🚀 COMENZAR AHORA", use_container_width=True, type="primary"):
@@ -455,43 +455,41 @@ def mostrar_landing():
 
     st.write("---")
 
-    # 3. LAS 3 TARJETAS (DISEÑO NEÓN RECUPERADO)
+    # 3. TARJETAS DE INFORMACIÓN - TAMAÑO GRANDE RECUPERADO
     c1, c2, c3 = st.columns(3, gap="medium")
     
-    # Estilo CSS para que no se corten los textos y tengan borde neón
+    # Estilo CSS con altura aumentada (300px) para evitar cortes
     card_css = (
         "background: rgba(30, 30, 30, 0.6); "
-        "padding: 25px; "
+        "padding: 30px 20px; " # Más espacio arriba/abajo
         "border-radius: 15px; "
-        "border: 2px solid #33ffaa; " # Borde neón recuperado
+        "border: 2px solid #33ffaa; " # Borde neón original
         "text-align: center; "
-        "min-height: 280px; " # Altura fija para alineación perfecta
-        "display: flex; flex-direction: column; justify-content: center;"
+        "min-height: 300px; " # Altura aumentada para que quepa todo sin deformarse
+        "display: flex; flex-direction: column; justify-content: center; align-items: center;"
     )
 
     with c1:
         st.markdown(f"""<div style="{card_css}">
-            <div style="font-size: 2.5rem; margin-bottom: 10px;">🧠</div>
-            <h3 style="color: #33ffaa; font-size: 1.1rem; margin-bottom: 10px;">Personalización</h3>
-            <p style="color: #ccc; font-size: 0.9rem;">Rutinas únicas basadas en tu biometría y metas personales.</p>
+            <div style="font-size: 2.8rem; margin-bottom: 15px;">🧠</div>
+            <h3 style="color: #33ffaa; font-size: 1.2rem; margin: 0 0 10px 0;">Personalización</h3>
+            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.4;">Rutinas únicas basadas en tu biometría y metas personales.</p>
         </div>""", unsafe_allow_html=True)
-        st.button("Cómo funciona", key="btn_orig_1", use_container_width=True)
+        st.button("Cómo funciona", key="L_btn_fix1", use_container_width=True)
             
     with c2:
         st.markdown(f"""<div style="{card_css}">
-            <div style="font-size: 2.5rem; margin-bottom: 10px;">⚡</div>
-            <h3 style="color: #33ffaa; font-size: 1.1rem; margin-bottom: 10px;">Resultados</h3>
-            <p style="color: #ccc; font-size: 0.9rem;">Planes listos para descargar en segundos antes de entrenar.</p>
+            <div style="font-size: 2.8rem; margin-bottom: 15px;">⚡</div>
+            <h3 style="color: #33ffaa; font-size: 1.2rem; margin: 0 0 10px 0;">Resultados</h3>
+            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.4;">Planes listos para descargar en segundos antes de entrenar.</p>
         </div>""", unsafe_allow_html=True)
-        st.button("Ver velocidad", key="btn_orig_2", use_container_width=True)
+        st.button("Ver velocidad", key="L_btn_fix2", use_container_width=True)
             
     with c3:
         st.markdown(f"""<div style="{card_css}">
-            <div style="font-size: 2.5rem; margin-bottom: 10px;">📄</div>
-            <h3 style="color: #33ffaa; font-size: 1.1rem; margin-bottom: 10px;">Informes PDF</h3>
-            <p style="color: #ccc; font-size: 0.9rem;">Exporta tu progreso en un formato profesional y limpio.</p>
-        </div>""", unsafe_allow_html=True)
-        st.button("Ver ejemplo", key="btn_orig_3", use_container_width=True)
+            <div style="font-size: 2.8rem; margin-bottom: 15px;">📄</div>
+            <h3 style="color: #33ffaa; font-size: 1.2rem; margin: 0 0 10px 0;">Informes PDF</h3>
+            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.4;">Exporta tu
     
 # --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
 def conectar_db():
@@ -841,6 +839,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
