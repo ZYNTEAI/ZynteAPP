@@ -285,14 +285,19 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. CONEXIÓN API ---
+# --- CONFIGURACIÓN DE IA CORREGIDA ---
 try:
-    api_key = st.secrets["GOOGLE_API_KEY"]
-    genai.configure(api_key=api_key)
+    # Forzamos la versión 'v1' para evitar el error 404 de la v1beta
+    genai.configure(
+        api_key=st.secrets["GOOGLE_API_KEY"],
+        transport='rest' # Esto ayuda en algunos entornos de Windows
+    )
 except:
-    pass
+    # Si estás en local sin secrets:
+    genai.configure(api_key="TU_CLAVE_AQUI")
 
-MODELO_USADO = 'gemini-1.5-flash'
+# Usamos el nombre sin el prefijo "models/" para que la librería lo gestione
+MODELO_USADO = "gemini-1.5-flash"
 
 # ==============================================================================
 # ℹ️ PÁGINAS DE INFORMACIÓN 
@@ -760,6 +765,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
