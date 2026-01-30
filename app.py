@@ -431,53 +431,68 @@ def mostrar_info_pdf():
 # 🌟 VISTAS PRINCIPALES
 # ==============================================================================
 def mostrar_landing():
-    # ... (mantén tu código del logo y botón de "Comenzar" igual) ...
+    """Portada Principal Recuperada - Diseño Original Full"""
+    st.write("") 
+    st.write("") 
+    
+    # 1. Logo centrado (usando el layout original)
+    col_l1, col_l2, col_l3 = st.columns([0.8, 1.5, 0.8])
+    with col_l2:
+        try: 
+            st.image("logo.png", use_container_width=True)
+        except: 
+            st.markdown("<h1 style='text-align:center; color:white;'>ZYNTE</h1>", unsafe_allow_html=True)
+    
+    st.markdown('<p class="hero-title">TU ENTRENADOR DE ÉLITE</p>', unsafe_allow_html=True)
+    st.markdown('<p class="hero-subtitle">Planes de entrenamiento personalizados generados en segundos.</p>', unsafe_allow_html=True)
+    
+    # 2. Botón central de acceso
+    _, col_btn, _ = st.columns([1.2, 1, 1.2])
+    with col_btn:
+        if st.button("🚀 COMENZAR AHORA", use_container_width=True, type="primary"):
+            st.session_state.page = 'login'
+            st.rerun()
 
     st.write("---")
 
-    # Usamos columnas con un gap pequeño para aprovechar el ancho
-    c1, c2, c3 = st.columns(3, gap="small")
+    # 3. LAS 3 TARJETAS (DISEÑO NEÓN RECUPERADO)
+    c1, c2, c3 = st.columns(3, gap="medium")
     
-    # Estilo CSS unificado para que todas las cajas sean idénticas
-    estilo_card = (
+    # Estilo CSS para que no se corten los textos y tengan borde neón
+    card_css = (
         "background: rgba(30, 30, 30, 0.6); "
-        "padding: 20px; "
+        "padding: 25px; "
         "border-radius: 15px; "
-        "border: 1px solid #33ffaa; " # El borde neón que pediste
+        "border: 2px solid #33ffaa; " # Borde neón recuperado
         "text-align: center; "
-        "min-height: 260px; " # Altura fija para que los botones queden alineados
+        "min-height: 280px; " # Altura fija para alineación perfecta
         "display: flex; flex-direction: column; justify-content: center;"
     )
 
     with c1:
-        st.markdown(f"""
-            <div style="{estilo_card}">
-                <div style="font-size: 2rem;">🧠</div>
-                <h3 style="color: #33ffaa; font-size: 1.05rem; margin: 10px 0;">Personalización</h3>
-                <p style="color: #ccc; font-size: 0.85rem;">Rutinas únicas basadas en tu biometría y metas.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("Cómo funciona", key="L_btn1", use_container_width=True)
+        st.markdown(f"""<div style="{card_css}">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">🧠</div>
+            <h3 style="color: #33ffaa; font-size: 1.1rem; margin-bottom: 10px;">Personalización</h3>
+            <p style="color: #ccc; font-size: 0.9rem;">Rutinas únicas basadas en tu biometría y metas personales.</p>
+        </div>""", unsafe_allow_html=True)
+        st.button("Cómo funciona", key="btn_orig_1", use_container_width=True)
             
     with c2:
-        st.markdown(f"""
-            <div style="{estilo_card}">
-                <div style="font-size: 2rem;">⚡</div>
-                <h3 style="color: #33ffaa; font-size: 1.05rem; margin: 10px 0;">Resultados</h3>
-                <p style="color: #ccc; font-size: 0.85rem;">Planes listos para descargar en segundos.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("Ver velocidad", key="L_btn2", use_container_width=True)
+        st.markdown(f"""<div style="{card_css}">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">⚡</div>
+            <h3 style="color: #33ffaa; font-size: 1.1rem; margin-bottom: 10px;">Resultados</h3>
+            <p style="color: #ccc; font-size: 0.9rem;">Planes listos para descargar en segundos antes de entrenar.</p>
+        </div>""", unsafe_allow_html=True)
+        st.button("Ver velocidad", key="btn_orig_2", use_container_width=True)
             
     with c3:
-        st.markdown(f"""
-            <div style="{estilo_card}">
-                <div style="font-size: 2rem;">📄</div>
-                <h3 style="color: #33ffaa; font-size: 1.05rem; margin: 10px 0;">Informes PDF</h3>
-                <p style="color: #ccc; font-size: 0.85rem;">Exporta tu progreso en formato profesional.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        st.button("Ver ejemplo", key="L_btn3", use_container_width=True)
+        st.markdown(f"""<div style="{card_css}">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">📄</div>
+            <h3 style="color: #33ffaa; font-size: 1.1rem; margin-bottom: 10px;">Informes PDF</h3>
+            <p style="color: #ccc; font-size: 0.9rem;">Exporta tu progreso en un formato profesional y limpio.</p>
+        </div>""", unsafe_allow_html=True)
+        st.button("Ver ejemplo", key="btn_orig_3", use_container_width=True)
+    
 # --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
 def conectar_db():
     try:
@@ -826,6 +841,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
