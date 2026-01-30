@@ -174,7 +174,28 @@ def activar_plan_pro(email):
         return True
     except:
         return False
+def revocar_plan_pro(email):
+    """Devuelve al usuario al plan Free (Castigo)"""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute("UPDATE users SET plan = 'Free' WHERE email = ?", (email,))
+        conn.commit()
+        conn.close()
+        return True
+    except: return False
 
+def eliminar_usuario_total(email):
+    """Borra al usuario y sus datos para siempre (Opción Nuclear)"""
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute("DELETE FROM users WHERE email = ?", (email,))
+        c.execute("DELETE FROM historial WHERE email = ?", (email,))
+        conn.commit()
+        conn.close()
+        return True
+    except: return False
 def comprobar_plan(email):
     try:
         conn = sqlite3.connect('zynte_users.db')
@@ -580,18 +601,30 @@ def app_principal():
             else: st.toast("Error")
         
         # ==========================================
-        # 🕵️‍♂️ AQUÍ ESTÁ TU "PANEL DE DIOS" SECRETO
+        # 👑 PANEL DE CONTROL TOTAL (GOD MODE)
         # ==========================================
         if email_actual == EMAIL_JEFE:
             st.write("---")
-            with st.expander("🔐 ADMINISTRACIÓN (SOLO TÚ)"):
-                st.caption("Conceder licencia VIP gratis")
-                email_vip = st.text_input("Email del usuario a activar:").strip().lower()
-                if st.button("⚡ CONCEDER VIP"):
-                    if activar_plan_pro(email_vip):
-                        st.success(f"¡{email_vip} ahora es PRO!")
+            with st.expander("🔐 PANEL DE CONTROL"):
+                accion = st.radio("Acción:", ["Dar VIP 🌟", "Quitar VIP 💀", "Borrar Usuario ❌"])
+                email_target = st.text_input("Email objetivo:").strip().lower()
+                
+                if st.button("EJECUTAR ORDEN ⚡", type="primary"):
+                    if not email_target:
+                        st.error("Escribe un email.")
                     else:
-                        st.error("Error: ¿Seguro que ese email está registrado?")
+                        if accion == "Dar VIP 🌟":
+                            if activar_plan_pro(email_target): st.success(f"{email_target} ahora es PRO.")
+                            else: st.error("No encontrado.")
+                        
+                        elif accion == "Quitar VIP 💀":
+                            if revocar_plan_pro(email_target): st.warning(f"{email_target} vuelve a ser FREE.")
+                            else: st.error("Error o no existe.")
+                            
+                        elif accion == "Borrar Usuario ❌":
+                            if eliminar_usuario_total(email_target): st.error(f"{email_target} ha sido ELIMINADO.")
+                            else: st.error("No se pudo borrar.")
+        # ==========================================
         # ==========================================
 
         st.write("---")
@@ -727,6 +760,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
