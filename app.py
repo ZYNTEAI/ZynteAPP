@@ -81,11 +81,13 @@ st.markdown("""
     footer {visibility: hidden;}
     
     /* FONDO DEGRADADO NOCTURNO */
+    /* FONDO CON IMAGEN DE GIMNASIO OSCURECIDA */
     [data-testid="stAppViewContainer"] {
-        background: radial-gradient(ellipse at top, #1b2735 0%, #090a0f 100%);
-    }
-    [data-testid="stHeader"] {
-        background: transparent;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.95)), 
+                          url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
     }
 
     /* TIPOGRAFÍA DE IMPACTO */
@@ -554,5 +556,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
