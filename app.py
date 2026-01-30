@@ -758,14 +758,13 @@ if prompt := st.chat_input("¿En qué puedo ayudarte hoy?"):
         if prompt := st.chat_input("Pregunta al coach..."):
             st.chat_message("user").markdown(prompt)
             st.session_state.history.append({"role": "user", "content": prompt})
-            try:
-                model = genai.GenerativeModel(MODELO_USADO, system_instruction=f"Eres Zynte. Cliente: {peso}kg, {objetivo}.")
-                chat = model.start_chat(history=[{"role": "user" if m["role"]=="user" else "model", "parts":[m["content"]]} for m in st.session_state.history[:-1]])
-                response = chat.send_message(prompt)
-                st.chat_message("assistant").markdown(response.text)
-                st.session_state.history.append({"role": "model", "content": response.text})
-            except: st.error("Error IA")
-
+        try:
+            # Todo lo que esté aquí dentro debe tener 4 espacios más que el 'try'
+            if prompt := st.chat_input("¿En qué puedo ayudarte hoy?"):
+                st.session_state.history.append({"role": "user", "content": prompt})
+                # ... resto del código del chat ...
+        except Exception as e:
+            st.error(f"Error: {e}")
     with tab_nutri:
         st.header("Plan Nutricional")
         c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
@@ -823,6 +822,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
