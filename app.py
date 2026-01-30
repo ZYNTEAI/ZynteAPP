@@ -268,7 +268,9 @@ def mostrar_login():
                 st.success("Credenciales verificadas. Redirigiendo...")
                 time.sleep(0.5)
                 st.rerun()
-                
+      # --- LÍNEA DE RASTREO (Solo para depurar) ---
+st.write(f"📍 Datos escritos en: {sheet.spreadsheet.title}")
+st.link_button("📂 ABRIR HOJA DE CÁLCULO", f"https://docs.google.com/spreadsheets/d/{sheet.spreadsheet.id}")          
         with tab2:
             st.write("")
             st.text_input("Tu Mejor Email")
@@ -470,4 +472,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
