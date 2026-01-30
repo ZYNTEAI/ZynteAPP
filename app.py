@@ -10,25 +10,46 @@ import re
 import pandas as pd  
 import requests
 
-def enviar_mensaje_directo(texto_usuario, api_key):
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-    headers = {'Content-Type': 'application/json'}
-    payload = {
-        "contents": [{"parts": [{"text": texto_usuario}]}]
-    }
-    
-    res = requests.post(url, headers=headers, json=payload)
-    if res.status_code == 200:
-        return res.json()['candidates'][0]['content']['parts'][0]['text']
-    else:
-        return f"Error Crítico: {res.status_code} - {res.text}"
+# --- GENERADORES RÁPIDOS (FREE) ---
+st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
+col_b1, col_b2, col_b3 = st.columns(3)
 
-# Uso en los botones:
+# ¡IMPORTANTE! Definimos la variable como None al principio para evitar el NameError
+prompt_rapido = None 
+
+if col_b1.button("🔥 Rutina HIIT 20'", use_container_width=True):
+    prompt_rapido = "Créame una rutina de HIIT de 20 minutos intensa para hacer en casa."
+if col_b2.button("🧘 Estiramientos", use_container_width=True):
+    prompt_rapido = "Dame una tabla de estiramientos de espalda y cuello para después de trabajar."
+if col_b3.button("💪 Reto de Flexiones", use_container_width=True):
+    prompt_rapido = "Dime un reto de flexiones para hacer hoy según mi nivel."
+
+# Si se ha pulsado un botón, ejecutamos la lógica
 if prompt_rapido:
-    respuesta = enviar_mensaje_directo(prompt_rapido, api_key)
+    # 1. Guardamos la pregunta del usuario en el historial
+    if "history" not in st.session_state:
+        st.session_state.history = []
     st.session_state.history.append({"role": "user", "content": prompt_rapido})
-    st.session_state.history.append({"role": "model", "content": respuesta})
-    st.rerun()
+    
+    with st.spinner("Zynte está pensando..."):
+        try:
+            # USAMOS LA RUTA DIRECTA V1 (ESTABLE) PARA EVITAR EL ERROR 404
+            # Asegúrate de que 'api_key' esté definida arriba en tu archivo
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+            payload = {
+                "contents": [{"parts": [{"text": prompt_rapido}]}]
+            }
+            
+            res = requests.post(url, json=payload)
+            
+            if res.status_code == 200:
+                respuesta_ia = res.json()['candidates'][0]['content']['parts'][0]['text']
+                st.session_state.history.append({"role": "model", "content": respuesta_ia})
+                st.rerun() # Recargamos para mostrar el mensaje
+            else:
+                st.error(f"Error de Google: {res.status_code} - {res.text}")
+        except Exception as e:
+            st.error(f"Hubo un problema de conexión: {e}")
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
@@ -785,6 +806,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
