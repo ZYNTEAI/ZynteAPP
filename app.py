@@ -96,62 +96,55 @@ with st.sidebar:
             mime="application/pdf"
         )
 
-    if st.button("Reiniciar Chat"):
-        st.session_state.history = []
-        st.rerun()
-
-# --- 5. DASHBOARD ---
-imc = peso / ((altura/100)**2)
-estado_imc = "Normal"
-if imc >= 25: estado_imc = "Sobrepeso"
-if imc >= 30: estado_imc = "Obesidad"
-elif imc < 18.5: estado_imc = "Bajo peso"
-
-try: st.image("banner.jpg", use_column_width=True)
-except: st.title("ZYNTE COACH")
-
-col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
-with col1: st.metric("IMC", f"{imc:.1f}", estado_imc)
-with col2: st.metric("Peso", f"{peso} kg")
-with col3: st.metric("Objetivo", objetivo)
-with col4: st.metric("Nivel", nivel)
-st.divider()
-
-# --- 6. CHAT ---
-if "history" not in st.session_state:
-    st.session_state.history = []
-    inicio = f"Sesión iniciada. Usuario: {nombre}. Objetivo: {objetivo}. Esperando comandos."
-    st.session_state.history.append({"role": "model", "content": inicio})
-
-for msg in st.session_state.history:
-    role = "assistant" if msg["role"] == "model" else "user"
-    avatar = "logo.png" if role == "assistant" else None
-    try: st.chat_message(role, avatar=avatar).markdown(msg["content"])
-    except: st.chat_message(role).markdown(msg["content"])
-
+   # --- CAJA DE TEXTO CON SISTEMA "ANTI-CAÍDAS" ---
 if prompt := st.chat_input("Consulta a Zynte..."):
+    
     st.chat_message("user").markdown(prompt)
     st.session_state.history.append({"role": "user", "content": prompt})
     
     with st.chat_message("assistant", avatar="logo.png"):
         placeholder = st.empty()
         placeholder.markdown("...")
+        
         try:
+            # 1. Configuración del Cerebro
             ctx = f"""
-            Eres Zynte, entrenador de élite. Habla de TÚ a TÚ con {nombre}.
+            Eres Zynte, entrenador de élite.
+            CLIENTE: {nombre}.
             DATOS: {peso}kg, {altura}cm, Objetivo: {objetivo}.
-            Responde técnico pero motivador. Usa listas.
+            
+            INSTRUCCIONES:
+            - Responde de forma técnica pero motivadora.
+            - Usa negritas y listas.
+            - Sé breve y directo.
             """
+            
             model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
             chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
             chat = model.start_chat(history=chat_history)
-            response = chat.send_message(prompt)
+            
+            # 2. INTENTO DE ENVÍO CON PROTECCIÓN
+            try:
+                # Intentamos enviar el mensaje normal
+                response = chat.send_message(prompt)
+            except Exception as e:
+                # SI FALLA (Por límite de velocidad), entramos aquí
+                if "429" in str(e):
+                    placeholder.warning("⏳ Alto tráfico en la red neuronal. Reintentando en 5 segundos...")
+                    time.sleep(5) # Esperamos 5 segundos
+                    try:
+                        response = chat.send_message(prompt) # Reintentamos
+                    except:
+                        placeholder.error("⚠️ La IA está saturada. Por favor, espera 1 minuto y prueba de nuevo.")
+                        st.stop()
+                else:
+                    raise e # Si es otro error, que avise
+            
+            # 3. Mostrar respuesta si todo salió bien
             placeholder.markdown(response.text)
             st.session_state.history.append({"role": "model", "content": response.text})
+            
         except Exception as e:
-            placeholder.error(f"Error: {e}")
-
-
-
+            placeholder.error(f"Error de conexión: {e}")
 
 
