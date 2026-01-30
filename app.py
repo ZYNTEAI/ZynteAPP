@@ -347,24 +347,26 @@ def mostrar_login():
     with lc2:
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Nuevo Registro"])
         
-        # --- LOGIN REAL ---
+        # --- LOGIN ---
         with tab1:
             st.write("")
             email_login = st.text_input("Correo Electrónico", key="login_email").strip().lower()
             pass_login = st.text_input("Contraseña", type="password", key="login_pass").strip()
             st.write("")
+            
             if st.button("ENTRAR AL SISTEMA ▶", type="primary", use_container_width=True):
-                # Verificamos DB
+                # Verificamos credenciales en la Base de Datos
                 if verificar_login(email_login, pass_login):
                     st.session_state.logged_in = True
-                    st.session_state.user_email = email_login  # <--- ¡ESTA ES LA LÍNEA NUEVA IMPORTANTE!
+                    st.session_state.user_email = email_login # <--- ESTA ES LA CLAVE DE LA MEMORIA
                     st.session_state.page = 'pricing'
                     st.success("Credenciales verificadas. Redirigiendo...")
-                    time.sleep(0.5); st.rerun()
+                    time.sleep(0.5)
+                    st.rerun()
                 else:
                     st.error("❌ Credenciales incorrectas o usuario no registrado.")
                 
-        # --- REGISTRO SEGURO ---
+        # --- REGISTRO ---
         with tab2:
             st.write("")
             new_email = st.text_input("Tu Mejor Email", key="reg_email", placeholder="ejemplo@gmail.com")
@@ -378,14 +380,17 @@ def mostrar_login():
                 if not email_limpio or not pass_limpio:
                     st.warning("⚠️ Rellena todos los campos para continuar.")
                 else:
+                    # Validamos el email
                     es_valido, mensaje = validar_email_estricto(email_limpio)
                     if not es_valido:
                         st.error(f"❌ {mensaje}")
                     else:
+                        # Intentamos registrar
                         if registrar_usuario_sql(email_limpio, pass_limpio):
                             st.success("✅ ¡Cuenta creada con éxito!")
                             time.sleep(1.5)
                             st.session_state.logged_in = True
+                            st.session_state.user_email = email_limpio # Guardamos email también al registrar
                             st.session_state.page = 'pricing'
                             st.rerun()
                         else:
@@ -393,7 +398,6 @@ def mostrar_login():
 
     st.write(""); st.write("---")
     if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
-
 def mostrar_pricing():
     st.markdown("<h2 style='text-align: center; margin-top:20px;'>Selecciona tu Plan</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color:#a0aaba; margin-bottom:40px;'>Invierte en tu transformación física.</p>", unsafe_allow_html=True)
@@ -657,6 +661,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
