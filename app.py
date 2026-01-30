@@ -717,18 +717,17 @@ def app_principal():
         st.session_state.history.append({"role": "user", "content": prompt_rapido})
         # Aquí puedes añadir la llamada a la IA si quieres que los botones respondan
 
-    # --- SECCIÓN DE CHAT ---
+# --- SECCIÓN DE CHAT PRINCIPAL ---
     st.write("---") 
     st.subheader("💬 Chat con Zynte AI")
 
-    # El input debe estar alineado con el subheader
-    prompt = st.chat_input("¿En qué puedo ayudarte hoy?", key="input_principal")
+    # El input del chat
+    prompt = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_input_final")
 
     if prompt:
         if "history" not in st.session_state:
             st.session_state.history = []
         
-        # Esta línea ahora estará perfectamente alineada
         st.session_state.history.append({"role": "user", "content": prompt})
         
         with st.chat_message("user"):
@@ -737,25 +736,22 @@ def app_principal():
         with st.chat_message("assistant"):
             with st.spinner("Zynte está pensando..."):
                 try:
-                    # Método directo para evitar el error 404 de v1beta
+                    # Usamos la URL v1 para evitar el error 404 de v1beta
                     url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
                     payload = {"contents": [{"parts": [{"text": prompt}]}]}
                     
                     import requests
-                    res = requests.post(url_estable, json=payload)
+                    res = requests.post(url_estable, json=payload, timeout=30)
                     
                     if res.status_code == 200:
-                        respuesta_texto = res.json()['candidates'][0]['content']['parts'][0]['text']
+                        datos = res.json()
+                        respuesta_texto = datos['candidates'][0]['content']['parts'][0]['text']
                         st.markdown(respuesta_texto)
                         st.session_state.history.append({"role": "model", "content": respuesta_texto})
                     else:
                         st.error(f"Error de Google: {res.status_code}")
                 except Exception as e:
-                    st.error(f"Error técnico: {e}")
-                        else:
-                            st.error(f"Error de Google: {res.status_code}")
-                    except Exception as e:
-                        st.error(f"Error técnico: {e}")
+                    st.error(f"Error de conexión: {e}")
             
             # El rerun debe ir SIEMPRE fuera del try/except
             if not error_ocurrido:
@@ -835,6 +831,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
