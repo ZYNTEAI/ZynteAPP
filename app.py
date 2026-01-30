@@ -8,28 +8,27 @@ from oauth2client.service_account import ServiceAccountCredentials
 import sqlite3
 import re
 import pandas as pd  
+import requests
 
-# 1. Asegúrate de que el nombre sea el estándar
-MODELO_USADO = "gemini-1.5-flash"
-
-# 2. Reemplaza la creación del modelo por esto:
-try:
-    # Creamos el modelo forzando que NO use v1beta
-    model = genai.GenerativeModel(model_name=MODELO_USADO)
+def enviar_mensaje_directo(texto_usuario, api_key):
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+        "contents": [{"parts": [{"text": texto_usuario}]}]
+    }
     
-    # TRUCO FINAL: Forzamos la versión de la API en el cliente
-    import google.ai.generativelanguage as gag
-    model._client = gag.GenerativeServiceClient(
-        client_options={"api_endpoint": "generativelanguage.googleapis.com", "api_version": "v1"}
-    )
+    res = requests.post(url, headers=headers, json=payload)
+    if res.status_code == 200:
+        return res.json()['candidates'][0]['content']['parts'][0]['text']
+    else:
+        return f"Error Crítico: {res.status_code} - {res.text}"
 
-    # Ahora intentamos enviar el mensaje
-    response = model.generate_content(prompt_rapido)
-    st.session_state.history.append({"role": "model", "content": response.text})
+# Uso en los botones:
+if prompt_rapido:
+    respuesta = enviar_mensaje_directo(prompt_rapido, api_key)
+    st.session_state.history.append({"role": "user", "content": prompt_rapido})
+    st.session_state.history.append({"role": "model", "content": respuesta})
     st.rerun()
-
-except Exception as e:
-    st.error(f"Error técnico: {e}")
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
@@ -786,6 +785,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
