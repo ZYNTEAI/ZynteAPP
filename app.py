@@ -72,7 +72,6 @@ def mostrar_landing():
     
     st.markdown('<p class="hero-title">TU ENTRENADOR INTELIGENTE</p>', unsafe_allow_html=True)
     
-    # --- AQUÍ ESTÁ EL CAMBIO (TEXTO LIMPIO) ---
     st.markdown('<p class="hero-subtitle">Planes de entrenamiento de élite generados en segundos.</p>', unsafe_allow_html=True)
     
     col_a, col_b, col_c = st.columns([1, 1, 1])
@@ -133,10 +132,11 @@ def mostrar_pricing():
              st.rerun()
 
     with col2:
+        # --- AQUÍ ESTÁ EL CAMBIO DE PRECIO ---
         st.markdown("""
         <div class='price-card' style='border-color: #33ffaa;'>
             <h3 style='color: #33ffaa;'>🔥 Zynte PRO</h3>
-            <h1>9.99€</h1>
+            <h1>19.99€</h1>
             <p>PDFs y Prioridad</p>
         </div>
         """, unsafe_allow_html=True)
