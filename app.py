@@ -297,7 +297,7 @@ except:
     genai.configure(api_key="TU_CLAVE_AQUI")
 
 # Usamos el nombre sin el prefijo "models/" para que la librería lo gestione
-MODELO_USADO = "gemini-1.5-flash"
+MODELO_USADO = "gemini-1.5-flash-001"
 
 # ==============================================================================
 # ℹ️ PÁGINAS DE INFORMACIÓN 
@@ -765,6 +765,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
