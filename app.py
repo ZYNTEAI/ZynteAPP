@@ -432,55 +432,64 @@ def mostrar_info_pdf():
 # ==============================================================================
 
 def mostrar_landing():
-    """Portada Principal"""
+    """Portada Principal Corregida"""
     st.write("") 
     st.write("") 
     
-    col1, col2, col3 = st.columns([1,2,1])
+    # Contenedor para el Logo
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        try: st.image("logo.png", use_column_width=True)
-        except: st.title("ZYNTE")
+        try: 
+            st.image("logo.png", use_container_width=True) # Actualizado para nuevas versiones de Streamlit
+        except: 
+            st.markdown("<h1 style='text-align:center; color:white;'>ZYNTE</h1>", unsafe_allow_html=True)
     
+    # Título y Subtítulo
     st.markdown('<p class="hero-title">TU ENTRENADOR DE ÉLITE</p>', unsafe_allow_html=True)
-    # TEXTO DEFINITIVO: 
     st.markdown('<p class="hero-subtitle">Planes de entrenamiento personalizados generados en segundos.</p>', unsafe_allow_html=True)
     
-    col_a, col_b, col_c = st.columns([1, 1, 1])
-    with col_b:
+    # Botón Central
+    _, col_btn, _ = st.columns([1, 1, 1])
+    with col_btn:
         st.write("")
         if st.button("🚀 COMENZAR AHORA", use_container_width=True, type="primary"):
             st.session_state.page = 'login'
             st.rerun()
         st.write("")
-        st.write("")
 
-    # TARJETAS DE INFORMACIÓN
-    c1, c2, c3 = st.columns(3)
+    st.write("---") # Separador visual
+
+    # TARJETAS DE INFORMACIÓN (Ajuste de tamaño y alineación)
+    # Usamos columnas iguales para que no se deformen
+    c1, c2, c3 = st.columns(3, gap="large")
     
     with c1:
-        st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>🧠 Personalización Total</h3>
-        <p style='color:#a0aaba; min-height:60px;'>Análisis biométrico avanzado para crear una rutina única para tu cuerpo.</p>
+        st.markdown("""
+        <div class='price-card'>
+            <h3 style='color:#33ffaa;'>🧠 Personalización</h3>
+            <p style='color:#a0aaba; font-size:0.9rem;'>Análisis biométrico avanzado para crear una rutina única basada en tu peso, altura y objetivos.</p>
         </div>""", unsafe_allow_html=True)
-        if st.button("Cómo funciona", key="btn_ia"):
+        if st.button("Cómo funciona", key="btn_ia_fix", use_container_width=True):
             st.session_state.page = 'info_ia'
             st.rerun()
             
     with c2:
-        st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>⚡ Resultados Rápidos</h3>
-        <p style='color:#a0aaba; min-height:60px;'>Tu planificación completa lista para descargar antes de llegar al gimnasio.</p>
+        st.markdown("""
+        <div class='price-card'>
+            <h3 style='color:#33ffaa;'>⚡ Resultados</h3>
+            <p style='color:#a0aaba; font-size:0.9rem;'>Tu planificación completa lista para descargar antes de que pongas un pie en el gimnasio.</p>
         </div>""", unsafe_allow_html=True)
-        if st.button("Ver velocidad", key="btn_vel"):
+        if st.button("Ver velocidad", key="btn_vel_fix", use_container_width=True):
             st.session_state.page = 'info_vel'
             st.rerun()
             
     with c3:
-        st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>📄 Informes PDF</h3>
-        <p style='color:#a0aaba; min-height:60px;'>Exporta tu rutina en formato profesional limpio y sin distracciones.</p>
+        st.markdown("""
+        <div class='price-card'>
+            <h3 style='color:#33ffaa;'>📄 Informes PDF</h3>
+            <p style='color:#a0aaba; font-size:0.9rem;'>Exporta tu rutina en un formato profesional, limpio y optimizado para leer en el móvil.</p>
         </div>""", unsafe_allow_html=True)
-        if st.button("Ver ejemplo", key="btn_pdf"):
+        if st.button("Ver ejemplo", key="btn_pdf_fix", use_container_width=True):
             st.session_state.page = 'info_pdf'
             st.rerun()
 # --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
@@ -831,6 +840,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
