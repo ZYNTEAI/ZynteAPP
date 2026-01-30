@@ -83,11 +83,9 @@ st.markdown("""
     /* FONDO DEGRADADO NOCTURNO */
     /* FONDO CON IMAGEN DE GIMNASIO OSCURECIDA */
     [data-testid="stAppViewContainer"] {
-        background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.95)), 
-                          url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
+        /* FONDO DEGRADADO AGRESIVO */
+    [data-testid="stAppViewContainer"] {
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
     }
 
     /* TIPOGRAFÍA DE IMPACTO */
@@ -556,6 +554,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
