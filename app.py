@@ -36,7 +36,8 @@ MODELO_USADO = 'models/gemini-flash-latest'
 # --- BARRA LATERAL (PANEL DE CONTROL DEL CLIENTE) ---
 with st.sidebar:
     # Logo ficticio o icono pro
-    st.image("https://cdn-icons-png.flaticon.com/512/14243/14243367.png", width=80)
+   # CAMBIO: Usamos tu logo.png
+    st.image("logo.png", width=150) # He subido un poco el tamaño para que luzca
     st.title("Panel del Atleta")
     st.markdown("---")
     
@@ -80,7 +81,7 @@ elif imc < 18.5:
 # --- ÁREA PRINCIPAL (EL "DASHBOARD") ---
 
 # 1. Banner de cabecera (Puedes cambiar la URL por una imagen tuya propia si la subes a internet)
-st.image("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", use_column_width=True)
+st.image("banner.jpg", use_column_width=True)
 st.title(f"⚡ Zynte Coach | {objetivo}")
 
 # 2. Resumen Visual del Cliente (Usando columnas y métricas)
@@ -164,3 +165,4 @@ if prompt := st.chat_input("Escribe aquí tu consulta al entrenador..."):
             
         except Exception as e:
             message_placeholder.error(f"❌ Tuve un problema de conexión. Por favor, intenta preguntar de nuevo. (Error: {e})")
+
