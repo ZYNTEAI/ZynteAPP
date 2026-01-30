@@ -4,22 +4,20 @@ from fpdf import FPDF
 import datetime
 import time
 
-# --- 1. CONFIGURACIÓN INICIAL (Siempre al principio) ---
+# --- 1. CONFIGURACIÓN INICIAL ---
 st.set_page_config(
-    page_title="Zynte | Elite AI Coach", 
+    page_title="Zynte | Elite Coach", 
     page_icon="logo.png", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. ESTILOS CSS (Diseño Profesional) ---
+# --- 2. ESTILOS CSS ---
 st.markdown("""
     <style>
-    /* Ocultar menú de desarrollo */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Títulos de Impacto */
     .hero-title {
         font-size: 3rem;
         font-weight: 800;
@@ -35,7 +33,6 @@ st.markdown("""
         color: #cccccc;
         margin-bottom: 30px;
     }
-    /* Tarjetas de Precios */
     .price-card {
         background-color: #1a1a1a;
         border: 1px solid #333;
@@ -56,17 +53,17 @@ try:
     api_key = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=api_key)
 except:
-    st.warning("⚠️ Nota: API Key no detectada. La IA no responderá hasta configurarla.")
+    st.warning("⚠️ Nota: API Key no detectada.")
 
 MODELO_USADO = 'models/gemini-flash-latest'
 
 # ==============================================================================
-# 🌟 FUNCIONES DE PÁGINAS (VISTAS)
+# 🌟 VISTAS (PÁGINAS)
 # ==============================================================================
 
 def mostrar_landing():
     """Página de Portada"""
-    st.write("") # Espacio superior
+    st.write("") 
     
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
@@ -74,7 +71,9 @@ def mostrar_landing():
         except: st.title("ZYNTE")
     
     st.markdown('<p class="hero-title">TU ENTRENADOR INTELIGENTE</p>', unsafe_allow_html=True)
-    st.markdown('<p class="hero-subtitle">Planes de entrenamiento de élite generados por IA en segundos.</p>', unsafe_allow_html=True)
+    
+    # --- AQUÍ ESTÁ EL CAMBIO (TEXTO LIMPIO) ---
+    st.markdown('<p class="hero-subtitle">Planes de entrenamiento de élite generados en segundos.</p>', unsafe_allow_html=True)
     
     col_a, col_b, col_c = st.columns([1, 1, 1])
     with col_b:
@@ -84,14 +83,14 @@ def mostrar_landing():
 
     st.write("---")
     c1, c2, c3 = st.columns(3)
-    c1.info("🧠 **Inteligencia Real**\n\nZynte analiza tu biometría y crea algo único.")
-    c2.warning("⚡ **Velocidad Sónica**\n\nTu plan completo en menos de 10 segundos.")
+    c1.info("🧠 **Inteligencia Real**\n\nZynte analiza tu biometría y crea algo único para ti.")
+    c2.warning("⚡ **Velocidad Sónica**\n\nTu plan completo listo antes de que te ates los cordones.")
     c3.success("📄 **Informes PDF**\n\nDescarga tu rutina profesional lista para imprimir.")
 
 def mostrar_login():
     """Página de Acceso"""
     st.markdown("## 🔐 Acceso Seguro")
-    st.write("Simulación de acceso. Puedes inventar los datos.")
+    st.write("Simulación de acceso.")
     
     tab1, tab2 = st.tabs(["Iniciar Sesión", "Crear Cuenta"])
     
@@ -149,9 +148,9 @@ def mostrar_pricing():
             st.rerun()
 
 def app_principal():
-    """La App de IA original (Tu código de siempre)"""
+    """La App Principal"""
     
-    # --- 1. Definición de PDF ---
+    # --- PDF Class ---
     class PDF(FPDF):
         def header(self):
             try: self.image('logo.png', 10, 8, 33)
@@ -185,7 +184,7 @@ def app_principal():
                 pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
 
-    # --- 2. Barra Lateral ---
+    # --- Sidebar ---
     with st.sidebar:
         try: st.image("logo.png", width=180)
         except: st.header("ZYNTE")
@@ -222,7 +221,7 @@ def app_principal():
             st.session_state.logged_in = False
             st.rerun()
 
-    # --- 3. Dashboard Principal ---
+    # --- Dashboard ---
     imc = peso / ((altura/100)**2)
     estado_imc = "Normal"
     if imc >= 25: estado_imc = "Sobrepeso"
@@ -237,9 +236,9 @@ def app_principal():
     with col3: st.metric("Objetivo", objetivo)
     with col4: st.metric("Nivel", nivel)
     st.divider()
-    st.caption("⚠️ **Aviso:** Zynte AI es un asistente informativo. Consulta siempre con un profesional.")
+    st.caption("⚠️ **Aviso:** Zynte es un asistente informativo. Consulta siempre con un profesional.")
 
-    # --- 4. Chat ---
+    # --- Chat ---
     if "history" not in st.session_state:
         st.session_state.history = []
         st.session_state.history.append({"role": "model", "content": f"Hola {nombre}. Listo para diseñar tu plan de {objetivo}. ¿Empezamos?"})
@@ -263,7 +262,6 @@ def app_principal():
                 chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
                 chat = model.start_chat(history=chat_history)
                 
-                # Sistema Anti-Caídas
                 try:
                     response = chat.send_message(prompt)
                 except Exception as e:
@@ -279,11 +277,10 @@ def app_principal():
                 placeholder.error(f"Error: {e}")
 
 # ==============================================================================
-# 🚀 EJECUCIÓN PRINCIPAL (Aquí es donde ocurre la magia)
+# 🚀 MAIN
 # ==============================================================================
 
 def main():
-    # Inicialización de estado segura
     if 'page' not in st.session_state:
         st.session_state.page = 'landing'
     if 'logged_in' not in st.session_state:
@@ -291,7 +288,6 @@ def main():
     if 'is_premium' not in st.session_state:
         st.session_state.is_premium = False
 
-    # Router (Navegación)
     if st.session_state.page == 'landing':
         mostrar_landing()
     elif st.session_state.page == 'login':
@@ -304,6 +300,5 @@ def main():
         st.session_state.page = 'landing'
         st.rerun()
 
-# ¡Arrancamos!
 if __name__ == "__main__":
     main()
