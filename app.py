@@ -95,4 +95,7 @@ st.divider()
 if "history" not in st.session_state:
     st.session_state.history = []
     # Mensaje inicial puramente funcional, sin saludos excesivos
-    st.session_state.history.append({"role": "model", "content": f"Bienvenido {nombre}. Panel de entrenamiento cargado. Datos sincron
+   # Bloque arreglado (Copia y pega esto en lugar de la línea que da error)
+    mensaje_inicio = f"Bienvenido {nombre}. Datos: {peso}kg | {objetivo}. Esperando consulta."
+    st.session_state.history.append({"role": "model", "content": mensaje_inicio})
+
