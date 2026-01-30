@@ -108,6 +108,20 @@ def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
     try:
         conn = sqlite3.connect('zynte_users.db')
         c = conn.cursor()
+        
+        # Guardamos perfil
+        datos = (peso, altura, edad, objetivo, nivel, email)
+        c.execute('UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?', datos)
+        conn.commit()
+        conn.close()
+        
+        # Guardamos historial también
+        registrar_peso_historico(email, peso) 
+        return True
+    except: return False  # <--- ESTO ES LO QUE FALTABA
+
+# --- NUEVAS FUNCIONES PARA EL PAGO ---
+
 def activar_plan_pro(email):
     """Actualiza la cuenta del usuario a PRO permanentemente"""
     try:
@@ -130,17 +144,6 @@ def comprobar_plan(email):
         if resultado and resultado[0] == 'Pro':
             return True
         return False
-    except: return False      
-       
-        datos_a_guardar = (peso, altura, edad, objetivo, nivel, email)
-        
-        c.execute('UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?', datos_a_guardar)
-        
-        conn.commit()
-        conn.close()
-        
-        registrar_peso_historico(email, peso) 
-        return True
     except: return False
 # --- 3. ESTILOS CSS PREMIUM (FONDO NUEVO) ---
 st.markdown("""
@@ -632,6 +635,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
