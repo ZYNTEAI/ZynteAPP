@@ -117,7 +117,8 @@ with col2: st.metric("Peso", f"{peso} kg")
 with col3: st.metric("Objetivo", objetivo)
 with col4: st.metric("Nivel", nivel)
 st.divider()
-
+# --- AVISO LEGAL IMPORTANTE ---
+st.caption("⚠️ **Aviso:** Zynte AI es un asistente informativo. Consulta siempre con un profesional de la salud antes de iniciar un programa físico.")
 # --- 6. CHAT ---
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -175,3 +176,6 @@ if prompt := st.chat_input("Consulta a Zynte..."):
             
         except Exception as e:
             placeholder.error(f"Error técnico: {e}")
+
+# --- NUEVO: FIRMA ---
+    st.caption("© 2024 Zynte AI Coach v1.0")
