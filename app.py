@@ -116,4 +116,6 @@ st.divider()
 # --- 6. CHAT CON SISTEMA "ANTI-CAÍDAS" AMABLE ---
 if "history" not in st.session_state:
     st.session_state.history = []
-    st.session_state.history.append({"role": "model", "content": f"Bienvenido {nombre}. Estoy listo para crear tu plan de {objetivo}. ¿
+    mensaje = f"Bienvenido {nombre}. Listo para el objetivo: {objetivo}. ¿Empezamos?"
+    st.session_state.history.append({"role": "model", "content": mensaje})
+
