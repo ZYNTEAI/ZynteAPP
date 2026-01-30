@@ -24,7 +24,7 @@ except:
     st.error("Error: API Key no configurada.")
     st.stop()
 
-MODELO_USADO = 'models/gemini-flash-latest'
+MODELO_USADO = 'models/gemini-1.5-flash'
 
 # --- 3. FUNCIÓN GENERADORA DE PDF ---
 class PDF(FPDF):
@@ -150,6 +150,7 @@ if prompt := st.chat_input("Consulta a Zynte..."):
             st.session_state.history.append({"role": "model", "content": response.text})
         except Exception as e:
             placeholder.error(f"Error: {e}")
+
 
 
 
