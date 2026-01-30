@@ -9,6 +9,19 @@ import sqlite3
 import re
 import pandas as pd  
 
+# --- CONFIGURACIÓN DE IA DEFINITIVA ---
+# Usamos el modelo 1.5-flash que es el que tiene 1.500 mensajes gratis
+MODELO_USADO = "gemini-1.5-flash" 
+
+try:
+    # Intentamos configurar la API. 
+    # Si estás en Streamlit Cloud, usará secrets. 
+    # Si estás en tu PC, usará la clave que pongas abajo.
+    api_key = st.secrets["GOOGLE_API_KEY"]
+except:
+    api_key = "AIzaSyAtfmBcIrMhUWzV7s1yOurloW_VSJ_-xTg" # <-- PEGA AQUÍ TU CLAVE DE GOOGLE
+
+genai.configure(api_key=api_key)
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
@@ -765,6 +778,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
