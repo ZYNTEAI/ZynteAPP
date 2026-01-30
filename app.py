@@ -9,15 +9,7 @@ import sqlite3
 import re
 import pandas as pd  
 
-# --- 1. CONFIGURACIÓN INICIAL ---
-st.set_page_config(
-    page_title="Zynte | Elite Coach", 
-    page_icon="logo.png", 
-    layout="wide", 
-    initial_sidebar_state="collapsed"
-)
-
-# --- 2. GESTIÓN DE BASE DE DATOS Y PERFIL (V10.2 - BLINDADO) ---
+# --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (Master Block) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
@@ -48,26 +40,50 @@ def init_db():
     migrar_db()
 
 def migrar_db():
-    """Actualiza la tabla evitando errores de sintaxis"""
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
-    
-    # Bloques separados para seguridad
-    try: c.execute('ALTER TABLE users ADD COLUMN peso REAL')
-    except: pass
-    try: c.execute('ALTER TABLE users ADD COLUMN altura INTEGER')
-    except: pass
-    try: c.execute('ALTER TABLE users ADD COLUMN edad INTEGER')
-    except: pass
-    try: c.execute('ALTER TABLE users ADD COLUMN objetivo TEXT')
-    except: pass
-    try: c.execute('ALTER TABLE users ADD COLUMN nivel TEXT')
-    except: pass
-
+    # Bloques try/except separados para evitar errores
+    try: c.execute('ALTER TABLE users ADD COLUMN peso REAL'); except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN altura INTEGER'); except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN edad INTEGER'); except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN objetivo TEXT'); except: pass
+    try: c.execute('ALTER TABLE users ADD COLUMN nivel TEXT'); except: pass
     conn.commit()
     conn.close()
 
-# --- FUNCIONES DE DATOS ---
+# --- FUNCIONES DE SEGURIDAD (LOGIN) ---
+def validar_email_estricto(email):
+    email = email.strip().lower()
+    patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(patron, email): return False, "Formato inválido."
+    dominios = ["gmail.com", "yahoo.com", "yahoo.es", "hotmail.com", "outlook.com", "icloud.com", "protonmail.com"]
+    try: dom = email.split('@')[-1]
+    except: return False, "Error dominio."
+    if dom not in dominios: return False, "Dominio no permitido."
+    return True, "OK"
+
+def verificar_login(email, password):
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password))
+        return c.fetchone() is not None
+    except: return False
+
+def registrar_usuario_sql(email, password):
+    try:
+        conn = sqlite3.connect('zynte_users.db')
+        c = conn.cursor()
+        fecha = str(datetime.date.today())
+        # Valores por defecto
+        c.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                  (email, password, fecha, "Free", 70.0, 175, 25, "Hipertrofia", "Intermedio"))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError: return False
+
+# --- FUNCIONES DE PERFIL E HISTORIAL ---
 def registrar_peso_historico(email, peso):
     try:
         conn = sqlite3.connect('zynte_users.db')
@@ -91,60 +107,6 @@ def obtener_historial_df(email):
 def cargar_perfil(email):
     try:
         conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
-        c.execute('SELECT peso, altura, edad, objetivo, nivel FROM users WHERE email = ?', (email,))
-        data = c.fetchone()
-        conn.close()
-        return {
-            "peso": data[0] if data[0] else 70.0,
-            "altura": data[1] if data[1] else 175,
-            "edad": data[2] if data[2] else 25,
-            "objetivo": data[3] if data[3] else "Hipertrofia",
-            "nivel": data[4] if data[4] else "Intermedio"
-        }
-    except: return {"peso": 70.0, "altura": 175, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
-
-def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
-    try:
-        conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
-        
-        # Guardamos perfil
-        datos = (peso, altura, edad, objetivo, nivel, email)
-        c.execute('UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?', datos)
-        conn.commit()
-        conn.close()
-        
-        # Guardamos historial también
-        registrar_peso_historico(email, peso) 
-        return True
-    except: return False  # <--- ESTO ES LO QUE FALTABA
-
-# --- NUEVAS FUNCIONES PARA EL PAGO ---
-
-def activar_plan_pro(email):
-    """Actualiza la cuenta del usuario a PRO permanentemente"""
-    try:
-        conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
-        c.execute("UPDATE users SET plan = 'Pro' WHERE email = ?", (email,))
-        conn.commit()
-        conn.close()
-        return True
-    except: return False
-
-def comprobar_plan(email):
-    """Mira si el usuario es PRO o Free"""
-    try:
-        conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
-        c.execute("SELECT plan FROM users WHERE email = ?", (email,))
-        resultado = c.fetchone()
-        conn.close()
-        if resultado and resultado[0] == 'Pro':
-            return True
-        return False
-    except: return False
 # --- 3. ESTILOS CSS PREMIUM (FONDO NUEVO) ---
 st.markdown("""
     <style>
@@ -635,6 +597,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
