@@ -3,7 +3,7 @@ import google.generativeai as genai
 from fpdf import FPDF
 import datetime
 import time
-import sqlite3  # <--- NUEVA LIBRERÍA (Sin instalación necesaria)
+import sqlite3
 
 # --- 1. CONFIGURACIÓN INICIAL ---
 st.set_page_config(
@@ -18,7 +18,6 @@ def init_db():
     """Inicializa la base de datos local"""
     conn = sqlite3.connect('zynte_users.db')
     c = conn.cursor()
-    # Creamos tabla segura donde el email es único (PRIMARY KEY)
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             email TEXT PRIMARY KEY,
@@ -33,13 +32,19 @@ def init_db():
 def validar_email(email):
     """Reglas de validación estrictas"""
     email = email.strip().lower()
+    
+    # 0. Validación de vacío absoluta
+    if not email:
+        return False, "El campo email está vacío."
+
     # 1. Lista blanca de dominios permitidos
     dominios_validos = ["@gmail.com", "@yahoo.es", "@yahoo.com", "@hotmail.com", "@outlook.com", "@icloud.com"]
     
-    # 2. Comprobaciones
+    # 2. Comprobaciones de formato
     if "@" not in email or "." not in email:
-        return False, "Formato de correo inválido."
+        return False, "Formato de correo inválido (falta @ o .)."
     
+    # 3. Comprobación de dominio
     es_valido = False
     for dom in dominios_validos:
         if email.endswith(dom):
@@ -47,7 +52,7 @@ def validar_email(email):
             break
             
     if not es_valido:
-        return False, f"Solo aceptamos proveedores personales: {', '.join(dominios_validos)}"
+        return False, f"Solo aceptamos correos personales: {', '.join(dominios_validos)}"
         
     return True, "OK"
 
@@ -63,75 +68,39 @@ def registrar_usuario_sql(email, password):
         conn.close()
         return True
     except sqlite3.IntegrityError:
-        # Esto salta si el email ya existe en la base de datos
         return False
 
 # ARRANCAMOS LA DB AL INICIO
 init_db()
 
-# --- 3. ESTILOS CSS PREMIUM (INTACTOS) ---
+# --- 3. ESTILOS CSS PREMIUM ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* FONDO DEGRADADO NOCTURNO */
     [data-testid="stAppViewContainer"] {
         background: radial-gradient(ellipse at top, #1b2735 0%, #090a0f 100%);
     }
-    [data-testid="stHeader"] {
-        background: transparent;
-    }
+    [data-testid="stHeader"] {background: transparent;}
 
-    /* TIPOGRAFÍA DE IMPACTO */
     .hero-title {
-        font-size: 3.5rem;
-        font-weight: 800;
+        font-size: 3.5rem; font-weight: 800;
         background: linear-gradient(to right, #ffffff, #33ffaa);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: center;
-        margin-bottom: 10px;
-        text-shadow: 0 0 30px rgba(51, 255, 170, 0.2);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        text-align: center; margin-bottom: 10px; text-shadow: 0 0 30px rgba(51, 255, 170, 0.2);
     }
-    .hero-subtitle {
-        font-size: 1.3rem;
-        text-align: center;
-        color: #a0aaba;
-        margin-bottom: 40px;
-    }
+    .hero-subtitle {font-size: 1.3rem; text-align: center; color: #a0aaba; margin-bottom: 40px;}
     
-    /* TARJETAS DE CRISTAL */
     .price-card {
-        background-color: rgba(26, 26, 26, 0.8);
-        backdrop-filter: blur(10px);
-        border: 1px solid #333;
-        border-radius: 15px;
-        padding: 25px;
-        text-align: center;
-        transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        height: 100%;
+        background-color: rgba(26, 26, 26, 0.8); backdrop-filter: blur(10px);
+        border: 1px solid #333; border-radius: 15px; padding: 25px;
+        text-align: center; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.2); height: 100%;
     }
-    .price-card:hover {
-        border-color: #33ffaa;
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(51, 255, 170, 0.2);
-    }
+    .price-card:hover {border-color: #33ffaa; transform: translateY(-5px); box-shadow: 0 8px 25px rgba(51, 255, 170, 0.2);}
     
-    /* INPUTS */
-    .stTextInput input {
-        background-color: rgba(255,255,255,0.05) !important;
-        border: 1px solid #333 !important;
-        color: white !important;
-    }
-    
-    /* BOTONES ESTILIZADOS */
-    div.stButton > button {
-        border-radius: 8px;
-        font-weight: bold;
-        transition: all 0.2s;
-    }
+    .stTextInput input {background-color: rgba(255,255,255,0.05) !important; border: 1px solid #333 !important; color: white !important;}
+    div.stButton > button {border-radius: 8px; font-weight: bold; transition: all 0.2s;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -145,80 +114,10 @@ except:
 MODELO_USADO = 'models/gemini-flash-latest'
 
 # ==============================================================================
-# ℹ️ PÁGINAS DE INFORMACIÓN (Copywriting Persuasivo)
-# ==============================================================================
-
-def mostrar_info_ia():
-    """Detalle: Tecnología"""
-    st.markdown("## 🧠 El Algoritmo Zynte™")
-    st.write("")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.markdown("""
-        <div class="price-card" style="text-align: left;">
-            <h3>Ingeniería Biométrica</h3>
-            <p style="color:#ccc;">Olvida las rutinas genéricas de internet.</p>
-            <p>Zynte procesa 12 variables fisiológicas en tiempo real para calcular tu volumen de entrenamiento óptimo. No es magia, es matemática aplicada al rendimiento deportivo.</p>
-            <br>
-            <p>✅ <b>Periodización Ondulante:</b> Ajuste de cargas automático.</p>
-            <p>✅ <b>Selección Inteligente:</b> Elige entre 5.000 ejercicios.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.info("💡 **Dato:** Nuestros usuarios reportan un aumento del 30% en adherencia comparado con entrenadores tradicionales.")
-    st.write("")
-    if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
-
-def mostrar_info_velocidad():
-    """Detalle: Velocidad"""
-    st.markdown("## ⚡ Eficiencia Absoluta")
-    st.write("")
-    st.markdown("""
-    <div class="price-card">
-        <h3>Tu tiempo es para entrenar, no para esperar.</h3>
-        <hr style="border-color:#333;">
-        <div style="display:flex; justify-content:space-around; align-items:center; margin-top:20px;">
-            <div><h1 style="color:#a0aaba; font-size:3rem;">48h</h1><p>Espera Media (Entrenador Humano)</p></div>
-            <div style="font-size:3rem; color:#555;">VS</div>
-            <div><h1 style="color:#33ffaa; font-size:4rem;">Instantáneo</h1><p>Zynte System</p></div>
-        </div>
-        <br>
-        <p style="color:#ccc;">Genera, modifica y regenera tu plan tantas veces como necesites. Sin citas previas.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    st.write("")
-    if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
-
-def mostrar_info_pdf():
-    """Detalle: Documentación"""
-    st.markdown("## 📄 Documentación Ejecutiva")
-    st.write("")
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.markdown("""
-        <div class="price-card" style="text-align: left;">
-            <h3>Enfoque sin distracciones</h3>
-            <p style="color:#ccc;">En el gimnasio, tu foco debe estar en el hierro, no en la pantalla.</p>
-            <p>Obtén un informe técnico detallado en PDF al finalizar cada sesión de planificación. Imprímelo o guárdalo en tu dispositivo.</p>
-            <br>
-            <ul style="color:#ccc;">
-                <li>Desglose de series y repeticiones.</li>
-                <li>Tiempos de descanso estipulados.</li>
-                <li>Notas técnicas de ejecución.</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.success("📂 **Característica PRO:** Disponible exclusivamente en el plan Élite (19.99€).")
-    st.write("")
-    if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
-
-# ==============================================================================
-# 🌟 VISTAS PRINCIPALES (Texto Definitivo)
+# VISTAS PRINCIPALES
 # ==============================================================================
 
 def mostrar_landing():
-    """Portada Principal"""
     st.write(""); st.write("") 
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
@@ -233,24 +132,14 @@ def mostrar_landing():
         st.write("")
         if st.button("🚀 COMENZAR AHORA", use_container_width=True, type="primary"):
             st.session_state.page = 'login'; st.rerun()
-        st.write(""); st.write("")
 
     c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>🧠 Personalización Total</h3><p style='color:#a0aaba; min-height:60px;'>Análisis biométrico avanzado para crear una rutina única para tu cuerpo.</p></div>""", unsafe_allow_html=True)
-        if st.button("Cómo funciona", key="btn_ia"): st.session_state.page = 'info_ia'; st.rerun()
-    with c2:
-        st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>⚡ Resultados Rápidos</h3><p style='color:#a0aaba; min-height:60px;'>Tu planificación completa lista para descargar antes de llegar al gimnasio.</p></div>""", unsafe_allow_html=True)
-        if st.button("Ver velocidad", key="btn_vel"): st.session_state.page = 'info_vel'; st.rerun()
-    with c3:
-        st.markdown("""<div class='price-card' style='text-align:left; border:none; background:transparent; box-shadow:none;'>
-        <h3>📄 Informes PDF</h3><p style='color:#a0aaba; min-height:60px;'>Exporta tu rutina en formato profesional limpio y sin distracciones.</p></div>""", unsafe_allow_html=True)
-        if st.button("Ver ejemplo", key="btn_pdf"): st.session_state.page = 'info_pdf'; st.rerun()
+    with c1: st.markdown("<div class='price-card'><h3>🧠 Personalización</h3><p style='color:#aaa'>Análisis biométrico único.</p></div>", unsafe_allow_html=True)
+    with c2: st.markdown("<div class='price-card'><h3>⚡ Velocidad</h3><p style='color:#aaa'>Sin esperas innecesarias.</p></div>", unsafe_allow_html=True)
+    with c3: st.markdown("<div class='price-card'><h3>📄 Documentación</h3><p style='color:#aaa'>Exportación profesional PDF.</p></div>", unsafe_allow_html=True)
 
 def mostrar_login():
-    """Página de Acceso MODIFICADA CON SQLITE Y VALIDACIÓN"""
+    """Página de Acceso BLINDADA"""
     st.markdown("## 🔐 Área de Miembros")
     st.caption("Accede a tu panel de control de alto rendimiento.")
     st.write("")
@@ -267,30 +156,34 @@ def mostrar_login():
             if st.button("ENTRAR AL SISTEMA ▶", type="primary", use_container_width=True):
                 st.session_state.logged_in = True
                 st.session_state.page = 'pricing'
-                st.success("Credenciales verificadas. Redirigiendo...")
-                time.sleep(0.5)
-                st.rerun()
+                st.success("Credenciales verificadas.")
+                time.sleep(0.5); st.rerun()
                 
-        with tab2: # REGISTRO REAL (SQLITE + VALIDACIÓN)
+        with tab2: # REGISTRO
             st.write("")
             new_email = st.text_input("Tu Mejor Email", key="reg_email", placeholder="ejemplo@gmail.com")
             new_pass = st.text_input("Elige Contraseña", type="password", key="reg_pass")
             st.write("")
             
             if st.button("Crear Cuenta Gratuita", use_container_width=True):
-                # 1. Validar que no esté vacío
-                if not new_email or not new_pass:
-                    st.warning("⚠️ Rellena todos los campos para continuar.")
+                # Limpiamos espacios antes de comprobar
+                email_limpio = new_email.strip()
+                pass_limpio = new_pass.strip()
+
+                # 1. VALIDACIÓN DE VACÍO (BLOQUEANTE)
+                if not email_limpio or not pass_limpio:
+                    st.error("⚠️ ERROR: Debes escribir un email y una contraseña.")
+                
                 else:
-                    # 2. Validar Dominio (@gmail, @yahoo, etc)
-                    es_valido, mensaje = validar_email(new_email)
+                    # 2. VALIDACIÓN DE DOMINIO Y FORMATO
+                    es_valido, mensaje_error = validar_email(email_limpio)
                     
                     if not es_valido:
-                        st.error(f"❌ {mensaje}")
+                        st.error(f"❌ {mensaje_error}")
                     else:
-                        # 3. Guardar en Base de Datos
-                        with st.spinner("Creando perfil de atleta..."):
-                            exito = registrar_usuario_sql(new_email.strip().lower(), new_pass)
+                        # 3. REGISTRO EN BASE DE DATOS
+                        with st.spinner("Creando perfil seguro..."):
+                            exito = registrar_usuario_sql(email_limpio, pass_limpio)
                             
                             if exito:
                                 st.success("✅ ¡Cuenta creada con éxito!")
@@ -299,7 +192,7 @@ def mostrar_login():
                                 st.session_state.page = 'pricing'
                                 st.rerun()
                             else:
-                                st.error("⛔ Este email ya está registrado en el sistema. Por favor inicia sesión.")
+                                st.error("⛔ Este email ya está registrado. Prueba a iniciar sesión.")
 
     st.write(""); st.write("---")
     if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
@@ -307,7 +200,6 @@ def mostrar_login():
 def mostrar_pricing():
     st.markdown("<h2 style='text-align: center; margin-top:20px;'>Selecciona tu Plan</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color:#a0aaba; margin-bottom:40px;'>Invierte en tu transformación física.</p>", unsafe_allow_html=True)
-    
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("""<div class='price-card'><h3>🌱 Starter</h3><h1 style='font-size: 3.5rem; margin: 10px 0;'>0€</h1><p style='color:#a0aaba;'>Prueba de concepto</p></div>""", unsafe_allow_html=True)
@@ -405,7 +297,7 @@ def app_principal():
             except Exception as e: placeholder.error(f"Error: {e}")
 
 # ==============================================================================
-# 🚀 ROUTER
+# ROUTER
 # ==============================================================================
 
 def main():
@@ -414,9 +306,6 @@ def main():
     if 'is_premium' not in st.session_state: st.session_state.is_premium = False
 
     if st.session_state.page == 'landing': mostrar_landing()
-    elif st.session_state.page == 'info_ia': mostrar_info_ia()
-    elif st.session_state.page == 'info_vel': mostrar_info_velocidad()
-    elif st.session_state.page == 'info_pdf': mostrar_info_pdf()
     elif st.session_state.page == 'login': mostrar_login()
     elif st.session_state.page == 'pricing': mostrar_pricing()
     elif st.session_state.page == 'app': app_principal()
