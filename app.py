@@ -76,4 +76,4 @@ with st.sidebar:
     with st.expander("Biometría", expanded=True):
         peso = st.slider("Peso (kg)", 40.0, 150.0, 72.5, 0.5)
         altura = st.slider("Altura (cm)", 120, 220, 176, 1)
-        edad = st.slider("Edad", 16, 8
+        edad = st.slider("Edad", 16, 80, 25)
