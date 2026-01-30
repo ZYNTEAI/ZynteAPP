@@ -456,34 +456,38 @@ def mostrar_landing():
     st.write("---")
 
     # 3. TARJETAS DE INFORMACIÓN - REPARACIÓN TOTAL
-    c1, c2, c3 = st.columns(3, gap="medium")
+    # Usamos columnas estándar para que el diseño no se rompa
+    c1, c2, c3 = st.columns(3)
     
-    # Estilo base corregido para evitar que el código se muestre como texto
-    estilo_tarjeta = "background-color:rgba(20,20,20,0.6);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,0.1);border-radius:15px;padding:20px;min-height:280px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;"
-
     with c1:
-        st.markdown(f"""<div style='{estilo_tarjeta}'>
-            <div style='font-size:2rem;margin-bottom:10px;'>🧠</div>
-            <h3 style='color:#33ffaa;font-size:1.1rem;margin:0;line-height:1.2;'>Personalización<br>Total</h3>
-            <p style='color:#a0aaba;font-size:0.85rem;margin-top:10px;'>Análisis biométrico avanzado para crear una rutina única para tu cuerpo.</p>
-        </div>""", unsafe_allow_html=True)
-        st.button("Cómo funciona", key="btn_fix_1", use_container_width=True)
+        st.markdown("""
+        <div style="background: rgba(30, 30, 30, 0.6); padding: 20px; border-radius: 15px; border: 1px solid #33ffaa; text-align: center; min-height: 250px;">
+            <h2 style="margin: 0;">🧠</h2>
+            <h3 style="color: #33ffaa; font-size: 1.1rem;">Personalización</h3>
+            <p style="color: #ccc; font-size: 0.85rem;">Análisis biométrico avanzado para crear una rutina única para tu cuerpo.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Cómo funciona", key="btn_L1", use_container_width=True)
             
     with c2:
-        st.markdown(f"""<div style='{estilo_tarjeta}'>
-            <div style='font-size:2rem;margin-bottom:10px;'>⚡</div>
-            <h3 style='color:#33ffaa;font-size:1.1rem;margin:0;line-height:1.2;'>Resultados<br>Rápidos</h3>
-            <p style='color:#a0aaba;font-size:0.85rem;margin-top:10px;'>Tu planificación completa lista para descargar antes de ir al gimnasio.</p>
-        </div>""", unsafe_allow_html=True)
-        st.button("Ver velocidad", key="btn_fix_2", use_container_width=True)
+        st.markdown("""
+        <div style="background: rgba(30, 30, 30, 0.6); padding: 20px; border-radius: 15px; border: 1px solid #33ffaa; text-align: center; min-height: 250px;">
+            <h2 style="margin: 0;">⚡</h2>
+            <h3 style="color: #33ffaa; font-size: 1.1rem;">Resultados</h3>
+            <p style="color: #ccc; font-size: 0.85rem;">Tu planificación lista para descargar antes de ir al gimnasio.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Ver velocidad", key="btn_L2", use_container_width=True)
             
     with c3:
-        st.markdown(f"""<div style='{estilo_tarjeta}'>
-            <div style='font-size:2rem;margin-bottom:10px;'>📄</div>
-            <h3 style='color:#33ffaa;font-size:1.1rem;margin:0;line-height:1.2;'>Informes<br>PDF</h3>
-            <p style='color:#a0aaba;font-size:0.85rem;margin-top:10px;'>Exporta tu rutina en formato profesional limpio y sin distracciones.</p>
-        </div>""", unsafe_allow_html=True)
-        st.button("Ver ejemplo", key="btn_fix_3", use_container_width=True)
+        st.markdown("""
+        <div style="background: rgba(30, 30, 30, 0.6); padding: 20px; border-radius: 15px; border: 1px solid #33ffaa; text-align: center; min-height: 250px;">
+            <h2 style="margin: 0;">📄</h2>
+            <h3 style="color: #33ffaa; font-size: 1.1rem;">Informes PDF</h3>
+            <p style="color: #ccc; font-size: 0.85rem;">Exporta tu rutina en formato profesional limpio y sin distracciones.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.button("Ver ejemplo", key="btn_L3", use_container_width=True)
 # --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
 def conectar_db():
     try:
@@ -832,6 +836,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
