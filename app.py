@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. ESTILOS CSS ---
+# --- 2. ESTILOS CSS PRO ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -71,7 +71,6 @@ def mostrar_landing():
         except: st.title("ZYNTE")
     
     st.markdown('<p class="hero-title">TU ENTRENADOR INTELIGENTE</p>', unsafe_allow_html=True)
-    
     st.markdown('<p class="hero-subtitle">Planes de entrenamiento de élite generados en segundos.</p>', unsafe_allow_html=True)
     
     col_a, col_b, col_c = st.columns([1, 1, 1])
@@ -132,7 +131,6 @@ def mostrar_pricing():
              st.rerun()
 
     with col2:
-        # --- AQUÍ ESTÁ EL CAMBIO DE PRECIO ---
         st.markdown("""
         <div class='price-card' style='border-color: #33ffaa;'>
             <h3 style='color: #33ffaa;'>🔥 Zynte PRO</h3>
@@ -220,6 +218,8 @@ def app_principal():
             st.session_state.page = 'landing'
             st.session_state.logged_in = False
             st.rerun()
+            
+        st.caption("© 2026 Zynte AI Coach")
 
     # --- Dashboard ---
     imc = peso / ((altura/100)**2)
