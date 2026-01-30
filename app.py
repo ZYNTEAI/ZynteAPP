@@ -710,19 +710,21 @@ def app_principal():
         if "history" not in st.session_state: 
             st.session_state.history = [{"role": "model", "content": f"Hola. Perfil cargado: {peso}kg, {objetivo}."}]
         
-        # Lógica de envío
-        if prompt_rapido:
-            st.session_state.history.append({"role": "user", "content": prompt_rapido})
-            error_ocurrido = False
-            
-            with st.spinner("El entrenador está pensando..."):
-        # --- SECCIÓN DE CHAT ---
-        st.write("---") # Fíjate que ahora NO hay un 'try:' suelto arriba
-        st.subheader("💬 Chat con Zynte AI")
+       # --- Lógica de envío corregida ---
+    if prompt_rapido:
+        if "history" not in st.session_state:
+            st.session_state.history = []
+        st.session_state.history.append({"role": "user", "content": prompt_rapido})
+        
+        # Eliminamos el spinner vacío que causaba el error
+        with st.chat_message("assistant"):
+            with st.spinner("Zynte está preparando tu rutina..."):
+                # Aquí iría tu lógica de petición directa que ya tienes abajo
+                pass 
 
-        # Definimos el input del chat
-        prompt = st.chat_input("¿En qué puedo ayudarte hoy?")
-
+    # --- SECCIÓN DE CHAT ---
+    st.write("---") 
+    st.subheader("💬 Chat con Zynte AI")
         if prompt:
             # Si el usuario escribe algo, entramos aquí
             if "history" not in st.session_state:
@@ -830,6 +832,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
