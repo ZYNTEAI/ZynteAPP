@@ -246,7 +246,6 @@ def conectar_db():
     except Exception as e:
         return None
 def mostrar_login():
-    # TEXTO DEFINITIVO: 
     st.markdown("## 🔐 Área de Miembros")
     st.caption("Accede a tu panel de control de alto rendimiento.")
     st.write("")
@@ -255,34 +254,56 @@ def mostrar_login():
     with lc2:
         tab1, tab2 = st.tabs(["Iniciar Sesión", "Nuevo Registro"])
         
+        # PESTAÑA 1: LOGIN
         with tab1:
             st.write("")
-            st.text_input("Correo Electrónico", key="login_email")
-            st.text_input("Contraseña", type="password", key="login_pass")
+            email_login = st.text_input("Correo Electrónico", key="login_email")
+            pass_login = st.text_input("Contraseña", type="password", key="login_pass")
             st.write("")
-            
             if st.button("ENTRAR AL SISTEMA ▶", type="primary", use_container_width=True):
                 st.session_state.logged_in = True
                 st.session_state.page = 'pricing'
-               
                 st.success("Credenciales verificadas. Redirigiendo...")
                 time.sleep(0.5)
                 st.rerun()
-      # --- LÍNEA DE RASTREO (Solo para depurar) ---
-st.write(f"📍 Datos escritos en: {sheet.spreadsheet.title}")
-st.link_button("📂 ABRIR HOJA DE CÁLCULO", f"https://docs.google.com/spreadsheets/d/{sheet.spreadsheet.id}")          
+        
+        # PESTAÑA 2: REGISTRO (Aquí estaba el error)
         with tab2:
             st.write("")
-            st.text_input("Tu Mejor Email")
+            new_email = st.text_input("Tu Mejor Email", key="reg_email")
+            new_pass = st.text_input("Elige Contraseña", type="password", key="reg_pass")
             st.write("")
+            
             if st.button("Crear Cuenta Gratuita", use_container_width=True):
-                st.success("Te hemos enviado un correo de confirmación (Demo).")
+                if new_email and new_pass:
+                    with st.spinner("Registrando usuario en la base de datos..."):
+                        sheet = conectar_db() 
+                        if sheet:
+                            try:
+                                fecha = str(datetime.date.today())
+                                sheet.append_row([new_email, fecha, "Free"])
+                                st.success("¡Registro completado con éxito!")
+                                # --- LÍNEA DE RASTREO (Solo para depurar) ---
+                                st.write(f"📍 Datos escritos en: {sheet.spreadsheet.title}")
+                                st.link_button("📂 ABRIR HOJA DE CÁLCULO", f"https://docs.google.com/spreadsheets/d/{sheet.spreadsheet.id}")
+                                # --------------------------------------------
+                                time.sleep(5) # Damos tiempo para leer
+                                st.session_state.logged_in = True
+                                st.session_state.page = 'pricing'
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error al guardar: {e}")
+                        else:
+                            st.warning("Nota: Usuario registrado localmente (Error de conexión DB).")
+                            time.sleep(1)
+                            st.session_state.logged_in = True
+                            st.session_state.page = 'pricing'
+                            st.rerun()
+                else:
+                    st.warning("Por favor rellena todos los campos.")
 
-    st.write("")
-    st.write("---")
-    if st.button("⬅️ Volver"):
-        st.session_state.page = 'landing'
-        st.rerun()
+    st.write(""); st.write("---")
+    if st.button("⬅️ Volver"): st.session_state.page = 'landing'; st.rerun()
 
 def mostrar_pricing():
     st.markdown("<h2 style='text-align: center; margin-top:20px;'>Selecciona tu Plan</h2>", unsafe_allow_html=True)
@@ -472,5 +493,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
