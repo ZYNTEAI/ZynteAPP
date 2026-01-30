@@ -74,18 +74,24 @@ def registrar_usuario_sql(email, password):
 
 # Iniciamos la DB al arrancar
 init_db()
-# --- 2. ESTILOS CSS PREMIUM ---
+# --- 3. ESTILOS CSS PREMIUM (FONDO NUEVO) ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
+    /* --- AQUÍ ESTÁ EL CAMBIO DEL FONDO --- */
     [data-testid="stAppViewContainer"] {
+        /* Capa negra al 85% + Foto de Gimnasio */
         background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.95)), 
                           url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
+    }
+
+    [data-testid="stHeader"] {
+        background: transparent;
     }
 
     /* TIPOGRAFÍA DE IMPACTO */
@@ -106,28 +112,29 @@ st.markdown("""
         margin-bottom: 40px;
     }
     
-    /* TARJETAS DE CRISTAL */
+    /* TARJETAS DE CRISTAL (Glassmorphism) */
     .price-card {
-        background-color: rgba(26, 26, 26, 0.8);
-        backdrop-filter: blur(10px);
-        border: 1px solid #333;
+        background-color: rgba(20, 20, 20, 0.6); /* Más transparente para ver el fondo */
+        backdrop-filter: blur(15px); /* Desenfoque del fondo */
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 15px;
         padding: 25px;
         text-align: center;
         transition: 0.3s;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         height: 100%;
     }
     .price-card:hover {
         border-color: #33ffaa;
         transform: translateY(-5px);
         box-shadow: 0 8px 25px rgba(51, 255, 170, 0.2);
+        background-color: rgba(30, 30, 30, 0.8);
     }
     
-    /* INPUTS */
+    /* INPUTS MEJORADOS */
     .stTextInput input {
-        background-color: rgba(255,255,255,0.05) !important;
-        border: 1px solid #333 !important;
+        background-color: rgba(0,0,0,0.5) !important;
+        border: 1px solid #444 !important;
         color: white !important;
     }
     
@@ -136,6 +143,7 @@ st.markdown("""
         border-radius: 8px;
         font-weight: bold;
         transition: all 0.2s;
+        border: none;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -554,6 +562,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
