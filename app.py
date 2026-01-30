@@ -617,7 +617,7 @@ def app_principal():
 
         st.divider()
 
-        # --- NOVEDAD: BOTONES RÁPIDOS PARA USUARIOS FREE ---
+       # --- BOTONES RÁPIDOS CORREGIDOS (V2) ---
         st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
         col_b1, col_b2, col_b3 = st.columns(3)
         prompt_rapido = None
@@ -629,21 +629,31 @@ def app_principal():
         if col_b3.button("💪 Reto de Flexiones", use_container_width=True):
             prompt_rapido = "Dime un reto de flexiones para hacer hoy según mi nivel."
 
-        # Inicializar historial
+        # Inicializar historial si está vacío
         if "history" not in st.session_state: 
-            st.session_state.history = [{"role": "model", "content": f"Hola {nombre}. Veo que pesas {peso}kg y buscas {objetivo}. ¿Entrenamos?"}]
+            st.session_state.history = [{"role": "model", "content": f"Hola. Perfil cargado: {peso}kg, {objetivo}."}]
         
-        # Si se pulsó un botón, lo inyectamos como si el usuario lo hubiera escrito
+        # Lógica de envío
         if prompt_rapido:
             st.session_state.history.append({"role": "user", "content": prompt_rapido})
-            try:
-                # Usamos la misma lógica de IA
-                model = genai.GenerativeModel(MODELO_USADO, system_instruction=f"Eres Zynte. Cliente: {peso}kg, {objetivo}.")
-                chat = model.start_chat(history=[{"role": "user" if m["role"]=="user" else "model", "parts":[m["content"]]} for m in st.session_state.history[:-1]])
-                response = chat.send_message(prompt_rapido)
-                st.session_state.history.append({"role": "model", "content": response.text})
-                st.rerun() # Recargamos para que salga el mensaje
-            except: st.error("Error IA")
+            error_ocurrido = False
+            
+            with st.spinner("El entrenador está pensando..."):
+                try:
+                    model = genai.GenerativeModel(MODELO_USADO, system_instruction=f"Eres Zynte. Cliente: {peso}kg, {objetivo}.")
+                    chat = model.start_chat(history=[{"role": "user" if m["role"]=="user" else "model", "parts":[m["content"]]} for m in st.session_state.history[:-1]])
+                    response = chat.send_message(prompt_rapido)
+                    st.session_state.history.append({"role": "model", "content": response.text})
+                except Exception as e:
+                    st.error(f"Error de conexión: {e}")
+                    error_ocurrido = True
+            
+            # El rerun debe ir SIEMPRE fuera del try/except
+            if not error_ocurrido:
+                st.rerun()
+
+        for msg in st.session_state.history: 
+            st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
         # -------------------------------------------------------
 
         for msg in st.session_state.history: 
@@ -717,6 +727,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
