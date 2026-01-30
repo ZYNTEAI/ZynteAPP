@@ -3,3 +3,7 @@ streamlit
 google-generativeai
 
 fpdf
+
+gspread
+
+oauth2client
