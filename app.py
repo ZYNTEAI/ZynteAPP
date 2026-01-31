@@ -804,8 +804,7 @@ def app_principal():
                     genai.configure(api_key=API_KEY_GLOBAL)
                     model = genai.GenerativeModel(MODELO_USADO)
                     
-                    # 2. CONTEXTO INVISIBLE (El Puente de Datos)
-                    # Le pasamos los datos de la barra lateral sin que el usuario lo vea
+                    # 2. CONTEXTO INVISIBLE (El Puente de Datos Actualizado)
                     datos_usuario = f"""
                     DATOS ACTUALES DEL CLIENTE (Úsalos para personalizar, no preguntes lo que ya sabes):
                     - Nombre: {nombre}
@@ -814,6 +813,7 @@ def app_principal():
                     - Edad: {edad} años
                     - Objetivo: {objetivo}
                     - Nivel: {nivel}
+                    - Disponibilidad: {dias_entreno} días a la semana (ADÁPTATE A ESTO)
                     """
 
                     # 3. CONSTRUIMOS EL PAQUETE PARA GOOGLE
@@ -948,6 +948,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
