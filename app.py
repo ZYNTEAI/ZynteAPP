@@ -703,7 +703,7 @@ def app_principal():
 
         st.divider()
 
---- SECCIÓN DE CHAT ÚNICA Y DEFINITIVA ---
+#--- SECCIÓN DE CHAT ÚNICA Y DEFINITIVA ---
     st.write("---") 
     st.subheader("💬 Chat con Zynte AI")
 
@@ -809,6 +809,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
