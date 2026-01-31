@@ -714,8 +714,13 @@ def app_principal():
             {"role": "user", "content": "Hola, a partir de ahora eres Zynte AI, un entrenador personal experto en biomecánica y nutrición deportiva. Eres motivador, directo y te basas en la ciencia. Tus respuestas son breves y útiles."},
             {"role": "model", "content": "¡Entendido! Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
         ]
-    # 2. Mostramos los mensajes previos
-    for msg in st.session_state.history: 
+    # 2. Mostramos los mensajes (Ocultando la configuración interna)
+    for msg in st.session_state.history:
+        # SI EL MENSAJE ES LA ORDEN SECRETA, NO LO MOSTRAMOS
+        if "a partir de ahora eres Zynte AI" in msg["content"] or "¡Entendido! Soy Zynte AI" in msg["content"]:
+            continue # Saltamos al siguiente mensaje sin pintar nada
+            
+        # Si es un mensaje normal, lo pintamos
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
@@ -850,6 +855,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
