@@ -1037,46 +1037,45 @@ def main():
         st.session_state.page = "login"
 
     # =========================================================
-    # ESCENA 1: PANTALLA DE LOGIN
+    # ESCENA 1: PANTALLA DE LOGIN (COMPLETA)
     # =========================================================
     if st.session_state.page == "login":
-        st.markdown("<h1 style='text-align: center;'>🤖</h1>", unsafe_allow_html=True)
-        st.write("---")
         
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            email = st.text_input("📧 Email")
-            password = st.text_input("🔑 Contraseña", type="password")
-            # --- BLOQUE DEL LOGO (RECUPERADO) ---
-        col_izq, col_centro, col_der = st.columns([1, 1, 1]) # 3 columnas para centrar
+        # 1. LOGO CENTRADO
+        col_izq, col_centro, col_der = st.columns([1, 1, 1])
         with col_centro:
             try:
-                # ⚠️ Asegúrate de que el archivo se llama "logo.png" o cambia el nombre aquí
-                st.image("logo.png", width=200) 
+                st.image("logo.png", width=200) # Asegúrate que tu archivo se llama así
             except:
-                # Si no encuentra la imagen, pone un emoji gigante como plan B
                 st.markdown("<div style='text-align: center; font-size: 80px;'>💪</div>", unsafe_allow_html=True)
-        # ------------------------------------
 
         st.markdown("<h1 style='text-align: center;'>Zynte AI Login</h1>", unsafe_allow_html=True)
         st.write("---")
-              
-            # BOTÓN ENTRAR (Con la lógica de Free vs Pro)
+        
+        # 2. FORMULARIO DE ACCESO (Centrado también)
+        c1, c2, c3 = st.columns([1, 2, 1])
+        with c2:
+            email = st.text_input("📧 Email")
+            password = st.text_input("🔑 Contraseña", type="password")
+            
+            st.write("") # Espacio
+            
+            # --- BOTÓN DE ENTRAR ---
             if st.button("Entrar", use_container_width=True):
                 if verificar_login(email, password):
                     st.session_state.email = email
-                    # Cargamos datos para ver si es VIP
+                    
+                    # Verificamos si es PRO o FREE
                     datos = cargar_perfil(email)
                     st.session_state.datos_usuario = datos
                     
-                    # Semáforo: ¿Es Pro o Free?
                     es_pro = (datos.get("status") == "pro")
                     
                     if es_pro:
                         st.session_state.page = 'app'
                         st.toast(f"¡Bienvenido Pro, {datos['nombre']}! 🌟")
                     else:
-                        st.session_state.page = 'pricing' # <--- Aquí redirige a ventas
+                        st.session_state.page = 'pricing' # Redirige a ventas si es free
                         st.toast("Verificado. Selecciona tu plan.")
                         
                     time.sleep(0.5)
@@ -1087,15 +1086,16 @@ def main():
             st.markdown("---")
             st.caption("¿Nuevo aquí?")
             
-            # BOTÓN REGISTRO (Simple)
-            if st.button("Crear Cuenta Gratis"):
+            # --- BOTÓN DE REGISTRO ---
+            if st.button("Crear Cuenta Gratis", use_container_width=True):
                 if validar_email_estricto(email)[0]:
+                    # Al registrarse, por defecto eres 'free' (ver función registrar_usuario_sql)
                     if registrar_usuario_sql(email, password):
-                        st.success("✅ Cuenta creada. ¡Ahora entra!")
+                        st.success("✅ Cuenta creada. ¡Ahora pulsa 'Entrar'!")
                     else:
                         st.warning("⚠️ Ese email ya existe.")
                 else:
-                    st.error("Email inválido.")
+                    st.error("Email inválido o dominio no permitido.")
             
     # =========================================================
     # ESCENA 2: PANTALLA DE PRECIOS (La que faltaba)
@@ -1136,6 +1136,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
