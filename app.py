@@ -13,7 +13,7 @@ import pandas as pd
 import requests
 
 # 1. DEFINE TU API KEY AQUÍ PARA QUE TODO EL CÓDIGO LA VEA
-API_KEY_GLOBAL = "AIzaSyDskaqeWzjFH7U2SGE6kfRi6k2MsY6SH2E" # Tu clave real
+API_KEY_GLOBAL = "AIzaSyABV_48UyYBsnA_K8MMSmwjPXMrVf0oe9E" # Tu clave real
 
 # 2. CONFIGURA LA IA INMEDIATAMENTE
 genai.configure(api_key=API_KEY_GLOBAL)
@@ -801,6 +801,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
