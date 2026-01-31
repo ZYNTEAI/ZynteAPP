@@ -133,7 +133,7 @@ def migrar_db():
     conn.commit()
     conn.close()
 
-# --- CONEXIÓN A GOOGLE SHEETS (El Motor Nuevo) ---
+# --- CONEXIÓN A GOOGLE SHEETS (El Motor ) ---
 def get_db_sheet():
     # 1. Definimos permisos para acceder a Drive y Sheets
     scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -899,10 +899,10 @@ def app_principal():
     # ...
         # ==========================================
 
-        st.write("---")
-        if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
-             pdf = crear_pdf(st.session_state.history, nombre, peso, objetivo)
-             st.download_button("📥 PDF", pdf, "Rutina.pdf")
+    st.write("---")
+    if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
+        pdf = crear_pdf(st.session_state.history, nombre, peso, objetivo)
+        st.download_button("📥 PDF", pdf, "Rutina.pdf")
         st.write("---"); st.button("Cerrar Sesión", on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'))
 
     # MAIN TABS (Igual que antes)
@@ -1217,7 +1217,7 @@ def main():
                     # 4. Lógica Pro vs Free
                     if status == "pro":
                         st.session_state.page = 'app'
-                        st.toast(f"¡Hola de nuevo, {datos['nombre']}! 🌟")
+                        st.toast(f"¡Hola de , {datos['nombre']}! 🌟")
                     else:
                         st.session_state.page = 'pricing'
                         st.toast("Verificado. Selecciona tu plan.")
@@ -1283,6 +1283,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
