@@ -816,8 +816,6 @@ def app_principal():
             # Aquí va tu código antiguo de la gráfica, INDENTADO A LA DERECHA
             st.header("📈 Tu Evolución")
             st.write("Visualiza cómo te acercas a tu objetivo sesión tras sesión.")
-            st.header("📈 Tu Evolución")
-            st.write("Visualiza cómo te acercas a tu objetivo sesión tras sesión.")
             df_progreso = obtener_historial_df(email_actual)
             if df_progreso is not None and not df_progreso.empty:
                 peso_inicial = df_progreso.iloc[0]['peso']
@@ -852,6 +850,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
