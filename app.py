@@ -812,9 +812,43 @@ def app_principal():
     
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
-  # PESTAÑA 1: ENTRENAMIENTO (Corregida y Alineada)
+  ## ---------------------------------------------------------
+    # PESTAÑA 1: ENTRENAMIENTO (Con Botones Rápidos Funcionando)
     # ---------------------------------------------------------
     with tab_train:
+        # --- A) GENERADORES RÁPIDOS (Ahora integrados) ---
+        st.caption("⚡ Rutinas Instantáneas")
+        b1, b2, b3 = st.columns(3)
+        
+        prompt_rapido = None
+        # Definimos los botones. Si se pulsan, guardamos el texto en 'prompt_rapido'
+        if b1.button("🔥 HIIT 20'", key="btn_hiit", use_container_width=True): 
+            prompt_rapido = "Crea una rutina de HIIT de 20 minutos intensa para hacer en casa sin equipo."
+        if b2.button("🧘 Estirar", key="btn_estira", use_container_width=True): 
+            prompt_rapido = "Dame una tabla rápida de estiramientos para espalda y cuello."
+        if b3.button("💪 Flexiones", key="btn_flex", use_container_width=True): 
+            prompt_rapido = "Dime un reto progresivo de flexiones para 30 días."
+
+        # Si se pulsó alguno, ejecutamos la IA
+        if prompt_rapido:
+            with st.spinner("Zynte diseñando tu sesión..."):
+                try:
+                    # Usamos la configuración segura de Gemini
+                    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+                    model = genai.GenerativeModel("gemini-1.5-flash")
+                    
+                    # Generamos la respuesta
+                    res_rapida = model.generate_content(prompt_rapido)
+                    
+                    # Guardamos en el historial para que aparezca en el chat de abajo
+                    if "history" not in st.session_state: st.session_state.history = []
+                    st.session_state.history.append({"role": "user", "content": prompt_rapido})
+                    st.session_state.history.append({"role": "model", "content": res_rapida.text})
+                    st.rerun() # Recargamos para ver la respuesta al instante
+                except Exception as e:
+                    st.error(f"Error de conexión: {e}")
+
+        st.divider()
         # A) Cálculo del IMC y Estado
         imc = peso_new / ((altura_new/100)**2)
         
@@ -1202,6 +1236,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
