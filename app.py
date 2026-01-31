@@ -9,7 +9,14 @@ import sqlite3
 import re
 import pandas as pd  
 import requests
+# --- PEGA ESTO AL PRINCIPIO DEL ARCHIVO (Línea 12 aprox) ---
+import requests
 
+# 1. DEFINE TU API KEY AQUÍ PARA QUE TODO EL CÓDIGO LA VEA
+API_KEY_GLOBAL = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE" # Tu clave real
+
+# 2. CONFIGURA LA IA INMEDIATAMENTE
+genai.configure(api_key=API_KEY_GLOBAL)
 # --- GENERADORES RÁPIDOS (FREE) ---
 st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
 col_b1, col_b2, col_b3 = st.columns(3)
@@ -34,9 +41,8 @@ if prompt_rapido:
     
     with st.spinner("Zynte está pensando..."):
         try:
-            # Petición directa a la versión estable v1
-            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-            payload = {"contents": [{"parts": [{"text": prompt_rapido}]}]}
+           # CAMBIA ESTO EN LA SECCIÓN DE GENERADORES RÁPIDOS:
+url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY_GLOBAL}"
             
             res = requests.post(url, json=payload)
             
@@ -585,15 +591,12 @@ def mostrar_pricing():
                     st.error("❌ Código incorrecto.")
 
 def app_principal():
-    api_key = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE" 
     
-    # Opción B: Si usas Secrets de Streamlit (Más seguro para subir a la nube)
-    # api_key = st.secrets["OPENAI_API_KEY"]
-    # --- HASTA AQUÍ ---
-
-    # El resto de tu código sigue igual...
-    error_ocurrido = False 
-    if not error_ocurrido:
+    # ASEGURA LA CONFIGURACIÓN AL ENTRAR EN LA APP
+    try:
+        genai.configure(api_key=API_KEY_GLOBAL)
+    except Exception as e:
+        st.error(f"Error configurando API: {e}")
         # --- CONFIGURACIÓN DEL JEFE ---
         EMAIL_JEFE = "pablonavarrorui@gmail.com" 
         
@@ -754,10 +757,13 @@ def app_principal():
             if st.button("🥑 GENERAR DIETA", type="primary"):
                 with st.spinner("Creando menú..."):
                     try:
-                        model = genai.GenerativeModel(MODELO_USADO)
+                        # Asegúrate de usar el modelo Flash
+                        model = genai.GenerativeModel('gemini-1.5-flash') 
                         res = model.generate_content(f"Crea dieta {dieta} de {c}kcal para {objetivo}. Incluye lista compra.")
                         st.session_state.plan_nutri = res.text
-                    except: st.error("Error IA")
+                        st.rerun() # Añade esto para refrescar la pantalla
+                    except Exception as e: # Capturamos el error real
+                        st.error(f"Error detallado de la IA: {e}")
         with col_d2:
             if "plan_nutri" in st.session_state: st.markdown(st.session_state.plan_nutri)
             else: st.info("Configura y genera tu plan.")
@@ -799,6 +805,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
