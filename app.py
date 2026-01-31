@@ -594,11 +594,11 @@ def app_principal():
     # El resto de tu código sigue igual...
     error_currido = False 
     if not error_currido:
-    # --- CONFIGURACIÓN DEL JEFE ---
-    EMAIL_JEFE = "pablonavarrorui@gmail.com" # <--- ¡PON AQUÍ TU EMAIL EXACTO!
-    
-    email_actual = st.session_state.get('user_email', 'invitado')
-    datos_usuario = cargar_perfil(email_actual)
+        # --- CONFIGURACIÓN DEL JEFE ---
+        EMAIL_JEFE = "pablonavarrorui@gmail.com" 
+        
+        email_actual = st.session_state.get('user_email', 'invitado')
+        datos_usuario = cargar_perfil(email_actual)
 
     # ... (Resto de lógica nutricional y PDF igual que antes) ...
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
@@ -817,6 +817,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
