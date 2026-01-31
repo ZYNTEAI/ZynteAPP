@@ -779,10 +779,8 @@ def app_principal():
             {"role": "user", "content": "Hola, a partir de ahora eres Zynte AI, un entrenador personal experto en biomecánica y nutrición deportiva. Eres motivador, directo y te basas en la ciencia. Tus respuestas son breves y útiles."},
             {"role": "model", "content": "¡Hola!Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
         ]
-    # 2. Mostramos los mensajes (Ocultando la configuración interna)
-       for msg in st.session_state.history:
-            texto = msg["content"]
-        
+   for msg in st.session_state.history:       <-- ¡ALINEADO CON LA DE ABAJO!
+        texto = msg["content"]
         # 1. OCULTAMOS SOLO LAS INSTRUCCIONES TÉCNICAS (El primer mensaje)
         if "Actúa como Zynte AI" in texto and "TU PERSONALIDAD" in texto:
             continue  # Este se salta, no se ve
@@ -950,6 +948,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
