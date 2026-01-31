@@ -686,14 +686,13 @@ def app_principal():
     with tab_nutri:
         st.subheader("🥗 Plan Nutricional Personalizado")
         
-        # 1. Definición local de la lógica (Evita el NameError)
-        def obtener_macros(p, a, e, g, obj, niv):
-            # Ecuación Harris-Benedict revisada
+        # 1. Lógica de cálculo integrada (Evita NameError)
+        def calcular_macros_interna(p, a, e, g, obj, niv):
             if g == "Hombre": tmb = 88.36 + (13.4 * p) + (4.8 * a) - (5.7 * e)
             else: tmb = 447.6 + (9.2 * p) + (3.1 * a) - (4.3 * e)
             
-            factores = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
-            tdee = tmb * factores.get(niv, 1.2)
+            f = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
+            tdee = tmb * f.get(niv, 1.2)
             
             if "Grasa" in obj: kcal = tdee - 450; p_g = p * 2.2; g_g = p * 0.8
             elif "Hipertrofia" in obj: kcal = tdee + 350; p_g = p * 2.0; g_g = p * 1.0
@@ -702,40 +701,42 @@ def app_principal():
             c_g = (kcal - (p_g * 4) - (g_g * 9)) / 4
             return int(kcal), int(p_g), int(c_g), int(g_g)
 
-        # 2. Ejecutar cálculo con tus variables actuales
-        kcal, prot, carb, grasa = obtener_macros(peso, altura, edad, "Hombre", objetivo, nivel)
+        # 2. Ejecutar cálculo con tus variables del Sidebar
+        kcal, prot, carb, grasa = calcular_macros_interna(peso, altura, edad, "Hombre", objetivo, nivel)
         
-        # 3. Mostrar métricas (Sustituye el mensaje de "Próximamente")
+        # 3. Mostrar métricas reales (Adiós al "Próximamente")
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Objetivo Kcal", f"{kcal}")
+        c1.metric("Kcal Objetivo", f"{kcal}")
         c2.metric("Proteína", f"{prot}g")
         c3.metric("Carbohidratos", f"{carb}g")
         c4.metric("Grasas", f"{grasa}g")
         
         st.divider()
 
-        # 4. Generador de Dieta con IA
+        # 4. Generador de Menú (Arregla el error de conexión)
         st.markdown("### 🍳 Menú Diario Sugerido")
-        if st.button("✨ GENERAR DIETA ESPECÍFICA", key="btn_gen_diet"):
-            with st.spinner("Zynte calculando raciones..."):
+        if st.button("✨ GENERAR DIETA ESPECÍFICA", key="btn_nutri_ia"):
+            with st.spinner("Zynte diseñando tu menú..."):
                 try:
-                    prompt_dieta = f"Como nutricionista, crea una dieta de un día para {objetivo}. " \
-                                   f"Macros: {kcal}kcal, {prot}g P, {carb}g CH, {grasa}g G. " \
-                                   f"Estructura: Desayuno, Comida, Merienda, Cena."
-                    
+                    # Usamos la misma lógica de conexión que funcionó en el chat
                     url_ia = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    res = requests.post(url_ia, json={"contents": [{"parts": [{"text": prompt_dieta}]}]}, timeout=30)
+                    prompt_dieta = f"Como nutricionista experto, crea una dieta diaria para {objetivo}. " \
+                                   f"Objetivo: {kcal} kcal, {prot}g proteína, {carb}g carbohidratos, {grasa}g grasa. " \
+                                   f"Estructura el menú en Desayuno, Comida, Merienda y Cena."
+                    
+                    payload = {"contents": [{"parts": [{"text": prompt_dieta}]}]}
+                    res = requests.post(url_ia, json=payload, timeout=30)
                     
                     if res.status_code == 200:
-                        dieta_txt = res.json()['candidates'][0]['content']['parts'][0]['text']
-                        st.session_state.current_diet = dieta_txt
-                        st.markdown(dieta_txt)
+                        texto_dieta = res.json()['candidates'][0]['content']['parts'][0]['text']
+                        st.session_state.current_diet = texto_dieta
+                        st.markdown(texto_dieta)
                     else:
-                        st.error("Error al conectar con la IA nutricional.")
+                        st.error(f"Error de comunicación (Código: {res.status_code})")
                 except Exception as e:
-                    st.error(f"Fallo de red: {e}")
+                    st.error(f"Fallo de conexión: {e}")
         
-        # Mostrar dieta guardada si existe
+        # Mostrar la dieta si ya fue generada para que no desaparezca al cambiar de pestaña
         elif "current_diet" in st.session_state:
             st.markdown(st.session_state.current_diet)
 
@@ -792,6 +793,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
