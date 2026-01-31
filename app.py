@@ -13,7 +13,7 @@ import pandas as pd
 import requests
 
 # 1. DEFINE TU API KEY AQUÍ PARA QUE TODO EL CÓDIGO LA VEA
-API_KEY_GLOBAL = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE" # Tu clave real
+API_KEY_GLOBAL = "AIzaSyDskaqeWzjFH7U2SGE6kfRi6k2MsY6SH2E" # Tu clave real
 
 # 2. CONFIGURA LA IA INMEDIATAMENTE
 genai.configure(api_key=API_KEY_GLOBAL)
@@ -42,7 +42,7 @@ if prompt_rapido:
     with st.spinner("Zynte está pensando..."):
         try:
             # Tienes que añadir 4 espacios antes de 'url' para que esté DENTRO del try
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY_GLOBAL}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_GLOBAL}"
             
             # Estas líneas TAMBIÉN deben estar alineadas con 'url'
             payload = {"contents": [{"parts": [{"text": prompt_rapido}]}]}
@@ -338,12 +338,12 @@ st.markdown("""
 try:
     # Forzamos la versión 'v1' para evitar el error 404 de la v1beta
     genai.configure(
-        api_key=st.secrets["GOOGLE_API_KEY"],
+        =st.secrets["GOOGLE_"],
         transport='rest' # Esto ayuda en algunos entornos de Windows
     )
 except:
     # Si estás en local sin secrets:
-    genai.configure(api_key="TU_CLAVE_AQUI")
+    genai.configure(api_key="AIzaSyDskaqeWzjFH7U2SGE6kfRi6k2MsY6SH2E")
 
 # Usamos el nombre sin el prefijo "models/" para que la librería lo gestione
 MODELO_USADO = "gemini-1.5-flash"
@@ -811,6 +811,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
