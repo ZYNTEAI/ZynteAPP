@@ -1030,23 +1030,99 @@ def app_principal():
 # ==============================================================================
 
 
+# --- FUNCIÓN PRINCIPAL (El Cerebro de Navegación) ---
 def main():
-    if 'page' not in st.session_state: st.session_state.page = 'landing'
-    if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-    if 'is_premium' not in st.session_state: st.session_state.is_premium = False
+    # 1. Si no hay página definida, empezamos en Login
+    if "page" not in st.session_state:
+        st.session_state.page = "login"
 
-    if st.session_state.page == 'landing': mostrar_landing()
-    elif st.session_state.page == 'info_ia': mostrar_info_ia()
-    elif st.session_state.page == 'info_vel': mostrar_info_velocidad()
-    elif st.session_state.page == 'info_pdf': mostrar_info_pdf()
-    elif st.session_state.page == 'login': mostrar_login()
-    elif st.session_state.page == 'pricing': mostrar_pricing()
-    elif st.session_state.page == 'app': app_principal()
-    else: st.session_state.page = 'landing'; st.rerun()
+    # =========================================================
+    # ESCENA 1: PANTALLA DE LOGIN
+    # =========================================================
+    if st.session_state.page == "login":
+        st.markdown("<h1 style='text-align: center;'>🤖 Zynte AI Login</h1>", unsafe_allow_html=True)
+        st.write("---")
+        
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            email = st.text_input("📧 Email")
+            password = st.text_input("🔑 Contraseña", type="password")
+            
+            # BOTÓN ENTRAR (Con la lógica de Free vs Pro)
+            if st.button("Entrar", use_container_width=True):
+                if verificar_login(email, password):
+                    st.session_state.email = email
+                    # Cargamos datos para ver si es VIP
+                    datos = cargar_perfil(email)
+                    st.session_state.datos_usuario = datos
+                    
+                    # Semáforo: ¿Es Pro o Free?
+                    es_pro = (datos.get("status") == "pro")
+                    
+                    if es_pro:
+                        st.session_state.page = 'app'
+                        st.toast(f"¡Bienvenido Pro, {datos['nombre']}! 🌟")
+                    else:
+                        st.session_state.page = 'pricing' # <--- Aquí redirige a ventas
+                        st.toast("Verificado. Selecciona tu plan.")
+                        
+                    time.sleep(0.5)
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o contraseña incorrectos")
+            
+            st.markdown("---")
+            st.caption("¿Nuevo aquí?")
+            
+            # BOTÓN REGISTRO (Simple)
+            if st.button("Crear Cuenta Gratis"):
+                if validar_email_estricto(email)[0]:
+                    if registrar_usuario_sql(email, password):
+                        st.success("✅ Cuenta creada. ¡Ahora entra!")
+                    else:
+                        st.warning("⚠️ Ese email ya existe.")
+                else:
+                    st.error("Email inválido.")
+
+    # =========================================================
+    # ESCENA 2: PANTALLA DE PRECIOS (La que faltaba)
+    # =========================================================
+    elif st.session_state.page == "pricing":
+        st.title("💎 Desbloquea tu Potencial")
+        st.write("Tu cuenta actual es **Gratuita**. Elige cómo quieres entrenar.")
+        
+        col_free, col_pro = st.columns(2)
+        
+        # Columna Gratis
+        with col_free:
+            st.info("### Plan Básico\n* Acceso a Chat (Limitado)\n* Registro de Peso\n* Rutinas Estándar")
+            if st.button("➡️ Continuar con Versión Gratis", use_container_width=True):
+                st.session_state.page = 'app'
+                st.rerun()
+                
+        # Columna Pro
+        with col_pro:
+            st.error("### 🚀 Zynte PRO (19.99€)\n* **IA Nutricionista Avanzada**\n* **Exportar PDF**\n* Soporte Prioritario")
+            st.link_button("💳 Pagar Ahora (Stripe)", "https://stripe.com/es") 
+            
+            st.write("---")
+            # TRUCO DE DESARROLLADOR: Botón para simular que pagaste
+            if st.button("🛠️ Simular Pago Exitoso (Solo tú lo ves)"):
+                # 1. Cambiamos el estado en la sesión
+                st.session_state.datos_usuario['status'] = 'pro'
+                # 2. (Opcional) Aquí deberíamos actualizar Google Sheets a 'pro' también
+                st.session_state.page = 'app'
+                st.rerun()
+
+    # =========================================================
+    # ESCENA 3: LA APP PRINCIPAL (Gimnasio)
+    # =========================================================
+    elif st.session_state.page == "app":
+        # Ejecutamos toda la app que programaste antes
+        app_principal()
 
 if __name__ == "__main__":
     main()
-
 
 
 
