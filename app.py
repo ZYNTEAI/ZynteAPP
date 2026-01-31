@@ -11,8 +11,24 @@ import pandas as pd
 import requests
 
 # --- GENERADORES RÁPIDOS (FREE) ---
-st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
-col_b1, col_b2, col_b3 = st.columns(3)
+with tab_train:
+        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
+        
+        # 1. AÑADE ESTO AQUÍ para definir la clave antes de usarla
+        try:
+            api_key = st.secrets["GOOGLE_API_KEY"]
+        except:
+            api_key = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE" # Fallback si no hay secrets
+
+        c1, c2, c3 = st.columns(3)
+        prompt_rapido = None
+        if c1.button("🔥 Rutina HIIT 20'"): prompt_rapido = "Genera una rutina HIIT de 20 min"
+        if c2.button("🧘 Estiramientos"): prompt_rapido = "Dame una tabla de estiramientos"
+        if c3.button("💪 Reto de Flexiones"): prompt_rapido = "Plan de flexiones para 30 días"
+
+        # 2. La lógica que sigue ya podrá usar 'api_key' sin dar error
+        if prompt_rapido:
+            # Aquí va tu código de requests.post que usa la variable api_key
 
 # 1. Definimos la variable al principio para evitar NameError
 prompt_rapido = None 
@@ -861,6 +877,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
