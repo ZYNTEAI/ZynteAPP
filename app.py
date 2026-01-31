@@ -13,7 +13,7 @@ import pandas as pd
 import requests
 
 # 1. DEFINE TU API KEY AQUÍ PARA QUE TODO EL CÓDIGO LA VEA
-API_KEY_GLOBAL = "AIzaSyABV_48UyYBsnA_K8MMSmwjPXMrVf0oe9E" # Tu clave real
+API_KEY_GLOBAL = st.secrets["GOOGLE_API_KEY"]
 
 # 2. CONFIGURA LA IA INMEDIATAMENTE
 genai.configure(api_key=API_KEY_GLOBAL)
@@ -802,6 +802,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
