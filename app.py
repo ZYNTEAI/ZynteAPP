@@ -1194,7 +1194,7 @@ def main():
                         st.success("Cuenta creada. ¡Entra!")
                     else: st.error("Email ya registrado")
                 else: st.error("Email inválido")
-# ... (Dentro de main, sección Login, debajo del formulario de registro) ...
+    # ... (Dentro de main, sección Login, debajo del formulario de registro) ...
 
     st.divider() # Línea separadora elegante
     
@@ -1260,6 +1260,7 @@ def main():
 if __name__ == "__main__":
     init_db() # Iniciamos base de datos
     main()    # Arrancamos la app
+
 
 
 
