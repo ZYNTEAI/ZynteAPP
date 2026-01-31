@@ -780,8 +780,8 @@ def app_principal():
             {"role": "model", "content": "¡Hola!Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
         ]
     # 2. Mostramos los mensajes (Ocultando la configuración interna)
-   for msg in st.session_state.history:
-        texto = msg["content"]
+       for msg in st.session_state.history:
+            texto = msg["content"]
         
         # 1. OCULTAMOS SOLO LAS INSTRUCCIONES TÉCNICAS (El primer mensaje)
         if "Actúa como Zynte AI" in texto and "TU PERSONALIDAD" in texto:
@@ -950,6 +950,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
