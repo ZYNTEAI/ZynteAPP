@@ -902,7 +902,17 @@ def app_principal():
                 try:
                     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
                     model = genai.GenerativeModel("gemini-flash-latest")
-                    ctx = f"Cliente {peso_new}kg, {altura_new}cm. Meta: {objetivo_new}."
+                    ctx = (
+                        f"ACTUAR COMO ENTRENADOR PERSONAL ZYNTE.\n"
+                        f"PERFIL DEL CLIENTE:\n"
+                        f"- Peso: {peso_new} kg\n"
+                        f"- Altura: {altura_new} cm\n"
+                        f"- Meta: {objetivo_new}\n"
+                        f"- Nivel: {nivel_new}\n"
+                        f"- DISPONIBILIDAD OBLIGATORIA: {dias_new} DÍAS/SEMANA.\n\n"
+                        f"⚠️ INSTRUCCIÓN CRÍTICA: Debes diseñar la rutina basándote EXACTAMENTE en una estructura de {dias_new} días. "
+                        f"Si el usuario pide una rutina, adáptala a este esquema de {dias_new} días."
+                    )
                     hist = [{"role": ("user" if m["role"]=="user" else "model"), "parts": [{"text": m["content"]}]} for m in st.session_state.history]
                     chat = model.start_chat(history=hist[:-1])
                     res = chat.send_message(f"{ctx}\nUsuario: {prompt}")
@@ -1252,6 +1262,7 @@ def main():
 if __name__ == "__main__":
     init_db() # Iniciamos base de datos
     main()    # Arrancamos la app
+
 
 
 
