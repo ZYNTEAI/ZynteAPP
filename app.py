@@ -880,6 +880,23 @@ def app_principal():
             if st.button("👮‍♂️ Volver a God Mode", type="primary", use_container_width=True):
                 st.session_state.page = 'admin'
                 st.rerun()
+        # ... (Aquí termina tu código de la barra lateral) ...
+
+    # --- PUENTE DE COMPATIBILIDAD (IMPORTANTE) ---
+    # Convertimos las variables nuevas a las que usa tu calculadora
+    # Esto arregla el error "NameError: name 'peso' is not defined"
+    peso = nuevo_peso
+    altura = nueva_altura
+    edad = nueva_edad
+    genero = nuevo_genero
+    objetivo = nuevo_objetivo
+    nivel = nuevo_nivel
+    
+    # -------------------------------------------------------
+    
+    # A partir de aquí, tu código original de IMC y Macros funcionará:
+    # st.title(f"Panel de Control - {st.session_state.datos_usuario.get('nombre', 'Usuario')}")
+    # ...
         # ==========================================
 
         st.write("---")
@@ -1266,6 +1283,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
