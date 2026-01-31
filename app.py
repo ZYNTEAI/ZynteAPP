@@ -750,29 +750,27 @@ def app_principal():
                     model = genai.GenerativeModel(MODELO_USADO)
                     
                     # 2. CONTEXTO INVISIBLE (El Puente de Datos)
-                    # Aquí le "chivamos" a la IA los datos de la barra lateral
+                    # Le pasamos los datos de la barra lateral sin que el usuario lo vea
                     datos_usuario = f"""
-                    INFORMACIÓN ACTUALIZADA DEL CLIENTE (No le preguntes esto, asúmelo):
+                    DATOS ACTUALES DEL CLIENTE (Úsalos para personalizar, no preguntes lo que ya sabes):
                     - Nombre: {nombre}
                     - Peso: {peso} kg
                     - Altura: {altura} cm
                     - Edad: {edad} años
                     - Objetivo: {objetivo}
                     - Nivel: {nivel}
-                    
-                    Usa estos datos para personalizar tus consejos sin tener que preguntarlos de nuevo.
                     """
 
                     # 3. CONSTRUIMOS EL PAQUETE PARA GOOGLE
                     chat_history_google = []
                     
-                    # A) Primero metemos los datos (Invisible para el usuario)
+                    # A) Primero metemos los datos técnicos
                     chat_history_google.append({
                         "role": "user",
                         "parts": [{"text": datos_usuario}]
                     })
 
-                    # B) Luego añadimos toda la conversación normal
+                    # B) Luego añadimos toda la conversación histórica
                     for msg in st.session_state.history:
                         role_google = "user" if msg["role"] == "user" else "model"
                         chat_history_google.append({
@@ -780,15 +778,16 @@ def app_principal():
                             "parts": [{"text": msg["content"]}]
                         })
                     
-                    # 4. ENVIAMOS TODO
+                    # 4. ENVIAMOS Y MOSTRAMOS RESPUESTA
                     response = model.generate_content(chat_history_google)
+                    
                     if response.text:
                         st.markdown(response.text)
                         st.session_state.history.append({"role": "model", "content": response.text})
                         st.rerun()
                         
-            except Exception as e:
-                st.error(f"Error de conexión: {e}")
+                except Exception as e:
+                    st.error(f"Error de conexión: {e}")
     with tab_nutri:
         # --- 1. VERIFICAMOS SI ES PRO ---
         if not st.session_state.get('is_premium'):
@@ -894,6 +893,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
