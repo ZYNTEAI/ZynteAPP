@@ -807,21 +807,30 @@ def app_principal():
                     st.info("Configura y genera tu plan nutricional aquí.")
 
     with tab_prog:
-        st.header("📈 Tu Evolución")
-        st.write("Visualiza cómo te acercas a tu objetivo sesión tras sesión.")
-        df_progreso = obtener_historial_df(email_actual)
-        if df_progreso is not None and not df_progreso.empty:
-            peso_inicial = df_progreso.iloc[0]['peso']
-            peso_actual = df_progreso.iloc[-1]['peso']
-            delta = peso_actual - peso_inicial
-            pc1, pc2, pc3 = st.columns(3)
-            pc1.metric("Peso Inicial", f"{peso_inicial} kg")
-            pc2.metric("Peso Actual", f"{peso_actual} kg")
-            pc3.metric("Cambio Total", f"{delta:.1f} kg", delta, delta_color="inverse" if "Grasa" in objetivo else "normal")
-            st.write(""); st.area_chart(df_progreso.set_index('fecha'), color="#33ffaa")
-            with st.expander("Ver historial detallado"): st.dataframe(df_progreso, use_container_width=True)
+        # --- 1. VERIFICAMOS SI ES PRO ---
+        if not st.session_state.get('is_premium'):
+            mostrar_bloqueo_pro("Análisis de Progreso")
+            
+        # --- 2. SI ES PRO, MOSTRAMOS EL CONTENIDO ---
         else:
-            st.info("👋 Guarda tu perfil hoy para ver tu primer punto en la gráfica.")
+            # Aquí va tu código antiguo de la gráfica, INDENTADO A LA DERECHA
+            st.header("📈 Tu Evolución")
+            st.write("Visualiza cómo te acercas a tu objetivo sesión tras sesión.")
+            st.header("📈 Tu Evolución")
+            st.write("Visualiza cómo te acercas a tu objetivo sesión tras sesión.")
+            df_progreso = obtener_historial_df(email_actual)
+            if df_progreso is not None and not df_progreso.empty:
+                peso_inicial = df_progreso.iloc[0]['peso']
+                peso_actual = df_progreso.iloc[-1]['peso']
+                delta = peso_actual - peso_inicial
+                pc1, pc2, pc3 = st.columns(3)
+                pc1.metric("Peso Inicial", f"{peso_inicial} kg")
+                pc2.metric("Peso Actual", f"{peso_actual} kg")
+                pc3.metric("Cambio Total", f"{delta:.1f} kg", delta, delta_color="inverse" if "Grasa" in objetivo else "normal")
+                st.write(""); st.area_chart(df_progreso.set_index('fecha'), color="#33ffaa")
+                with st.expander("Ver historial detallado"): st.dataframe(df_progreso, use_container_width=True)
+            else:
+                st.info("👋 Guarda tu perfil hoy para ver tu primer punto en la gráfica.")
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -843,6 +852,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
