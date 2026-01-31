@@ -751,47 +751,51 @@ def app_principal():
         nc1, nc2, nc3, nc4 = st.columns(4)
         nc1.metric("Kcal", c); nc2.metric("Prot", f"{p}g"); nc3.metric("Carb", f"{ch}g"); nc4.metric("Grasa", f"{g}g")
         st.divider()
+        # --- PEGA ESTO JUSTO DEBAJO DE 'st.divider()' ---
         col_d1, col_d2 = st.columns([1, 2])
+        
+        # COLUMNA 1: BOTONES Y LÓGICA
         with col_d1:
             dieta = st.selectbox("Tipo", ["Omnívora", "Vegetariana", "Vegana", "Keto"])
             if st.button("🥑 GENERAR DIETA", type="primary"):
                 with st.spinner("Creando menú..."):
                     try:
-                        # Asegúrate de usar el modelo Flash
-                        try:
-                            # Usamos la variable global para no fallar
-                            model = genai.GenerativeModel(MODELO_USADO) 
-    
-                            # --- PEGA EL PROMPT EXPERTO AQUÍ ---
-                            prompt_nutri = f"""
-                            Actúa como un Nutricionista Deportivo de alto rendimiento.
-                            Objetivo: Crear un plan de alimentación {dieta} perfecto de {c} kcal diarias.
-                            Contexto del cliente: Objetivo {objetivo}.
-    
-                            Estructura de la respuesta obligatoria:
-                            1. 📊 RESUMEN MACROS: Proteínas, Grasas, Carbohidratos totales.
-                            2. 🍽️ MENÚ DIARIO (Desayuno, Almuerzo, Cena, Snacks):
-                               - Usa formato Tabla Markdown.
-                               - Indica peso exacto de los alimentos en crudo (gramos).
-                               - Incluye una breve instrucción de cocinado.
-                            3. 🛒 LISTA DE LA COMPRA SEMANAL:
-                               - Agrupada por pasillos del supermercado (Verdulería, Carnicería, Varios).
-                            4. 💡 CONSEJO PRO: Un tip específico para {objetivo}.
-    
-                            Mantén un tono motivador y profesional.
-                            """
-                            # ------------------------------------
-    
-                            # Enviamos el prompt mejorado
-                            res = model.generate_content(prompt_nutri)
-                            
-                            st.session_state.plan_nutri = res.text
-                            st.rerun()
-                        except Exception as e: # Capturamos el error real
-                            st.error(f"Error detallado de la IA: {e}")
+                        # 1. Configuramos el modelo (Variable Global)
+                        model = genai.GenerativeModel(MODELO_USADO)
+                        
+                        # 2. Definimos el Prompt Experto
+                        prompt_nutri = f"""
+                        Actúa como un Nutricionista Deportivo de alto rendimiento.
+                        Objetivo: Crear un plan de alimentación {dieta} perfecto de {c} kcal diarias.
+                        Contexto del cliente: Objetivo {objetivo}.
+
+                        Estructura de la respuesta obligatoria:
+                        1. 📊 RESUMEN MACROS: Proteínas, Grasas, Carbohidratos totales.
+                        2. 🍽️ MENÚ DIARIO (Desayuno, Almuerzo, Cena, Snacks):
+                           - Usa formato Tabla Markdown.
+                           - Indica peso exacto de los alimentos en crudo (gramos).
+                           - Incluye una breve instrucción de cocinado.
+                        3. 🛒 LISTA DE LA COMPRA SEMANAL:
+                           - Agrupada por pasillos del supermercado (Verdulería, Carnicería, Varios).
+                        4. 💡 CONSEJO PRO: Un tip específico para {objetivo}.
+
+                        Mantén un tono motivador y profesional.
+                        """
+                        
+                        # 3. Generamos y guardamos
+                        res = model.generate_content(prompt_nutri)
+                        st.session_state.plan_nutri = res.text
+                        st.rerun()
+                        
+                    except Exception as e:
+                        st.error(f"Error detallado de la IA: {e}")
+
+        # COLUMNA 2: RESULTADO (Perfectamente alineado ahora)
         with col_d2:
-            if "plan_nutri" in st.session_state: st.markdown(st.session_state.plan_nutri)
-            else: st.info("Configura y genera tu plan.")
+            if "plan_nutri" in st.session_state:
+                st.markdown(st.session_state.plan_nutri)
+            else:
+                st.info("Configura y genera tu plan nutricional aquí.")
 
     with tab_prog:
         st.header("📈 Tu Evolución")
@@ -830,6 +834,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
