@@ -1232,7 +1232,7 @@ def main():
     # ---------------------------------------------------------
     # PÁGINA 2: PRICING (AQUÍ ESTÁ EL CAMBIO CLAVE)
     # ---------------------------------------------------------
-    elif st.session_state.page == "pricing":
+    if st.session_state.page == "pricing":
         # Borramos todo el código viejo y ponemos SOLO ESTO:
         mostrar_pricing() 
 
@@ -1260,6 +1260,7 @@ def main():
 if __name__ == "__main__":
     init_db() # Iniciamos base de datos
     main()    # Arrancamos la app
+
 
 
 
