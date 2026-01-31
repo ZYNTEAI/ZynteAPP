@@ -1039,7 +1039,62 @@ def app_principal():
                 with st.expander("Ver historial detallado"): st.dataframe(df_progreso, use_container_width=True)
             else:
                 st.info("👋 Guarda tu perfil hoy para ver tu primer punto en la gráfica.")
+def admin_panel():
+    st.title("👮‍♂️ Panel de Control - Zynte God Mode")
+    st.warning("⚠️ Zona restringida. Los cambios se aplican directamente a la Base de Datos.")
 
+    # 1. Mostramos la lista de todos los usuarios
+    try:
+        sheet = get_db_sheet()
+        # Obtenemos todos los datos (devuelve lista de listas)
+        all_data = sheet.get_all_values()
+        
+        # Convertimos a DataFrame para verlo bonito (saltando la fila de cabecera)
+        if len(all_data) > 1:
+            header = all_data[0]
+            rows = all_data[1:]
+            df = pd.DataFrame(rows, columns=header)
+            
+            # Filtramos solo columnas importantes para ver rápido
+            st.dataframe(df[["email", "nombre", "status", "fecha_registro"]])
+            
+            st.write("---")
+            st.subheader("🛠️ Gestión de Usuarios")
+
+            # 2. Selector de Víctima (Usuario)
+            lista_emails = df["email"].tolist()
+            usuario_elegido = st.selectbox("Seleccionar Usuario a Modificar:", lista_emails)
+            
+            # Mostramos estado actual
+            estado_actual = df[df["email"] == usuario_elegido]["status"].values[0]
+            st.info(f"Estado actual de **{usuario_elegido}**: `{estado_actual}`")
+
+            # 3. Botones de Acción
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("🌟 Hacer PRO", use_container_width=True):
+                    if admin_update_status(usuario_elegido, "pro"):
+                        st.success(f"{usuario_elegido} ahora es PRO.")
+                        time.sleep(1)
+                        st.rerun()
+            
+            with col2:
+                if st.button("⬇️ Hacer FREE", use_container_width=True):
+                    if admin_update_status(usuario_elegido, "free"):
+                        st.success(f"{usuario_elegido} ahora es FREE.")
+                        time.sleep(1)
+                        st.rerun()
+
+            with col3:
+                if st.button("🚫 BANEAR (Bloquear)", type="primary", use_container_width=True):
+                    if admin_update_status(usuario_elegido, "banned"):
+                        st.error(f"{usuario_elegido} ha sido BANEADO.")
+                        time.sleep(1)
+                        st.rerun()
+                        
+    except Exception as e:
+        st.error(f"Error cargando panel admin: {e}")
 # ==============================================================================
 # 🚀 ROUTER
 # ==============================================================================
@@ -1151,6 +1206,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
