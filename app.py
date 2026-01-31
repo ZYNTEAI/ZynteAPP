@@ -782,6 +782,7 @@ def app_principal():
                     
                     # 4. ENVIAMOS TODO
                     response = model.generate_content(chat_history_google)
+    
     with tab_nutri:
         # --- 1. VERIFICAMOS SI ES PRO ---
         if not st.session_state.get('is_premium'):
@@ -887,6 +888,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
