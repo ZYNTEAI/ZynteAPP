@@ -627,12 +627,45 @@ def app_principal():
             self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME', 0, 0, 'C'); self.ln(20)
 
     def crear_pdf(historial, nombre, peso, objetivo):
-        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12); pdf.set_fill_color(200, 220, 255)
-        pdf.cell(0, 10, txt=f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}", ln=1, align='L', fill=True)
-        pdf.cell(0, 10, txt=f"PERFIL: {peso}kg | META: {objetivo}", ln=1, align='L', fill=True)
-        pdf.ln(10); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1); pdf.set_font("Arial", size=11)
+        class PDF(FPDF):
+            def header(self):
+                try: self.image('logo.png', 10, 8, 33)
+                except: pass
+                self.set_font('Arial', 'B', 15)
+                self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME', 0, 0, 'C')
+                self.ln(20)
+
+        pdf = PDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        pdf.set_fill_color(200, 220, 255)
+
+        # --- FUNCIÓN DE LIMPIEZA (El truco para que no falle) ---
+        def limpiar_texto(texto):
+            # Esto quita los emojis y caracteres raros que rompen el PDF
+            return str(texto).encode('latin-1', 'replace').decode('latin-1')
+
+        # Cabecera con datos limpios
+        pdf.cell(0, 10, txt=limpiar_texto(f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}"), ln=1, align='L', fill=True)
+        pdf.cell(0, 10, txt=limpiar_texto(f"PERFIL: {peso}kg | META: {objetivo}"), ln=1, align='L', fill=True)
+        pdf.ln(10)
+        
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1)
+        
+        pdf.set_font("Arial", size=11)
+        
+        # Cuerpo del PDF (Limpiando cada mensaje)
         for mensaje in historial:
-            if mensaje["role"] == "model": pdf.multi_cell(0, 7, txt=mensaje["content"].replace("**", "").replace("*", "-")); pdf.ln(5)
+            if mensaje["role"] == "model":
+                # 1. Quitamos negritas de Markdown (**texto**)
+                texto_base = mensaje["content"].replace("**", "").replace("*", "-")
+                # 2. Quitamos emojis
+                texto_final = limpiar_texto(texto_base)
+                
+                pdf.multi_cell(0, 7, txt=texto_final)
+                pdf.ln(5)
+                
         return pdf.output(dest="S").encode("latin-1", "replace")
 
     # --- SIDEBAR ---
@@ -893,6 +926,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
