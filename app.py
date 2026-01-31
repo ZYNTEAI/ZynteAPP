@@ -579,145 +579,56 @@ def mostrar_pricing():
                     st.error("❌ Código incorrecto.")
 
 def app_principal():
-    # --- 1. CONFIGURACIÓN INICIAL Y LLAVE API ---
-    EMAIL_JEFE = "pablonavarrorui@gmail.com"
-    email_actual = st.session_state.get('user_email', 'invitado')
-    datos_usuario = cargar_perfil(email_actual)
-    
-    # Definimos la llave aquí para que TODA la función la vea
-    try:
-        api_key = st.secrets["GOOGLE_API_KEY"]
-    except:
-        api_key = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE"
+    # ... (Mantén todo tu código de configuración, PDF, Sidebar y Tabs igual) ...
 
-    # --- 2. LÓGICA INTERNA (Macros y PDF) ---
-    def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
-        if genero == "Hombre": tmb = 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
-        else: tmb = 447.6 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad)
-        factores = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
-        tdee = tmb * factores.get(nivel, 1.2)
-        if "Grasa" in objetivo: return int(tdee - 400), int(peso*2.2), int((tdee-400 - peso*2.2*4 - peso*0.9*9)/4), int(peso*0.9)
-        elif "Hipertrofia" in objetivo: return int(tdee + 300), int(peso*2.0), int((tdee+300 - peso*2*4 - peso*1*9)/4), int(peso*1)
-        else: return int(tdee), int(peso*1.6), int((tdee - peso*1.6*4 - peso*1*9)/4), int(peso*1)
-
-    class PDF(FPDF):
-        def header(self):
-            try: self.image('logo.png', 10, 8, 33)
-            except: pass
-            self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME', 0, 0, 'C'); self.ln(20)
-
-    def crear_pdf(historial, nombre, peso, objetivo):
-        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12); pdf.set_fill_color(200, 220, 255)
-        pdf.cell(0, 10, txt=f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}", ln=1, align='L', fill=True)
-        pdf.cell(0, 10, txt=f"PERFIL: {peso}kg | META: {objetivo}", ln=1, align='L', fill=True)
-        pdf.ln(10); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1); pdf.set_font("Arial", size=11)
-        for mensaje in historial:
-            if mensaje["role"] == "model": 
-                pdf.multi_cell(0, 7, txt=mensaje["content"].replace("**", "").replace("*", "-")); pdf.ln(5)
-        return pdf.output(dest="S").encode("latin-1", "replace")
-
-    # --- 3. SIDEBAR ---
-    with st.sidebar:
-        try: st.image("logo.png", width=180)
-        except: st.header("ZYNTE")
-        
-        if st.session_state.get('is_premium'): st.success("🌟 PRO")
-        else: 
-            st.info("🌱 FREE")
-            if st.button("⬆️ Mejorar", use_container_width=True):
-                st.session_state.page = 'pricing'
-                st.rerun()
-        
-        st.write("---"); st.caption("PERFIL BIOMÉTRICO")
-        nombre = st.text_input("Alias", "Atleta")
-        peso = st.slider("Peso (kg)", 40.0, 150.0, float(datos_usuario['peso']), 0.5)
-        altura = st.slider("Altura (cm)", 120, 220, int(datos_usuario['altura']), 1)
-        edad = st.slider("Edad", 16, 80, int(datos_usuario['edad']))
-        genero = st.radio("Género:", ["Hombre", "Mujer"], horizontal=True)
-        
-        obj_ops = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
-        niv_ops = ["Principiante", "Intermedio", "Avanzado"]
-        idx_o = obj_ops.index(datos_usuario['objetivo']) if datos_usuario['objetivo'] in obj_ops else 0
-        idx_n = niv_ops.index(datos_usuario['nivel']) if datos_usuario['nivel'] in niv_ops else 1
-        
-        objetivo = st.selectbox("Objetivo:", obj_ops, index=idx_o)
-        nivel = st.select_slider("Experiencia:", options=niv_ops, value=niv_ops[idx_n])
-        
-        if st.button("💾 Guardar Perfil", use_container_width=True):
-            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel): st.toast("Datos Guardados")
-            else: st.toast("Error")
-        
-        # Panel de Control Jefe
-        if email_actual == EMAIL_JEFE:
-            st.write("---")
-            with st.expander("🔐 PANEL DE CONTROL"):
-                accion = st.radio("Acción:", ["Dar VIP 🌟", "Quitar VIP 💀", "Borrar Usuario ❌"])
-                email_target = st.text_input("Email objetivo:").strip().lower()
-                if st.button("EJECUTAR ORDEN ⚡", type="primary"):
-                    if email_target:
-                        if accion == "Dar VIP 🌟" and activar_plan_pro(email_target): st.success("OK")
-                        elif accion == "Quitar VIP 💀" and revocar_plan_pro(email_target): st.warning("Revocado")
-                        elif accion == "Borrar Usuario ❌" and eliminar_usuario_total(email_target): st.error("Borrado")
-                    else: st.error("Email vacío")
-
-        st.write("---")
-        if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
-             pdf_data = crear_pdf(st.session_state.history, nombre, peso, objetivo)
-             st.download_button("📥 PDF", pdf_data, "Rutina_Zynte.pdf")
-        
-        st.button("Cerrar Sesión", on_click=lambda: st.session_state.update({"logged_in": False, "page": "landing"}))
-
-    # --- 4. TABS PRINCIPALES ---
-    tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
-
-    with tab_train:
-        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
-        c1, c2, c3 = st.columns(3)
-        prompt_rapido = None
-        if c1.button("🔥 HIIT 20'"): prompt_rapido = "Rutina HIIT intensa"
-        if c2.button("🧘 Estirar"): prompt_rapido = "Tabla estiramientos post-entreno"
-        if c3.button("💪 Flexiones"): prompt_rapido = "Reto flexiones 30 días"
-
-        if prompt_rapido:
-            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-            res = requests.post(url, json={"contents": [{"parts": [{"text": prompt_rapido}]}]})
-            if res.status_code == 200:
-                st.session_state.history.append({"role": "user", "content": prompt_rapido})
-                st.session_state.history.append({"role": "model", "content": res.json()['candidates'][0]['content']['parts'][0]['text']})
-                st.rerun()
-
-        imc = peso / ((altura/100)**2)
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("IMC", f"{imc:.1f}"); m2.metric("Peso", f"{peso}kg"); m3.metric("Meta", objetivo); m4.metric("Nivel", nivel)
-        st.divider()
-
-    # --- 5. CHAT UNIFICADO (Sin duplicados) ---
-    st.subheader("💬 Chat con Zynte AI")
-    for msg in st.session_state.get('history', []):
-        st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-
-    if prompt := st.chat_input("¿Dudas con tu entreno?"):
-        if "history" not in st.session_state: st.session_state.history = []
-        st.session_state.history.append({"role": "user", "content": prompt})
-        with st.chat_message("user"): st.markdown(prompt)
-        
-        with st.chat_message("assistant"):
-            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-            res = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]})
-            if res.status_code == 200:
-                resp = res.json()['candidates'][0]['content']['parts'][0]['text']
-                st.markdown(resp)
-                st.session_state.history.append({"role": "model", "content": resp})
-                st.rerun()
-
-    # --- 6. NUTRICIÓN Y PROGRESO ---
     with tab_nutri:
         st.header("🥗 Nutrición")
-        # ... (Tu lógica de macros aquí) ...
-    
+        c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
+        nc1, nc2, nc3, nc4 = st.columns(4)
+        nc1.metric("Kcal", c); nc2.metric("Prot", f"{p}g"); nc3.metric("Carb", f"{ch}g"); nc4.metric("Grasa", f"{g}g")
+        st.divider()
+        # ... resto de tu lógica de dieta ...
+
     with tab_prog:
-        st.header("📈 Progreso")
-        # ... (Tu lógica de gráficas aquí) ...
+        st.header("📈 Tu Evolución")
+        # ... resto de tu lógica de gráficas ...
+
+    # ==========================================
+    # 💬 PEGA EL CHAT JUSTO AQUÍ (Fuera de los "with tab")
+    # ==========================================
+    st.write("---")
+    st.subheader("💬 Chat con Zynte AI")
+
+    if "history" not in st.session_state:
+        st.session_state.history = []
+
+    # Mostrar mensajes previos
+    for msg in st.session_state.history:
+        with st.chat_message("assistant" if msg["role"] == "model" else "user"):
+            st.markdown(msg["content"])
+
+    # Entrada de nuevo mensaje
+    if prompt := st.chat_input("¿Dudas con tu entreno?", key="chat_input_final"):
+        st.session_state.history.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        with st.chat_message("assistant"):
+            with st.spinner("Zynte está pensando..."):
+                try:
+                    import requests
+                    url_final = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                    res = requests.post(url_final, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=30)
+                    
+                    if res.status_code == 200:
+                        resp = res.json()['candidates'][0]['content']['parts'][0]['text']
+                        st.markdown(resp)
+                        st.session_state.history.append({"role": "model", "content": resp})
+                        st.rerun()
+                    else:
+                        st.error(f"Error IA: {res.status_code}")
+                except Exception as e:
+                    st.error(f"Error conexión: {e}")
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -739,6 +650,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
