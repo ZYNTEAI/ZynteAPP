@@ -215,6 +215,7 @@ def cargar_perfil(email):
                 "objetivo": row_values[8] if len(row_values) > 8 else "Hipertrofia",
                 "nivel": row_values[9] if len(row_values) > 9 else "Intermedio",
                 "dias": int(row_values[10]) if len(row_values) > 10 and row_values[10].isdigit() else 4 # (Opcional si usas dias)
+                "status": row_values[12] if len(row_values) > 12 else "free"
             }
             return datos
     except Exception as e:
@@ -575,27 +576,33 @@ def mostrar_login():
             email_login = st.text_input("Correo", key="login_email").strip().lower()
             pass_login = st.text_input("Contraseña", type="password", key="login_pass").strip()
             st.write("")
-            if st.button("Entrar", use_container_width=True):
-                if verificar_login(email, password):
-                    st.session_state.page = 'app'
-                    st.session_state.email = email  # <--- Guardamos el email
-                    st.rerun()
+# --- BOTÓN DE ENTRAR (Lógica de Negocio: Free vs Pro) ---
+        if st.button("Entrar", use_container_width=True):
+            if verificar_login(email, password):
+                # 1. Guardamos el email fundamental
+                st.session_state.email = email
+                
+                # 2. Cargamos el perfil YA para saber si es PRO o FREE
+                # (Esto lee la columna M de tu Google Sheet)
+                datos = cargar_perfil(email)
+                st.session_state.datos_usuario = datos
+                
+                # 3. Verificamos el estado
+                es_pro = (datos.get("status") == "pro")
+                st.session_state.is_premium = es_pro
+                
+                # 4. El Semáforo de acceso 🚦
+                if es_pro:
+                    st.session_state.page = 'app'  # Al gimnasio directo
+                    st.success(f"¡Bienvenido de nuevo, {datos['nombre']}! 🌟")
                 else:
-                    st.error("❌ Usuario o contraseña incorrectos")
-                    # AQUÍ MIRAMOS SI YA PAGÓ ANTES
-                    es_pro = comprobar_plan(email_login)
-                    st.session_state.is_premium = es_pro # Guardamos el estado
-                    
-                    if es_pro:
-                        st.session_state.page = 'app' # Si es Pro, directo a entrenar
-                        st.success("¡Bienvenido de nuevo, Atleta Pro! 🌟")
-                    else:
-                        st.session_state.page = 'pricing' # Si es Free, a ver precios
-                        st.success("Verificado.")
-                    
-                    time.sleep(0.5); st.rerun()
-                    else: st.error("Error de credenciales.")
-        
+                    st.session_state.page = 'pricing'  # A la tienda
+                    st.info("Cuenta verificada. Selecciona tu plan.")
+
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("❌ Usuario o contraseña incorrectos")
         with tab2:
             st.write("")
             new_email = st.text_input("Email", key="reg_email").strip().lower()
@@ -1023,18 +1030,38 @@ def app_principal():
 # ==============================================================================
 
 def main():
-    if 'page' not in st.session_state: st.session_state.page = 'landing'
-    if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-    if 'is_premium' not in st.session_state: st.session_state.is_premium = False
+    # Inicializar variables de sesión si no existen...
+    if "page" not in st.session_state: st.session_state.page = "login"
+    
+    # --- GESTOR DE PÁGINAS ---
+    if st.session_state.page == 'login':
+        mostrar_login()
+        
+    elif st.session_state.page == 'pricing':
+        # AQUÍ PONES TU PANTALLA DE VENTAS
+        st.title("💎 Desbloquea Zynte PRO")
+        st.write("Tu periodo de prueba ha terminado o eres usuario gratuito.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.info("Plan GRATIS\n\n- Rutinas básicas\n- Chat limitado")
+            if st.button("Continuar Gratis (Limitado)"):
+                st.session_state.page = 'app' # Dejamos entrar como free
+                st.rerun()
+                
+        with col2:
+            st.error("Plan PRO (19.99€)\n\n- Dieta IA Avanzada\n- PDF Exportable\n- Prioridad")
+            st.link_button("🚀 Comprar Ahora", "https://stripe.com/es") # Pon aquí tu link
+            
+            # Botón secreto para simular compra (mientras pruebas)
+            if st.button("Simular Pago Exitoso (Dev)"):
+                # Aquí actualizaríamos la DB a "pro"
+                st.session_state.datos_usuario['status'] = 'pro'
+                st.session_state.page = 'app'
+                st.rerun()
 
-    if st.session_state.page == 'landing': mostrar_landing()
-    elif st.session_state.page == 'info_ia': mostrar_info_ia()
-    elif st.session_state.page == 'info_vel': mostrar_info_velocidad()
-    elif st.session_state.page == 'info_pdf': mostrar_info_pdf()
-    elif st.session_state.page == 'login': mostrar_login()
-    elif st.session_state.page == 'pricing': mostrar_pricing()
-    elif st.session_state.page == 'app': app_principal()
-    else: st.session_state.page = 'landing'; st.rerun()
+    elif st.session_state.page == 'app':
+        app_principal()
 
 if __name__ == "__main__":
     main()
