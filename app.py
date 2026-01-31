@@ -10,60 +10,58 @@ import re
 import pandas as pd  
 import requests
 
-# --- GENERADORES RÁPIDOS (FREE) ---
-with tab_train:
+Aquí tienes el bloque completo y corregido para los Generadores Rápidos. He estructurado el código para que no tengas errores de indentación y para que la variable api_key esté siempre disponible cuando se necesite.
+
+Copia y pega este bloque en tu app.py, asegurándote de que esté dentro de la pestaña with tab_train::
+
+Python
+
+        # --- BLOQUE DE GENERADORES RÁPIDOS ---
         st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
         
-        # 1. AÑADE ESTO AQUÍ para definir la clave antes de usarla
+        # 1. Definición de la Llave API (Evita el error 'api_key not defined')
         try:
-            api_key = st.secrets["GOOGLE_API_KEY"]
+            llave_final = st.secrets["GOOGLE_API_KEY"]
         except:
-            api_key = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE" # Fallback si no hay secrets
+            llave_final = "TU_CLAVE_AQUI"
 
+        # 2. Configuración de los Botones
         c1, c2, c3 = st.columns(3)
         prompt_rapido = None
-        if c1.button("🔥 Rutina HIIT 20'"): prompt_rapido = "Genera una rutina HIIT de 20 min"
-        if c2.button("🧘 Estiramientos"): prompt_rapido = "Dame una tabla de estiramientos"
-        if c3.button("💪 Reto de Flexiones"): prompt_rapido = "Plan de flexiones para 30 días"
+        
+        if c1.button("🔥 Rutina HIIT 20'"): 
+            prompt_rapido = "Genera una rutina HIIT de 20 minutos intensa para quemar grasa."
+        if c2.button("🧘 Estiramientos"): 
+            prompt_rapido = "Dame una tabla de estiramientos completa para después de entrenar."
+        if c3.button("💪 Reto de Flexiones"): 
+            prompt_rapido = "Crea un plan progresivo de flexiones para 30 días, nivel principiante a intermedio."
 
-        # 2. La lógica que sigue ya podrá usar 'api_key' sin dar error
+        # 3. Lógica de Envío a la IA (Resuelve el IndentationError)
         if prompt_rapido:
-            # Aquí va tu código de requests.post que usa la variable api_key
-
-# 1. Definimos la variable al principio para evitar NameError
-prompt_rapido = None 
-
-# 2. Botones con 'key' única para evitar DuplicateElementId
-if col_b1.button("🔥 Rutina HIIT 20'", key="btn_hiit_free", use_container_width=True):
-    prompt_rapido = "Créame una rutina de HIIT de 20 minutos intensa para hacer en casa."
-if col_b2.button("🧘 Estiramientos", key="btn_estira_free", use_container_width=True):
-    prompt_rapido = "Dame una tabla de estiramientos de espalda y cuello para después de trabajar."
-if col_b3.button("💪 Reto de Flexiones", key="btn_flex_free", use_container_width=True):
-    prompt_rapido = "Dime un reto de flexiones para hacer hoy según mi nivel."
-
-# 3. Lógica de envío directo (Salta el error 404)
-if prompt_rapido:
-    if "history" not in st.session_state:
-        st.session_state.history = []
-    
-    st.session_state.history.append({"role": "user", "content": prompt_rapido})
-    
-    with st.spinner("Zynte está pensando..."):
-        try:
-            # Petición directa a la versión estable v1
-            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+            # URL v1 estable para evitar el error 404
+            url_api = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={llave_final}"
             payload = {"contents": [{"parts": [{"text": prompt_rapido}]}]}
             
-            res = requests.post(url, json=payload)
-            
-            if res.status_code == 200:
-                respuesta_ia = res.json()['candidates'][0]['content']['parts'][0]['text']
-                st.session_state.history.append({"role": "model", "content": respuesta_ia})
-                st.rerun()
-            else:
-                st.error(f"Error de Google: {res.status_code}")
-        except Exception as e:
-            st.error(f"Error de red: {e}")
+            with st.spinner("Zynte está preparando tu rutina..."):
+                try:
+                    # Petición a la API de Google
+                    res_google = requests.post(url_api, json=payload, timeout=30)
+                    
+                    if res_google.status_code == 200:
+                        respuesta_ia = res_google.json()['candidates'][0]['content']['parts'][0]['text']
+                        
+                        # Inicializar historial si no existe
+                        if "history" not in st.session_state:
+                            st.session_state.history = []
+                        
+                        # Guardar en el historial y refrescar la pantalla
+                        st.session_state.history.append({"role": "user", "content": prompt_rapido})
+                        st.session_state.history.append({"role": "model", "content": respuesta_ia})
+                        st.rerun() 
+                    else:
+                        st.error(f"Error de respuesta (Código {res_google.status_code}). Revisa tu API Key.")
+                except Exception as e_error:
+                    st.error(f"Error de conexión: {e_error}")
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
@@ -877,6 +875,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
