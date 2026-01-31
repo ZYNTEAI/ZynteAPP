@@ -723,6 +723,53 @@ def app_principal():
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
     with tab_train:
+    # --- BLOQUE DE GENERADORES RÁPIDOS (COPIAR DESDE AQUÍ) ---
+        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
+        
+        # 1. Configuración de seguridad para la API
+        try:
+            llave_api_zynte = st.secrets["GOOGLE_API_KEY"]
+        except:
+            llave_api_zynte = "TU_CLAVE_AQUI"
+
+        # 2. Interfaz de botones
+        col_1, col_2, col_3 = st.columns(3)
+        prompt_seleccionado = None
+        
+        if col_1.button("🔥 Rutina HIIT 20'"): 
+            prompt_seleccionado = "Genera una rutina HIIT de 20 minutos intensa para quemar grasa."
+        if col_2.button("🧘 Estiramientos"): 
+            prompt_seleccionado = "Dame una tabla de estiramientos completa para después de entrenar."
+        if col_3.button("💪 Reto de Flexiones"): 
+            prompt_seleccionado = "Crea un plan progresivo de flexiones para 30 días."
+
+        # 3. Lógica de ejecución (Indentación corregida)
+        if prompt_seleccionado:
+            # Usamos la URL v1 para evitar el error 404 detectado anteriormente
+            url_endpoint = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={llave_api_zynte}"
+            payload_data = {"contents": [{"parts": [{"text": prompt_seleccionado}]}]}
+            
+            with st.spinner("Zynte está preparando tu rutina..."):
+                try:
+                    import requests
+                    respuesta_servidor = requests.post(url_endpoint, json=payload_data, timeout=30)
+                    
+                    if respuesta_servidor.status_code == 200:
+                        texto_generado = respuesta_servidor.json()['candidates'][0]['content']['parts'][0]['text']
+                        
+                        # Inicializamos historial si es la primera vez
+                        if "history" not in st.session_state:
+                            st.session_state.history = []
+                        
+                        # Guardamos ambos mensajes en el historial
+                        st.session_state.history.append({"role": "user", "content": prompt_seleccionado})
+                        st.session_state.history.append({"role": "model", "content": texto_generado})
+                        st.rerun() 
+                    else:
+                        st.error(f"Error en la comunicación con la IA (Código: {respuesta_servidor.status_code})")
+                except Exception as e_error:
+                    st.error(f"Error crítico de conexión: {e_error}")
+        # --- FINAL DEL BLOQUE ---
         imc = peso / ((altura/100)**2)
         col1, col2, col3, col4 = st.columns([0.8, 1.2, 1.8, 1.5])
         with col1: st.metric("IMC", f"{imc:.1f}", "Normal" if 18.5 < imc < 25 else "Atención")
@@ -870,6 +917,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
