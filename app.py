@@ -214,7 +214,7 @@ def cargar_perfil(email):
                 "genero": row_values[7] if len(row_values) > 7 else "Hombre",
                 "objetivo": row_values[8] if len(row_values) > 8 else "Hipertrofia",
                 "nivel": row_values[9] if len(row_values) > 9 else "Intermedio",
-                "dias": int(row_values[10]) if len(row_values) > 10 and row_values[10].isdigit() else 4 # (Opcional si usas dias)
+                "dias": int(row_values[10]) if len(row_values) > 10 and row_values[10].isdigit() else 4, # (Opcional si usas dias)
                 "status": row_values[12] if len(row_values) > 12 else "free"
             }
             return datos
@@ -1065,6 +1065,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
