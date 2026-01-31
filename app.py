@@ -703,37 +703,34 @@ def app_principal():
 
         st.divider()
 
-# --- SECCIÓN DE CHAT ÚNICA Y CORREGIDA ---
+--- SECCIÓN DE CHAT ÚNICA Y DEFINITIVA ---
     st.write("---") 
     st.subheader("💬 Chat con Zynte AI")
 
-    # 1. Definimos la variable correctamente para evitar NameError
-    error_ocurrido = False 
-
-    # 2. Inicializar historial en la sesión si no existe
+    # 1. Aseguramos que el historial exista
     if "history" not in st.session_state:
         st.session_state.history = []
 
-    # 3. Mostrar mensajes previos (Solo un bucle for)
+    # 2. Mostramos los mensajes previos
     for msg in st.session_state.history: 
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # 4. Input del chat con KEY ÚNICA para evitar el error de ID duplicado
-    prompt_chat = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_input_zynte_final")
+    # 3. Caja de texto única con Key para evitar errores de ID
+    prompt_chat = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_zynte_final_v1")
 
     if prompt_chat:
-        # Guardar y mostrar mensaje del usuario
+        # Guardar mensaje del usuario
         st.session_state.history.append({"role": "user", "content": prompt_chat})
         with st.chat_message("user"):
             st.markdown(prompt_chat)
 
-        # Respuesta de la IA
+        # Llamada a la IA
         with st.chat_message("assistant"):
             with st.spinner("Zynte está pensando..."):
                 try:
-                    # URL actualizada a v1beta para evitar el Error 404
-                    url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                    # USAMOS LA VERSIÓN V1 QUE ES LA ESTABLE (ARREGLA EL 404)
+                    url_api = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
                     
                     payload = {
                         "contents": [{
@@ -745,16 +742,16 @@ def app_principal():
                     
                     if res.status_code == 200:
                         datos = res.json()
-                        # Extraer el texto de la respuesta
+                        # Extraemos el texto de la respuesta
                         respuesta_ia = datos['candidates'][0]['content']['parts'][0]['text']
                         st.markdown(respuesta_ia)
-                        # Guardar en historial y refrescar
+                        # Guardamos en el historial y recargamos para fijar la charla
                         st.session_state.history.append({"role": "model", "content": respuesta_ia})
                         st.rerun() 
                     else:
                         st.error(f"Error de Google ({res.status_code}): {res.text}")
                 except Exception as e:
-                    st.error(f"Error de conexión: {e}")
+                    st.error(f"Error de red: {e}")
     with tab_nutri:
         st.header("Plan Nutricional")
         c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
@@ -812,6 +809,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
