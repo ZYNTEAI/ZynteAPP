@@ -688,17 +688,35 @@ def mostrar_bloqueo_pro(nombre_funcion):
     </div>
     """, unsafe_allow_html=True)
 def app_principal():
-    # --- 1. GUARDIA DE SEGURIDAD (Anti-Crash) ---
-    # Si no hay email, al login
+    # --- 1. GUARDIA DE SEGURIDAD (Ya lo tienes) ---
     if "email" not in st.session_state or not st.session_state.email:
         st.session_state.page = "login"
         st.rerun()
         return
 
-    # --- 2. RECUPERADOR DE MEMORIA ---
-    # Si no hay datos, los cargamos
+    # --- 2. RECUPERADOR DE MEMORIA (Ya lo tienes) ---
     if "datos_usuario" not in st.session_state or not st.session_state.datos_usuario:
         st.session_state.datos_usuario = cargar_perfil(st.session_state.email)
+
+    # ==========================================
+    # --- 3. SINCRONIZADOR AUTOMÁTICO DE PAGOS (NUEVO) ---
+    # ==========================================
+    # Solo comprobamos si el usuario figura como "free" en memoria
+    # Así, en cuanto pague, al hacer cualquier clic, se actualizará solo.
+    if st.session_state.datos_usuario.get("status") == "free":
+        try:
+            # Consultamos "en silencio" a la base de datos
+            datos_frescos = cargar_perfil(st.session_state.email)
+            status_real = datos_frescos.get("status", "free")
+            
+            # Si en la DB dice PRO, pero en memoria decía FREE... ¡ACTUALIZAMOS!
+            if status_real == "pro":
+                st.session_state.datos_usuario['status'] = 'pro'
+                st.toast("🎉 ¡Pago detectado! Funciones PRO desbloqueadas.")
+                time.sleep(1)
+                st.rerun() # Recargamos la página para pintar todo verde
+        except:
+            pass # Si falla la conexión, no molestamos al usuario
 
     # --- 3. CONFIGURACIÓN DE IA (Ahora con su cierre correcto) ---
     try:
@@ -1281,6 +1299,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
