@@ -600,7 +600,46 @@ def app_principal():
                 texto = mensaje["content"].replace("**", "").replace("*", "-")
                 pdf.multi_cell(0, 7, txt=texto); pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
+with tab_train:
+        # --- NUEVOS GENERADORES RÁPIDOS BLINDADOS ---
+        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
+        
+        # Usamos keys únicas (key="...") para evitar duplicados
+        c1, c2, c3 = st.columns(3)
+        prompt_rapido = None
+        
+        if c1.button("🔥 Rutina HIIT 20'", key="btn_hiit_final"): 
+            prompt_rapido = "Genera una rutina HIIT de 20 min intensa."
+        if c2.button("🧘 Estiramientos", key="btn_est_final"): 
+            prompt_rapido = "Dame una tabla de estiramientos completa."
+        if c3.button("💪 Reto de Flexiones", key="btn_flex_final"): 
+            prompt_rapido = "Plan de flexiones para 30 días."
 
+        # Lógica de envío (Usa la api_key definida al inicio de la función)
+        if prompt_rapido:
+            with st.spinner("Zynte está preparando tu rutina rápida..."):
+                try:
+                    url_v1 = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                    res = requests.post(url_v1, json={"contents": [{"parts": [{"text": prompt_rapido}]}]}, timeout=30)
+                    if res.status_code == 200:
+                        respuesta_texto = res.json()['candidates'][0]['content']['parts'][0]['text']
+                        st.session_state.history.append({"role": "user", "content": prompt_rapido})
+                        st.session_state.history.append({"role": "model", "content": respuesta_texto})
+                        st.rerun()
+                    else:
+                        st.error(f"Error 404/IA: {res.status_code}")
+                except Exception as e:
+                    st.error(f"Error de red: {e}")
+
+        # --- MÉTRICAS DEL ATLETA ---
+        st.divider()
+        imc = peso / ((altura/100)**2)
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("IMC", f"{imc:.1f}")
+        m2.metric("Peso", f"{peso} kg")
+        m3.metric("Meta", objetivo)
+        m4.metric("Nivel", nivel)
+        st.divider()
     # 2. SIDEBAR ÚNICO
     with st.sidebar:
         try: st.image("logo.png", width=180)
@@ -700,6 +739,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
