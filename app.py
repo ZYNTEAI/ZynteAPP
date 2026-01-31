@@ -42,7 +42,7 @@ if prompt_rapido:
     with st.spinner("Zynte está pensando..."):
         try:
             # Tienes que añadir 4 espacios antes de 'url' para que esté DENTRO del try
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_GLOBAL}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY_GLOBAL}"
             
             # Estas líneas TAMBIÉN deben estar alineadas con 'url'
             payload = {"contents": [{"parts": [{"text": prompt_rapido}]}]}
@@ -754,7 +754,7 @@ def app_principal():
                 with st.spinner("Creando menú..."):
                     try:
                         # Asegúrate de usar el modelo Flash
-                        model = genai.GenerativeModel('gemini-1.5-flash') 
+                        model = genai.GenerativeModel('gemini-pro') 
                         res = model.generate_content(f"Crea dieta {dieta} de {c}kcal para {objetivo}. Incluye lista compra.")
                         st.session_state.plan_nutri = res.text
                         st.rerun() # Añade esto para refrescar la pantalla
@@ -801,6 +801,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
