@@ -5,4 +5,5 @@ pandas
 fpdf
 gspread
 oauth2client
+stripe
 
