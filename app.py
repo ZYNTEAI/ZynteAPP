@@ -591,7 +591,7 @@ def mostrar_pricing():
     
     # 1. ENLACE A TU KO-FI (O PAYPAL)
     # Crea tu cuenta en ko-fi.com, configura una "Membership" y pega el link aquí
-    LINK_PAGO = "https://ko-fi.com/TU_USUARIO" 
+    LINK_PAGO = "https://ko-fi.com/zynteapp" 
     
     # 2. EL CÓDIGO QUE DARÁS AL PAGAR
     # Configura en Ko-fi que el "Thank you message" muestre este código
@@ -1225,6 +1225,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
