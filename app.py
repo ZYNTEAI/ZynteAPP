@@ -703,7 +703,7 @@ def app_principal():
 
         st.divider()
 
-#--- SECCIÓN DE CHAT ÚNICA Y DEFINITIVA ---
+# --- SECCIÓN DE CHAT ÚNICA ---
     st.write("---") 
     st.subheader("💬 Chat con Zynte AI")
 
@@ -716,42 +716,32 @@ def app_principal():
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # 3. Caja de texto única con Key para evitar errores de ID
-    prompt_chat = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_zynte_final_v1")
+    # 3. Caja de texto con Key única (evita el error de Duplicate ID)
+    prompt_chat = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_zynte_final_fixed")
 
     if prompt_chat:
-        # Guardar mensaje del usuario
         st.session_state.history.append({"role": "user", "content": prompt_chat})
         with st.chat_message("user"):
             st.markdown(prompt_chat)
 
-        # Llamada a la IA
         with st.chat_message("assistant"):
             with st.spinner("Zynte está pensando..."):
                 try:
-                    # USAMOS LA VERSIÓN V1 QUE ES LA ESTABLE (ARREGLA EL 404)
-                    url_api = f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
+                    # USAMOS LA LIBRERÍA OFICIAL (Esto evita el error 404 de la URL)
+                    genai.configure(api_key=api_key)
+                    model = genai.GenerativeModel('gemini-1.5-flash')
                     
-                    payload = {
-                        "contents": [{
-                            "parts": [{"text": prompt_chat}]
-                        }]
-                    }
+                    # Llamada directa
+                    response = model.generate_content(prompt_chat)
                     
-                    res = requests.post(url_api, json=payload, timeout=30)
-                    
-                    if res.status_code == 200:
-                        datos = res.json()
-                        # Extraemos el texto de la respuesta
-                        respuesta_ia = datos['candidates'][0]['content']['parts'][0]['text']
-                        st.markdown(respuesta_ia)
-                        # Guardamos en el historial y recargamos para fijar la charla
-                        st.session_state.history.append({"role": "model", "content": respuesta_ia})
+                    if response.text:
+                        st.markdown(response.text)
+                        st.session_state.history.append({"role": "model", "content": response.text})
                         st.rerun() 
                     else:
-                        st.error(f"Error de Google ({res.status_code}): {res.text}")
+                        st.error("La IA no devolvió texto. Revisa tu saldo en Google AI Studio.")
                 except Exception as e:
-                    st.error(f"Error de red: {e}")
+                    st.error(f"Error de conexión: {e}")
     with tab_nutri:
         st.header("Plan Nutricional")
         c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
@@ -809,6 +799,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
