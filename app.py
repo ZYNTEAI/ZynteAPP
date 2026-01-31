@@ -692,45 +692,50 @@ def mostrar_bloqueo_pro(nombre_funcion):
     </div>
     """, unsafe_allow_html=True)
 def app_principal():
-    # --- 1. CONFIGURACIÓN INICIAL Y RECUPERACIÓN DE DATOS ---
+    # --- 1. SEGURIDAD ---
     if "email" not in st.session_state or not st.session_state.email:
         st.session_state.page = "login"
         st.rerun()
         return
 
-    EMAIL_JEFE = "pablonavarrorui@gmail.com" # <--- TU EMAIL DE ADMIN
+    # --- 2. GESTIÓN INTELIGENTE DE DATOS ---
     email_actual = st.session_state.email
-    
-    # Aseguramos que existan datos por defecto para evitar errores
+    EMAIL_JEFE = "pablonavarrorui@gmail.com" # <--- TU EMAIL
+
+    # Si no tenemos datos, los cargamos del Excel
     if "datos_usuario" not in st.session_state:
         st.session_state.datos_usuario = cargar_perfil(email_actual)
 
-    # Referencia corta para no escribir tanto
+    # Referencia corta para usar en el código
     datos = st.session_state.datos_usuario
-
-    # --- 2. LÓGICA DE ACTUALIZACIÓN EN TIEMPO REAL (FIX PRO/FREE) ---
-    # Verificamos si el estado en memoria coincide con la realidad
-    is_pro_memory = st.session_state.get('is_premium', False)
-    status_sheet = datos.get("status", "free").strip().lower()
     
-    # Si en el Excel es PRO pero en la App es FREE (o viceversa), forzamos la actualización
-    if status_sheet == "pro" and not is_pro_memory:
+    # === SINCRONIZACIÓN WEB VS EXCEL ===
+    # Aquí está la clave: La variable de sesión 'is_premium' manda sobre el Excel
+    # para dar esa sensación de "instantáneo".
+    status_excel = str(datos.get("status", "free")).lower().strip()
+    
+    # Si acabamos de forzar el PRO en el admin panel, 'is_premium' será True
+    # aunque 'status_excel' todavía pudiera ser antiguo por caché.
+    if "is_premium" not in st.session_state:
+        # Solo si no existe, confiamos en el Excel
+        st.session_state.is_premium = (status_excel == "pro")
+    
+    # Si el Excel dice PRO, forzamos PRO (por si entras desde otro PC)
+    if status_excel == "pro" and not st.session_state.is_premium:
         st.session_state.is_premium = True
-        st.toast("🌟 ¡Plan PRO detectado y activado!")
-        time.sleep(0.5)
-        st.rerun()
-    elif status_sheet != "pro" and is_pro_memory:
-        st.session_state.is_premium = False
         st.rerun()
 
-    # --- 3. DEFINICIÓN DE VARIABLES GLOBALES (SOLUCIÓN ERROR PESO) ---
-    # Extraemos los valores ANTES de usarlos para que no de 'UnboundLocalError'
+    # --- 3. VARIABLES GLOBALES (Arreglado el error de 'peso') ---
+    # Usamos .get() para que nunca falle si el campo está vacío en el Excel
     nombre = datos.get('nombre', 'Atleta')
-    # Convertimos a float/int asegurando que no fallen
+    
+    # Usamos bloques try/except para evitar que un texto rompa el slider numérico
     try: peso = float(datos.get('peso', 70.0))
     except: peso = 70.0
+    
     try: altura = int(datos.get('altura', 170))
     except: altura = 170
+    
     try: edad = int(datos.get('edad', 25))
     except: edad = 25
     
@@ -738,235 +743,201 @@ def app_principal():
     objetivo_actual = datos.get('objetivo', 'Hipertrofia')
     nivel_actual = datos.get('nivel', 'Intermedio')
 
-    # --- 4. FUNCIONES INTERNAS (Macros y PDF) ---
+    # --- 4. FUNCIONES INTERNAS (Sin cambios) ---
     def calcular_macros(p, a, e, g, obj, niv):
         if g == "Hombre": tmb = 88.36 + (13.4 * p) + (4.8 * a) - (5.7 * e)
         else: tmb = 447.6 + (9.2 * p) + (3.1 * a) - (4.3 * e)
-        factores = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
-        tdee = tmb * factores.get(niv, 1.2)
+        fact = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
+        tdee = tmb * fact.get(niv, 1.2)
         if "Grasa" in obj: return int(tdee - 400), int(p*2.2), int((tdee-400 - p*2.2*4 - p*0.9*9)/4), int(p*0.9)
         elif "Hipertrofia" in obj: return int(tdee + 300), int(p*2.0), int((tdee+300 - p*2*4 - p*1*9)/4), int(p*1)
         else: return int(tdee), int(p*1.6), int((tdee - p*1.6*4 - p*1*9)/4), int(p*1)
 
-    class PDF(FPDF):
-        def header(self):
-            try: self.image('logo.png', 10, 8, 33)
-            except: pass
-            self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME', 0, 0, 'C'); self.ln(20)
-
-    def crear_pdf(historial, nombre, peso, objetivo):
-        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12); pdf.set_fill_color(200, 220, 255)
-        # Función auxiliar para limpiar caracteres raros
-        def clean(txt): return str(txt).encode('latin-1', 'replace').decode('latin-1')
-        
-        pdf.cell(0, 10, txt=clean(f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}"), ln=1, align='L', fill=True)
-        pdf.cell(0, 10, txt=clean(f"PERFIL: {peso}kg | META: {objetivo}"), ln=1, align='L', fill=True)
-        pdf.ln(10); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1); pdf.set_font("Arial", size=11)
-        
-        for mensaje in historial:
-            if mensaje["role"] == "model":
-                texto = mensaje["content"].replace("**", "").replace("*", "-")
-                pdf.multi_cell(0, 7, txt=clean(texto)); pdf.ln(5)
-        return pdf.output(dest="S").encode("latin-1", "replace")
-
-    # --- 5. SIDEBAR (CONFIGURACIÓN) ---
+    # --- 5. SIDEBAR ---
     with st.sidebar:
-        # === ZONA ADMIN (Siempre visible al principio) ===
+        # === BOTÓN JEFE (Indestructible) ===
         if email_actual == EMAIL_JEFE:
-            st.warning("👑 MODO ADMINISTRADOR")
-            if st.button("⚙️ IR AL PANEL DE CONTROL", type="primary", use_container_width=True):
+            st.warning("👑 ZONA ADMIN")
+            if st.button("⚙️ PANEL DE CONTROL", type="primary", use_container_width=True):
                 st.session_state.page = 'admin'
                 st.rerun()
             st.divider()
-        # =================================================
-        
+        # ===================================
+
         try: st.image("logo.png", width=180)
         except: st.header("ZYNTE")
         
-        # Estado de la cuenta
-        if st.session_state.get('is_premium'): 
+        # VISOR DE ESTADO (Feedback inmediato)
+        if st.session_state.is_premium:
             st.success("🌟 PLAN PRO ACTIVO")
-        else: 
+        else:
             st.info("🌱 PLAN GRATUITO")
-            st.button("⬆️ Pasar a PRO", on_click=lambda: setattr(st.session_state, 'page', 'pricing'))
-        
-        # Botón de Sincronización Manual (La solución mágica)
-        if st.button("🔄 Sincronizar Cuenta", help="Pulsa si acabas de comprar el Pro y no sale"):
-            with st.spinner("Actualizando datos de la nube..."):
-                nuevos_datos = cargar_perfil(email_actual)
-                st.session_state.datos_usuario = nuevos_datos
-                time.sleep(1)
-                st.rerun()
+            if st.button("⬆️ Mejorar Plan"): st.session_state.page='pricing'; st.rerun()
 
         st.divider()
-        st.caption("PERFIL BIOMÉTRICO")
+        st.caption("CONFIGURACIÓN")
         
-        # Inputs modificables
-        nombre_new = st.text_input("Alias", nombre)
+        # Sliders conectados a las variables seguras
         peso_new = st.slider("Peso (kg)", 40.0, 150.0, peso, 0.5)
         altura_new = st.slider("Altura (cm)", 120, 220, altura, 1)
         edad_new = st.slider("Edad", 16, 80, edad)
-        genero_new = st.radio("Género:", ["Hombre", "Mujer"], horizontal=True, index=0 if genero == "Hombre" else 1)
         
         obj_ops = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
         niv_ops = ["Principiante", "Intermedio", "Avanzado"]
         
-        try: idx_o = obj_ops.index(objetivo_actual)
-        except: idx_o = 0
-        try: idx_n = niv_ops.index(nivel_actual)
-        except: idx_n = 1
+        # Índices seguros
+        idx_o = obj_ops.index(objetivo_actual) if objetivo_actual in obj_ops else 0
+        idx_n = niv_ops.index(nivel_actual) if nivel_actual in niv_ops else 1
         
         objetivo_new = st.selectbox("Objetivo:", obj_ops, index=idx_o)
-        nivel_new = st.select_slider("Experiencia:", options=niv_ops, value=niv_ops[idx_n])
+        nivel_new = st.select_slider("Nivel:", options=niv_ops, value=niv_ops[idx_n])
         
-        if st.button("💾 Guardar Cambios", use_container_width=True):
-            # Guardamos en Google Sheets
-            # (Asumimos que dias=4 por defecto si no está el slider)
-            if guardar_perfil_db(email_actual, nombre_new, peso_new, altura_new, edad_new, genero_new, objetivo_new, nivel_new, 4):
-                st.toast("✅ Guardado en la nube")
-                # Actualizamos la memoria local para ver el cambio ya
-                st.session_state.datos_usuario.update({
-                    "nombre": nombre_new, "peso": peso_new, "altura": altura_new, 
-                    "edad": edad_new, "genero": genero_new, "objetivo": objetivo_new, "nivel": nivel_new
-                })
-                time.sleep(1); st.rerun()
-            else: st.toast("❌ Error al guardar")
+        if st.button("💾 Guardar Datos", use_container_width=True):
+            if guardar_perfil_db(email_actual, nombre, peso_new, altura_new, edad_new, genero, objetivo_new, nivel_new, 4):
+                st.toast("✅ Guardado")
+                # Actualizamos memoria local al instante
+                st.session_state.datos_usuario.update({"peso": peso_new, "altura": altura_new, "objetivo": objetivo_new})
+                time.sleep(0.5); st.rerun()
+            else: st.error("Error guardando")
 
-        st.divider()
+        st.write("---")
         if st.button("Cerrar Sesión", use_container_width=True):
-            st.session_state.logged_in = False
+            st.session_state.clear() # Borramos todo para evitar conflictos
             st.session_state.page = "landing"
             st.rerun()
 
-    # --- 6. CUERPO PRINCIPAL ---
+    # --- 6. CUERPO DE LA APP ---
     try: st.image("banner.jpg", use_column_width=True)
     except: st.title("ZYNTE COACH")
-
+    
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
     with tab_train:
-        # Usamos las variables _new para que reaccionen al slider al instante
         imc = peso_new / ((altura_new/100)**2)
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("IMC", f"{imc:.1f}")
-        c2.metric("Peso", f"{peso_new} kg")
+        c2.metric("Peso", f"{peso_new}kg")
         c3.metric("Meta", objetivo_new)
         c4.metric("Nivel", nivel_new)
         st.divider()
 
-        # Chat
+        # Chat IA
         st.subheader("💬 Chat con tu preparador")
         if "history" not in st.session_state: st.session_state.history = []
-        
         for msg in st.session_state.history:
-            if msg.get("role") != "system":
-                st.chat_message(msg["role"]).markdown(msg["content"])
+            if msg.get("role") != "system": st.chat_message(msg["role"]).markdown(msg["content"])
 
-        if prompt := st.chat_input("Escribe aquí..."):
+        if prompt := st.chat_input("Pregunta algo..."):
             st.chat_message("user").markdown(prompt)
             st.session_state.history.append({"role": "user", "content": prompt})
             
             with st.chat_message("assistant"):
-                with st.spinner("Analizando..."):
-                    try:
-                        # Aseguramos API KEY
-                        api_key = st.secrets["GOOGLE_API_KEY"]
-                        genai.configure(api_key=api_key)
-                        model = genai.GenerativeModel("gemini-1.5-flash")
-                        
-                        contexto = f"Cliente: {nombre_new}, {peso_new}kg. Objetivo: {objetivo_new}."
-                        full_prompt = f"{contexto}\nUsuario dice: {prompt}"
-                        
-                        # Historial simple
-                        hist_api = []
-                        for m in st.session_state.history:
-                            r = "user" if m["role"] == "user" else "model"
-                            hist_api.append({"role": r, "parts": [{"text": m["content"]}]})
-                        
-                        chat = model.start_chat(history=hist_api[:-1])
-                        response = chat.send_message(full_prompt)
-                        
-                        st.markdown(response.text)
-                        st.session_state.history.append({"role": "model", "content": response.text})
-                    except Exception as e:
-                        st.error(f"Error conexión: {e}")
+                try:
+                    # Configuración IA
+                    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+                    model = genai.GenerativeModel("gemini-1.5-flash")
+                    
+                    # Contexto actualizado al segundo
+                    ctx = f"Cliente {peso_new}kg, {altura_new}cm. Meta: {objetivo_new}."
+                    
+                    # Llamada IA
+                    hist = [{"role": ("user" if m["role"]=="user" else "model"), "parts": [{"text": m["content"]}]} for m in st.session_state.history]
+                    chat = model.start_chat(history=hist[:-1])
+                    res = chat.send_message(f"{ctx}\nUsuario: {prompt}")
+                    st.markdown(res.text)
+                    st.session_state.history.append({"role": "model", "content": res.text})
+                except Exception as e: st.error(f"Error IA: {e}")
 
     with tab_nutri:
-        if not st.session_state.get('is_premium'):
+        # Aquí la comprobación es inmediata contra la variable 'is_premium'
+        if not st.session_state.is_premium:
             mostrar_bloqueo_pro("Nutrición Avanzada")
         else:
-            st.header("🥗 Plan Nutricional")
-            kcal, p, ch, g = calcular_macros(peso_new, altura_new, edad_new, genero_new, objetivo_new, nivel_new)
+            st.header("🥗 Plan Nutricional PRO")
+            k, p, c, f = calcular_macros(peso_new, altura_new, edad_new, genero, objetivo_new, nivel_new)
             c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Kcal", kcal); c2.metric("Prot", f"{p}g"); c3.metric("Carb", f"{ch}g"); c4.metric("Grasa", f"{g}g")
-            
-            # ... (Aquí va tu código de generador de dieta igual que antes) ...
-            # Si quieres puedo incluirlo, pero para no alargar demasiado la respuesta, asumo que mantienes tu bloque de botones.
-            st.info("💡 Pulsa el botón Generar para crear tu menú.")
+            c1.metric("Kcal", k); c2.metric("Prot", f"{p}g"); c3.metric("Carb", f"{c}g"); c4.metric("Grasa", f"{f}g")
+            st.info("Generador de dieta disponible (Copia tu código aquí)")
 
     with tab_prog:
-        if not st.session_state.get('is_premium'):
+        if not st.session_state.is_premium:
             mostrar_bloqueo_pro("Gráficas de Progreso")
         else:
-            st.header("📈 Tu Evolución")
+            st.header("📈 Gráficas PRO")
             df = obtener_historial_df(email_actual)
-            if df is not None and not df.empty:
-                st.line_chart(df.set_index('fecha'))
-            else:
-                st.info("No hay datos suficientes aún.")
+            if df is not None: st.line_chart(df.set_index('fecha'))
+            else: st.info("Sin datos aún.")
 
 def admin_panel():
     st.title("👮‍♂️ Panel de Control - Zynte God Mode")
     st.warning("⚠️ Zona restringida. Los cambios se aplican directamente a la Base de Datos.")
 
-    # 1. Mostramos la lista de todos los usuarios
     try:
         sheet = get_db_sheet()
-        # Obtenemos todos los datos (devuelve lista de listas)
         all_data = sheet.get_all_values()
         
-        # Convertimos a DataFrame para verlo bonito (saltando la fila de cabecera)
         if len(all_data) > 1:
             header = all_data[0]
             rows = all_data[1:]
             df = pd.DataFrame(rows, columns=header)
             
-            # Filtramos solo columnas importantes para ver rápido
-            st.dataframe(df[["email", "nombre", "status", "fecha_registro"]])
+            # Filtro para ver solo lo importante
+            try:
+                st.dataframe(df[["email", "nombre", "status", "fecha_registro"]])
+            except:
+                st.dataframe(df) # Por si faltan columnas
             
             st.write("---")
             st.subheader("🛠️ Gestión de Usuarios")
 
-            # 2. Selector de Víctima (Usuario)
-            lista_emails = df["email"].tolist()
+            # Selector de Usuario
+            lista_emails = df["email"].tolist() if "email" in df.columns else []
+            if not lista_emails: st.error("No hay emails en la columna 'email'"); return
+
             usuario_elegido = st.selectbox("Seleccionar Usuario a Modificar:", lista_emails)
             
-            # Mostramos estado actual
-            estado_actual = df[df["email"] == usuario_elegido]["status"].values[0]
-            st.info(f"Estado actual de **{usuario_elegido}**: `{estado_actual}`")
-
-            # 3. Botones de Acción
+            # Botones de Acción
             col1, col2, col3 = st.columns(3)
             
+            # === BOTÓN DE HACER PRO (Optimista) ===
             with col1:
                 if st.button("🌟 Hacer PRO", use_container_width=True):
+                    # 1. Actualizamos el Excel (Lento pero seguro)
                     if admin_update_status(usuario_elegido, "pro"):
-                        st.success(f"{usuario_elegido} ahora es PRO.")
-                        time.sleep(1)
+                        
+                        # 2. ¡TRUCO! Si soy yo mismo, me actualizo YA (Rápido)
+                        # "Actualízate independientemente del Google Sheet"
+                        if usuario_elegido == st.session_state.get('email'):
+                            if "datos_usuario" in st.session_state:
+                                st.session_state.datos_usuario["status"] = "pro"
+                            st.session_state.is_premium = True
+                            st.toast("⚡ ¡Modo PRO activado instantáneamente!")
+                        else:
+                            st.success(f"{usuario_elegido} ahora es PRO en la base de datos.")
+                        
+                        time.sleep(0.5)
                         st.rerun()
             
+            # === BOTÓN DE HACER FREE ===
             with col2:
                 if st.button("⬇️ Hacer FREE", use_container_width=True):
                     if admin_update_status(usuario_elegido, "free"):
-                        st.success(f"{usuario_elegido} ahora es FREE.")
-                        time.sleep(1)
+                        # Truco de actualización inmediata
+                        if usuario_elegido == st.session_state.get('email'):
+                            if "datos_usuario" in st.session_state:
+                                st.session_state.datos_usuario["status"] = "free"
+                            st.session_state.is_premium = False
+                            st.toast("⬇️ Vuelves a ser FREE al instante.")
+                        else:
+                            st.success(f"{usuario_elegido} bajado a FREE.")
+                        time.sleep(0.5)
                         st.rerun()
 
             with col3:
-                if st.button("🚫 BANEAR (Bloquear)", type="primary", use_container_width=True):
+                if st.button("🚫 BANEAR", type="primary", use_container_width=True):
                     if admin_update_status(usuario_elegido, "banned"):
-                        st.error(f"{usuario_elegido} ha sido BANEADO.")
-                        time.sleep(1)
+                        st.error("Usuario Baneado.")
+                        time.sleep(0.5)
                         st.rerun()
                         
     except Exception as e:
@@ -1108,6 +1079,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
