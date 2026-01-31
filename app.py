@@ -683,59 +683,53 @@ def app_principal():
         m3.metric("Meta", objetivo)
         m4.metric("Nivel", nivel)
 
-   with tab_nutri:
+  with tab_train:
+        # Todo el contenido de entrenamiento aquí...
+        st.write("Contenido de entrenamiento")
+
+    # ESTA ES LA LÍNEA 686: Debe estar alineada con 'with tab_train'
+    with tab_nutri:
         st.subheader("🥗 Plan Nutricional Avanzado")
         
-        # 1. Lógica de cálculo interna (Arregla el NameError: calcular_macros)
+        # Lógica de macros (Integrada para evitar NameError)
         def calcular_macros_v2(p, a, e, g, obj, niv):
-            # Ecuación de Harris-Benedict
             if g == "Hombre": tmb = 88.36 + (13.4 * p) + (4.8 * a) - (5.7 * e)
             else: tmb = 447.6 + (9.2 * p) + (3.1 * a) - (4.3 * e)
-            
             f_act = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
             tdee = tmb * f_act.get(niv, 1.2)
-            
             if "Grasa" in obj: kcal = tdee - 450; prot_g = p * 2.2; gras_g = p * 0.8
             elif "Hipertrofia" in obj: kcal = tdee + 350; prot_g = p * 2.0; gras_g = p * 1.0
             else: kcal = tdee; prot_g = p * 1.8; gras_g = p * 0.9
-            
             carb_g = (kcal - (prot_g * 4) - (gras_g * 9)) / 4
             return int(kcal), int(prot_g), int(carb_g), int(gras_g)
 
-        # 2. Ejecutar cálculo y mostrar métricas reales (Adiós al "Próximamente")
         kcal, p_g, c_g, g_g = calcular_macros_v2(peso, altura, edad, "Hombre", objetivo, nivel)
         
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Kcal", kcal); c2.metric("Proteína", f"{p_g}g")
-        c3.metric("Carbos", f"{c_g}g"); c4.metric("Grasas", f"{g_g}g")
+        c1.metric("Kcal", kcal)
+        c2.metric("Proteína", f"{p_g}g")
+        c3.metric("Carbos", f"{c_g}g")
+        c4.metric("Grasas", f"{g_g}g")
         
         st.divider()
 
-        # 3. Generador de Menú con IA (Arregla el Error 404)
         st.markdown("### 🍳 Menú Diario Sugerido")
-        if st.button("✨ GENERAR DIETA ESPECÍFICA", key="btn_nutri_ia_v2"):
+        if st.button("✨ GENERAR DIETA ESPECÍFICA", key="btn_nutri_ia_final"):
             with st.spinner("Zynte calculando raciones..."):
                 try:
-                    # Usamos la URL v1 estable para evitar el Error 404
                     url_ia = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    prompt_diet = f"Como nutricionista, crea un menú de un día para {objetivo}. " \
-                                  f"Macros: {kcal}kcal, {p_g}g Proteína, {c_g}g Carb, {g_g}g Grasa. " \
-                                  f"Estructura: Desayuno, Comida, Merienda y Cena."
-                    
+                    prompt_diet = f"Menú de un día para {objetivo}: {kcal}kcal, {p_g}g P, {c_g}g CH, {g_g}g G."
                     res = requests.post(url_ia, json={"contents": [{"parts": [{"text": prompt_diet}]}]}, timeout=30)
-                    
                     if res.status_code == 200:
                         menu_txt = res.json()['candidates'][0]['content']['parts'][0]['text']
                         st.session_state.current_diet = menu_txt
                         st.markdown(menu_txt)
                     else:
-                        st.error(f"Error de comunicación (Código: {res.status_code}). Verifica tu API Key.")
+                        st.error(f"Error {res.status_code}: Revisa la URL y API Key")
                 except Exception as e:
                     st.error(f"Fallo de conexión: {e}")
-        
         elif "current_diet" in st.session_state:
             st.markdown(st.session_state.current_diet)
-
     with tab_prog:
         st.subheader("📈 Tu Evolución")
         df_h = obtener_historial_df(email_actual)
@@ -789,6 +783,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
