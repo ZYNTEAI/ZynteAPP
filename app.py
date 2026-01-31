@@ -764,10 +764,21 @@ def app_principal():
         dias_entreno = st.slider("Días disponibles/semana:", 1, 7, 4)
         
         if st.button("💾 Guardar Perfil", use_container_width=True):
-            # (Nota: Por ahora esto no se guarda en la base de datos hasta que hagamos el Paso A, 
-            # pero funcionará en la sesión actual para el Chat)
-            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel): st.toast("Datos Guardados")
-            else: st.toast("Error")
+            with st.spinner("Guardando en la nube..."):
+                # Fíjate que ahora enviamos TODOS los datos nuevos
+                if guardar_perfil_db(st.session_state.email, nombre, peso, altura, edad, genero, objetivo, nivel, dias_entreno):
+                    st.toast("✅ Perfil actualizado en Google Sheets")
+                    
+                    # Actualizamos la memoria local también
+                    st.session_state.datos_usuario = {
+                        "nombre": nombre, "peso": peso, "altura": altura, 
+                        "edad": edad, "genero": genero, "objetivo": objetivo, 
+                        "nivel": nivel, "dias": dias_entreno
+                    }
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.toast("❌ Error al conectar con la base de datos")
 
         # --- NUEVO: BOTÓN PARA VACIAR CHAT ---
         st.write("---")
@@ -1025,6 +1036,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
