@@ -1210,9 +1210,16 @@ def main():
     elif st.session_state.page == "app":
         # Ejecutamos toda la app que programaste antes
         app_principal()
-
+    elif st.session_state.page == "admin":
+        # Solo dibujamos el panel si estamos en modo admin
+        admin_panel()
+        
+        if st.button("🔙 Salir al Login"):
+            st.session_state.page = "login"
+            st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
