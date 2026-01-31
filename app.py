@@ -575,11 +575,13 @@ def mostrar_login():
             email_login = st.text_input("Correo", key="login_email").strip().lower()
             pass_login = st.text_input("Contraseña", type="password", key="login_pass").strip()
             st.write("")
-            if st.button("ENTRAR ▶", type="primary", use_container_width=True):
-          if verificar_login(email, password):
-                st.session_state.page = 'app'   <-- ¡Empujado a la derecha!
-                st.session_state.email = email
-                st.rerun()
+            if st.button("Entrar", use_container_width=True):
+                if verificar_login(email, password):
+                    st.session_state.page = 'app'
+                    st.session_state.email = email  # <--- Guardamos el email
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o contraseña incorrectos")
                     # AQUÍ MIRAMOS SI YA PAGÓ ANTES
                     es_pro = comprobar_plan(email_login)
                     st.session_state.is_premium = es_pro # Guardamos el estado
@@ -1036,6 +1038,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
