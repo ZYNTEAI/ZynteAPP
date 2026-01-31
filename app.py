@@ -688,12 +688,21 @@ def mostrar_bloqueo_pro(nombre_funcion):
     </div>
     """, unsafe_allow_html=True)
 def app_principal():
-    # --- MUEVE ESTO AQUÍ ARRIBA (Línea 335 aprox) ---
-    EMAIL_JEFE = "pablonavarrorui@gmail.com" 
-    email_actual = st.session_state.get('user_email', 'invitado')
-    
-    # ESTA LÍNEA ES LA CLAVE: Cargar los datos ANTES de cualquier 'try' o 'if'
-    datos_usuario = cargar_perfil(email_actual)
+    # --- 1. GUARDIA DE SEGURIDAD (Anti-Crash) ---
+    # Si por alguna razón el email se borró, mandamos al usuario al Login
+    if "email" not in st.session_state or not st.session_state.email:
+        st.session_state.page = "login"
+        st.rerun()
+        return
+
+    # --- 2. RECUPERADOR DE MEMORIA ---
+    # Si tenemos email pero nos faltan los datos, los cargamos AHORA
+    if "datos_usuario" not in st.session_state or not st.session_state.datos_usuario:
+        st.session_state.datos_usuario = cargar_perfil(st.session_state.email)
+
+    # --- CONFIGURACIÓN DE IA (Tu código sigue aquí igual que antes) ---
+    try:
+        genai.configure(api_key=API_KEY_GLOBAL)
     # ------------------------------------------------
 
     # Luego sigue con la configuración de la IA
@@ -1253,6 +1262,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
