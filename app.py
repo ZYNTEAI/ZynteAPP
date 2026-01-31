@@ -595,17 +595,19 @@ def mostrar_pricing():
                     st.error("❌ Código incorrecto.")
 
 def app_principal():
-    
-    # ASEGURA LA CONFIGURACIÓN AL ENTRAR EN LA APP
+    # 1. Configuración de seguridad inicial
     try:
         genai.configure(api_key=API_KEY_GLOBAL)
     except Exception as e:
-        st.error(f"Error configurando API: {e}")
-        # --- CONFIGURACIÓN DEL JEFE ---
-        EMAIL_JEFE = "pablonavarrorui@gmail.com" 
-        
-        email_actual = st.session_state.get('user_email', 'invitado')
-        datos_usuario = cargar_perfil(email_actual)
+        st.error(f"Error config: {e}")
+
+    # 2. CARGA DE DATOS OBLIGATORIA (Solución a tu error)
+    # Definimos esto ANTES de cualquier if/try para que siempre exista
+    EMAIL_JEFE = "pablonavarrorui@gmail.com" 
+    email_actual = st.session_state.get('user_email', 'invitado')
+    
+    # Cargamos el perfil aquí mismo para que esté disponible para los Sliders
+    datos_usuario = cargar_perfil(email_actual)
 
     # ... (Resto de lógica nutricional y PDF igual que antes) ...
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
@@ -809,6 +811,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
