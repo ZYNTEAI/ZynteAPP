@@ -784,7 +784,7 @@ def app_principal():
                 try:
                     # Usamos la configuración segura de Gemini
                     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-                    model = genai.GenerativeModel("gemini-1.5-flash")
+                    model = genai.GenerativeModel("gemini-flash-latest")
                     
                     # Generamos la respuesta
                     res_rapida = model.generate_content(prompt_rapido)
@@ -830,7 +830,7 @@ def app_principal():
             with st.chat_message("assistant"):
                 try:
                     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-                    model = genai.GenerativeModel("gemini-1.5-flash")
+                    model = genai.GenerativeModel("gemini-flash-latest")
                     ctx = f"Cliente {peso_new}kg, {altura_new}cm. Meta: {objetivo_new}."
                     hist = [{"role": ("user" if m["role"]=="user" else "model"), "parts": [{"text": m["content"]}]} for m in st.session_state.history]
                     chat = model.start_chat(history=hist[:-1])
@@ -1185,6 +1185,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
