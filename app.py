@@ -1130,31 +1130,38 @@ def main():
             
             st.write("") # Espacio
             
-            # --- BOTÓN DE ENTRAR ---
+            # --- BOTÓN DE ENTRAR (CON LÓGICA ADMIN Y BANEO) ---
             if st.button("Entrar", use_container_width=True):
                 if verificar_login(email, password):
                     st.session_state.email = email
                     
-                    # Verificamos si es PRO o FREE
+                    # 1. ¿ERES EL JEFE? (Pon aquí tu email real de admin) 👇
+                    if email == "pablonavarrorui@gmail.com":  # <--- CAMBIA ESTO POR TU EMAIL
+                        st.session_state.page = 'admin'
+                        st.rerun()
+
+                    # 2. Si no eres el jefe, cargamos perfil normal
                     datos = cargar_perfil(email)
                     st.session_state.datos_usuario = datos
-                    
-                    es_pro = (datos.get("status") == "pro")
-                    
-                    if es_pro:
+                    status = datos.get("status", "free")
+
+                    # 3. FILTRO ANTI-BANEADOS 🛑
+                    if status == "banned":
+                        st.error("⛔ TU CUENTA HA SIDO SUSPENDIDA POR INFRINGIR LAS NORMAS.")
+                        st.stop() # Detiene la ejecución aquí mismo
+
+                    # 4. Lógica Pro vs Free
+                    if status == "pro":
                         st.session_state.page = 'app'
-                        st.toast(f"¡Bienvenido Pro, {datos['nombre']}! 🌟")
+                        st.toast(f"¡Hola de nuevo, {datos['nombre']}! 🌟")
                     else:
-                        st.session_state.page = 'pricing' # Redirige a ventas si es free
+                        st.session_state.page = 'pricing'
                         st.toast("Verificado. Selecciona tu plan.")
                         
                     time.sleep(0.5)
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos")
-            
-            st.markdown("---")
-            st.caption("¿Nuevo aquí?")
             
             # --- BOTÓN DE REGISTRO ---
             if st.button("Crear Cuenta Gratis", use_container_width=True):
@@ -1206,6 +1213,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
