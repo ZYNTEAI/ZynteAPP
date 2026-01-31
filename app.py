@@ -602,61 +602,7 @@ def app_principal():
                 pdf.multi_cell(0, 7, txt=texto_limpio); pdf.ln(5); pdf.line(10, pdf.get_y(), 200, pdf.get_y()); pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
 
-    with st.sidebar:
-        try: st.image("logo.png", width=180)
-        except: st.header("ZYNTE")
-        
-        if st.session_state.get('is_premium', False): st.success("🌟 MIEMBRO PRO")
-        else: st.info("🌱 CUENTA GRATUITA"); st.button("⬆️ Mejorar Plan", use_container_width=True, on_click=lambda: setattr(st.session_state, 'page', 'pricing'))
-        
-        st.write("---"); st.caption("PERFIL BIOMÉTRICO")
-        
-        # LOS VALORES POR DEFECTO AHORA VIENEN DE LA BASE DE DATOS
-        nombre = st.text_input("Alias", "Atleta")
-        peso = st.slider("Peso (kg)", 40.0, 150.0, float(datos_usuario['peso']), 0.5)
-        altura = st.slider("Altura (cm)", 120, 220, int(datos_usuario['altura']), 1)
-        edad = st.slider("Edad", 16, 80, int(datos_usuario['edad']))
-        
-        # Índices para los selectbox
-        obj_options = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
-        niv_options = ["Principiante", "Intermedio", "Avanzado"]
-        
-        try: idx_obj = obj_options.index(datos_usuario['objetivo'])
-        except: idx_obj = 0
-        try: idx_niv = niv_options.index(datos_usuario['nivel'])
-        except: idx_niv = 1
 
-        objetivo = st.selectbox("Objetivo:", obj_options, index=idx_obj)
-        nivel = st.select_slider("Experiencia:", options=niv_options, value=niv_options[idx_niv])
-        
-        # BOTÓN NUEVO PARA GUARDAR CAMBIOS
-        if st.button("💾 Guardar Perfil", use_container_width=True):
-            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel):
-                st.toast("✅ Perfil actualizado con éxito")
-            else:
-                st.toast("❌ Error al guardar")
-
-        st.write("---")
-        if "history" in st.session_state and len(st.session_state.history) > 1:
-            if st.session_state.get('is_premium', False):
-                pdf_bytes = crear_pdf(st.session_state.history, nombre, peso, objetivo)
-                st.download_button("📥 DESCARGAR INFORME", pdf_bytes, f"Plan_{nombre}.pdf", "application/pdf", use_container_width=True)
-            else: st.warning("🔒 DESCARGA BLOQUEADA (PRO)")
-            
-        st.write("---"); st.button("Cerrar Sesión", use_container_width=True, on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'))
-        st.caption("© 2026 Zynte Performance")
-
-    imc = peso / ((altura/100)**2); estado_imc = "Normal"
-    if imc >= 25: estado_imc = "Sobrepeso"
-    if imc < 18.5: estado_imc = "Bajo peso"
-    try: st.image("banner.jpg", use_column_width=True)
-    except: st.title("ZYNTE COACH")
-    
-    col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
-    with col1: st.metric("IMC", f"{imc:.1f}", estado_imc)
-    with col2: st.metric("Peso", f"{peso} kg")
-    with col3: st.metric("Meta", objetivo)
-    with col4: st.metric("Nivel", nivel)
     st.divider(); st.caption("⚠️ **Aviso:** Zynte es una herramienta de soporte. Consulta siempre con un médico antes de iniciar actividad física.")
 
     if "history" not in st.session_state:
@@ -664,12 +610,6 @@ def app_principal():
         # Mensaje personalizado
         st.session_state.history.append({"role": "model", "content": f"Hola. Veo que pesas {peso}kg y buscas {objetivo}. He cargado tu perfil. ¿Qué entrenamos hoy?"})
         
-    for msg in st.session_state.history:
-        role = "assistant" if msg["role"] == "model" else "user"
-        avatar = "logo.png" if role == "assistant" else None
-        try: st.chat_message(role, avatar=avatar).markdown(msg["content"])
-        except: st.chat_message(role).markdown(msg["content"])
-
     if prompt := st.chat_input("Describe tu necesidad o equipamiento..."):
         st.chat_message("user").markdown(prompt)
         st.session_state.history.append({"role": "user", "content": prompt})
@@ -803,6 +743,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
