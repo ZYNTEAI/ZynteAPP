@@ -10,11 +10,6 @@ import re
 import pandas as pd  
 import requests
 
-Aquí tienes el bloque completo y corregido para los Generadores Rápidos. He estructurado el código para que no tengas errores de indentación y para que la variable api_key esté siempre disponible cuando se necesite.
-
-Copia y pega este bloque en tu app.py, asegurándote de que esté dentro de la pestaña with tab_train::
-
-Python
 
         # --- BLOQUE DE GENERADORES RÁPIDOS ---
         st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
@@ -875,6 +870,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
