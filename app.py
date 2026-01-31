@@ -43,7 +43,7 @@ if prompt_rapido:
     with st.spinner("Zynte está pensando..."):
         try:
             # Tienes que añadir 4 espacios antes de 'url' para que esté DENTRO del try
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={API_KEY_GLOBAL}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY_GLOBAL}"
             
             # Estas líneas TAMBIÉN deben estar alineadas con 'url'
             payload = {"contents": [{"parts": [{"text": prompt_rapido}]}]}
@@ -337,7 +337,7 @@ st.markdown("""
 
 
 # Usamos el nombre sin el prefijo "models/" para que la librería lo gestione
-MODELO_USADO = "gemini-1.0-pro"
+MODELO_USADO = "gemini-2.0-flash"
 
 # ==============================================================================
 # ℹ️ PÁGINAS DE INFORMACIÓN 
@@ -729,7 +729,7 @@ def app_principal():
                 try:
                     # USAMOS LA LIBRERÍA OFICIAL (Esto evita el error 404 de la URL)
                     genai.configure(api_key=API_KEY_GLOBAL)
-                    model = genai.GenerativeModel('gemini-pro')
+                    model = genai.GenerativeModel('gemini-2.0-flash')
                     
                     # Llamada directa
                     response = model.generate_content(prompt_chat)
@@ -755,7 +755,7 @@ def app_principal():
                 with st.spinner("Creando menú..."):
                     try:
                         # Asegúrate de usar el modelo Flash
-                        model = genai.GenerativeModel('gemini-pro') 
+                        model = genai.GenerativeModel('gemini-2.0-flash') 
                         res = model.generate_content(f"Crea dieta {dieta} de {c}kcal para {objetivo}. Incluye lista compra.")
                         st.session_state.plan_nutri = res.text
                         st.rerun() # Añade esto para refrescar la pantalla
@@ -802,6 +802,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
