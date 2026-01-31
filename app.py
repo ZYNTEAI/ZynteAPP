@@ -204,24 +204,28 @@ def cargar_perfil(email):
         cell = sheet.find(email, in_column=1)
         if cell:
             row_values = sheet.row_values(cell.row)
-            # Mapa de columnas (La lista empieza en 0):
-            # 0:Email, 1:Pass, 2:Fecha, 3:Nombre, 4:Peso, 5:Altura, 6:Edad, 7:Genero, 8:Obj, 9:Nivel
+            
+            # Limpiamos el valor del status para evitar errores de espacios o mayúsculas
+            raw_status = row_values[12] if len(row_values) > 12 else "free"
+            status_limpio = str(raw_status).strip().lower() 
+
             datos = {
-                "nombre": row_values[3] if len(row_values) > 3 else "Usuario", # <--- NUEVO: Lee el nombre
+                "nombre": row_values[3] if len(row_values) > 3 else "Usuario",
                 "peso": float(row_values[4]) if len(row_values) > 4 else 70.0,
                 "altura": int(row_values[5]) if len(row_values) > 5 else 170,
                 "edad": int(row_values[6]) if len(row_values) > 6 else 25,
                 "genero": row_values[7] if len(row_values) > 7 else "Hombre",
                 "objetivo": row_values[8] if len(row_values) > 8 else "Hipertrofia",
                 "nivel": row_values[9] if len(row_values) > 9 else "Intermedio",
-                "dias": int(row_values[10]) if len(row_values) > 10 and row_values[10].isdigit() else 4, # (Opcional si usas dias)
-                "status": row_values[12] if len(row_values) > 12 else "free"
+                "dias": int(row_values[10]) if len(row_values) > 10 else 4,
+                "status": status_limpio # <--- Aquí está la clave
             }
             return datos
     except Exception as e:
         print(f"Error cargando perfil: {e}")
-    # Valores por defecto si falla
-    return {"nombre": "Usuario", "peso": 70.0, "altura": 170, "edad": 25, "genero": "Hombre", "objetivo": "Hipertrofia", "nivel": "Intermedio", "dias": 4}
+    
+    # Valores por defecto si falla la lectura
+    return {"nombre": "Usuario", "status": "free", "peso": 70.0, "altura": 170, "edad": 25, "genero": "Hombre", "objetivo": "Hipertrofia", "nivel": "Intermedio", "dias": 4}
 
 def guardar_perfil_db(email, nombre, peso, altura, edad, genero, objetivo, nivel, dias):
     try:
@@ -1220,6 +1224,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
