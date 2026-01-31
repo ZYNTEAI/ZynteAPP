@@ -892,10 +892,10 @@ def app_principal():
     objetivo = nuevo_objetivo
     nivel = nuevo_nivel
     
-   # A) BOTÓN DE CERRAR SESIÓN (Para todos)
-        if st.button("Log Out / Salir", use_container_width=True):
-            st.session_state.clear()
-            st.rerun()
+    # A) BOTÓN DE CERRAR SESIÓN (Para todos)
+    if st.button("Log Out / Salir", use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
 
     st.write("---")
     if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
@@ -1281,6 +1281,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
