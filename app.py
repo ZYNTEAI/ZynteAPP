@@ -743,9 +743,6 @@ def app_principal():
                         st.error(f"Error de Google: {res.status_code}. Revisa tu API Key.")
                 except Exception as e:
                     st.error(f"Error de conexión: {e}")
-            # El rerun debe ir SIEMPRE fuera del try/except
-            if not error_ocurrido:
-                st.rerun()
 
         for msg in st.session_state.history: 
             st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
@@ -821,6 +818,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
