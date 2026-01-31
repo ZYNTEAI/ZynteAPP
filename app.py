@@ -754,11 +754,7 @@ def app_principal():
         if prompt := st.chat_input("Pregunta al coach..."):
             st.chat_message("user").markdown(prompt)
             st.session_state.history.append({"role": "user", "content": prompt})
-        try:
-            # Todo lo que esté aquí dentro debe tener 4 espacios más que el 'try'
-            if prompt := st.chat_input("¿En qué puedo ayudarte hoy?"):
-                st.session_state.history.append({"role": "user", "content": prompt})
-                # ... resto del código del chat ...
+    
         except Exception as e:
             st.error(f"Error: {e}")
     with tab_nutri:
@@ -818,6 +814,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
