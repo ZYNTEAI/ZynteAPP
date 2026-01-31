@@ -812,29 +812,25 @@ def app_principal():
     
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
-   with tab_train:
-        # 1. CÁLCULO DEL IMC Y SU ESTADO
+  # PESTAÑA 1: ENTRENAMIENTO (Corregida y Alineada)
+    # ---------------------------------------------------------
+    with tab_train:
+        # A) Cálculo del IMC y Estado
         imc = peso_new / ((altura_new/100)**2)
         
-        if imc < 18.5:
-            estado_imc = "Bajo Peso 🔵"
-        elif 18.5 <= imc < 25:
-            estado_imc = "Normal ✅"
-        elif 25 <= imc < 30:
-            estado_imc = "Sobrepeso ⚠️"
-        else:
-            estado_imc = "Obesidad 🚨"
+        if imc < 18.5: estado_imc = "Bajo Peso 🔵"
+        elif 18.5 <= imc < 25: estado_imc = "Normal ✅"
+        elif 25 <= imc < 30: estado_imc = "Sobrepeso ⚠️"
+        else: estado_imc = "Obesidad 🚨"
 
-        # 2. COLUMNAS (Mantenemos el ancho [1,1,2,2] para que no se corten las palabras)
+        # B) Columnas Anchas [1, 1, 2, 2] para que no se corte el texto
         c1, c2, c3, c4 = st.columns([1, 1, 2, 2])
         
-        # 3. VISUALIZACIÓN
-        # Usamos 'delta' para mostrar el texto debajo del número
-        # 'delta_color="off"' hace que el texto sea gris/neutro en vez de rojo/verde
-        c1.metric("IMC", f"{imc:.1f}", delta=estado_imc, delta_color="off") 
+        # C) Visualización con delta (texto debajo del número)
+        c1.metric("IMC", f"{imc:.1f}", delta=estado_imc, delta_color="off")
         c2.metric("Peso", f"{peso_new}kg")
-        c3.metric("Meta", objetivo_new)
-        c4.metric("Nivel", nivel_new)
+        c3.metric("Meta", objetivo_new) # Ahora cabe perfecto
+        c4.metric("Nivel", nivel_new)   # Ahora cabe perfecto
         
         st.divider()
 
@@ -1206,6 +1202,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
