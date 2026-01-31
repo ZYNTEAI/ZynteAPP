@@ -814,7 +814,7 @@ def app_principal():
 
     with tab_train:
         imc = peso_new / ((altura_new/100)**2)
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4 = st.columns([1, 1, 2, 2])
         c1.metric("IMC", f"{imc:.1f}")
         c2.metric("Peso", f"{peso_new}kg")
         c3.metric("Meta", objetivo_new)
@@ -1194,6 +1194,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
