@@ -578,57 +578,28 @@ def mostrar_pricing():
                 else:
                     st.error("❌ Código incorrecto.")
 
-def app_principal():
-    # ... (Mantén todo tu código de configuración, PDF, Sidebar y Tabs igual) ...
+# 1. PRIMERO: Creamos las pestañas (Tabs)
+    tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
+    # 2. SEGUNDO: El contenido de Entrenamiento
+    with tab_train:
+        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
+        # ... (Tu código de botones HIIT, Estiramientos, etc.) ...
+
+    # 3. TERCERO: El contenido de Nutrición (Donde te daba el error)
     with tab_nutri:
-        st.header("🥗 Nutrición")
-        c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
-        nc1, nc2, nc3, nc4 = st.columns(4)
-        nc1.metric("Kcal", c); nc2.metric("Prot", f"{p}g"); nc3.metric("Carb", f"{ch}g"); nc4.metric("Grasa", f"{g}g")
-        st.divider()
-        # ... resto de tu lógica de dieta ...
+        st.header("🥗 Plan Nutricional")
+        # ... (Tu código de macros y dieta) ...
 
+    # 4. CUARTO: El contenido de Progreso
     with tab_prog:
         st.header("📈 Tu Evolución")
-        # ... resto de tu lógica de gráficas ...
+        # ... (Tu código de gráficas) ...
 
-    # ==========================================
-    # 💬 PEGA EL CHAT JUSTO AQUÍ (Fuera de los "with tab")
-    # ==========================================
+    # 5. AL FINAL (FUERA DE LAS TABS): El Chat
     st.write("---")
     st.subheader("💬 Chat con Zynte AI")
-
-    if "history" not in st.session_state:
-        st.session_state.history = []
-
-    # Mostrar mensajes previos
-    for msg in st.session_state.history:
-        with st.chat_message("assistant" if msg["role"] == "model" else "user"):
-            st.markdown(msg["content"])
-
-    # Entrada de nuevo mensaje
-    if prompt := st.chat_input("¿Dudas con tu entreno?", key="chat_input_final"):
-        st.session_state.history.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        
-        with st.chat_message("assistant"):
-            with st.spinner("Zynte está pensando..."):
-                try:
-                    import requests
-                    url_final = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    res = requests.post(url_final, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=30)
-                    
-                    if res.status_code == 200:
-                        resp = res.json()['candidates'][0]['content']['parts'][0]['text']
-                        st.markdown(resp)
-                        st.session_state.history.append({"role": "model", "content": resp})
-                        st.rerun()
-                    else:
-                        st.error(f"Error IA: {res.status_code}")
-                except Exception as e:
-                    st.error(f"Error conexión: {e}")
+    # ... (El bloque del chat que pegamos antes) ...
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -650,6 +621,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
