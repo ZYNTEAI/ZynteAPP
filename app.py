@@ -692,25 +692,36 @@ def mostrar_bloqueo_pro(nombre_funcion):
     </div>
     """, unsafe_allow_html=True)
 def app_principal():
-    # --- 1. VERIFICACIÓN DE SESIÓN ---
+    # 1. SEGURIDAD: Si no hay email, volvemos al login
     if "email" not in st.session_state or not st.session_state.email:
         st.session_state.page = "login"
         st.rerun()
         return
 
-    # --- 2. CARGA INICIAL DE DATOS (Arregla el AttributeError) ---
-    if "datos_usuario" not in st.session_state:
-        st.session_state.datos_usuario = cargar_perfil(st.session_state.email)
+    # 2. CARGA/SINCRONIZACIÓN AUTOMÁTICA
+    # Si no hay datos en memoria o el usuario es "free", verificamos la base de datos
+    if "datos_usuario" not in st.session_state or st.session_state.datos_usuario.get("status") == "free":
+        datos_frescos = cargar_perfil(st.session_state.email)
+        
+        # Si el cliente acaba de pagar (ahora es PRO en el Excel), actualizamos la web
+        if "datos_usuario" in st.session_state:
+            if st.session_state.datos_usuario.get("status") == "free" and datos_frescos.get("status") == "pro":
+                st.session_state.datos_usuario = datos_frescos
+                st.toast("🚀 ¡Suscripción PRO activada automáticamente!")
+                time.sleep(1)
+                st.rerun()
+        
+        st.session_state.datos_usuario = datos_frescos
 
-    # --- 3. SINCRONIZADOR AUTOMÁTICO PRO ---
-    # Si en la web sale FREE, preguntamos a Google Sheets si ya cambió a PRO
-    if st.session_state.datos_usuario.get("status") == "free":
-        datos_recientes = cargar_perfil(st.session_state.email)
-        if datos_recientes.get("status") == "pro":
-            st.session_state.datos_usuario["status"] = "pro"
-            st.toast("🚀 ¡Suscripción PRO activada automáticamente!")
-            time.sleep(1)
-            st.rerun()
+    # 3. ACCESO RÁPIDO A VARIABLES (Arregla el UnboundLocalError)
+    # Creamos una copia local para que los sliders funcionen sin errores
+    u_data = st.session_state.datos_usuario
+    
+    # --- A partir de aquí sigue tu configuración de IA ---
+    try:
+        genai.configure(api_key=API_KEY_GLOBAL)
+    except Exception as e:
+        st.error(f"Error IA: {e}")
 
     # ... (Resto de lógica nutricional y PDF igual que antes) ...
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
@@ -1230,6 +1241,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
