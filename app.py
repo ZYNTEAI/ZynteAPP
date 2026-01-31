@@ -4,7 +4,7 @@ from fpdf import FPDF
 import datetime
 import time
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 import sqlite3
 import re
 import pandas as pd  
@@ -133,95 +133,145 @@ def migrar_db():
     conn.commit()
     conn.close()
 
-# --- FUNCIONES DE SEGURIDAD (LOGIN) ---
+# --- CONEXIÓN A GOOGLE SHEETS (El Motor Nuevo) ---
+def get_db_sheet():
+    # 1. Definimos permisos para acceder a Drive y Sheets
+    scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+    
+    # 2. Leemos las credenciales desde el archivo secrets.toml
+    creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+    client = gspread.authorize(creds)
+    
+    # 3. Abrimos la hoja "Zynte_DB" (Asegúrate de haberla creado con ese nombre exacto)
+    return client.open("Zynte_DB").sheet1
+
+# --- FUNCIONES DE SEGURIDAD Y DATOS (Versión Google Sheets) ---
+
 def validar_email_estricto(email):
+    # (Esta función no cambia, es lógica pura)
     email = email.strip().lower()
-    patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    patron = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
     if not re.match(patron, email):
         return False, "Formato inválido."
-    dominios = ["gmail.com", "yahoo.com", "yahoo.es", "hotmail.com", "outlook.com", "icloud.com", "protonmail.com"]
+    dominios = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "protonmail.com"]
     try:
-        dom = email.split('@')[-1]
-    except:
-        return False, "Error dominio."
-    if dom not in dominios:
-        return False, "Dominio no permitido."
+        dom = email.split("@")[-1]
+        if dom not in dominios: return False, "Dominio no permitido (Usa Gmail, Hotmail, etc)."
+    except: return False, "Error dominio."
     return True, "OK"
 
 def verificar_login(email, password):
     try:
-        conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
-        c.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password))
-        return c.fetchone() is not None
-    except:
-        return False
+        sheet = get_db_sheet()
+        # Buscamos el email en la Columna A (1)
+        cell = sheet.find(email, in_column=1)
+        if cell:
+            # La contraseña está en la Columna B (2) de la misma fila
+            real_pass = sheet.cell(cell.row, 2).value
+            if real_pass == password:
+                return True
+    except Exception as e:
+        print(f"Error login: {e}")
+    return False
 
 def registrar_usuario_sql(email, password):
     try:
-        conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
+        sheet = get_db_sheet()
+        # Verificamos si ya existe
+        try:
+            cell = sheet.find(email, in_column=1)
+            if cell: return False # Ya existe
+        except gspread.exceptions.CellNotFound:
+            pass # No existe, podemos continuar
+
+        # Preparamos la fila nueva. 
+        # Estructura: Email, Pass, Fecha, Nombre, Peso, Altura, Edad, Genero, Obj, Nivel, Plan, Historial
         fecha = str(datetime.date.today())
-        c.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-                  (email, password, fecha, "Free", 70.0, 175, 25, "Hipertrofia", "Intermedio"))
-        conn.commit()
-        conn.close()
+        # Valores por defecto para que no falle al principio
+        nueva_fila = [email, password, fecha, "Usuario", 70, 170, 25, "Hombre", "Hipertrofia", "Intermedio", "", ""]
+        
+        sheet.append_row(nueva_fila)
         return True
-    except sqlite3.IntegrityError:
+    except Exception as e:
+        st.error(f"Error registrando en Google Sheets: {e}")
         return False
 
 # --- FUNCIONES DE PERFIL E HISTORIAL ---
-def registrar_peso_historico(email, peso):
-    try:
-        conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
-        fecha = str(datetime.date.today())
-        c.execute('DELETE FROM historial WHERE email = ? AND fecha = ?', (email, fecha))
-        c.execute('INSERT INTO historial VALUES (?, ?, ?)', (email, fecha, peso))
-        conn.commit()
-        conn.close()
-        return True
-    except:
-        return False
-
-def obtener_historial_df(email):
-    try:
-        conn = sqlite3.connect('zynte_users.db')
-        df = pd.read_sql_query("SELECT fecha, peso FROM historial WHERE email = ? ORDER BY fecha ASC", conn, params=(email,))
-        conn.close()
-        return df
-    except:
-        return None
 
 def cargar_perfil(email):
     try:
-        conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
-        c.execute('SELECT peso, altura, edad, objetivo, nivel FROM users WHERE email = ?', (email,))
-        data = c.fetchone()
-        conn.close()
-        return {
-            "peso": data[0] if data[0] else 70.0,
-            "altura": data[1] if data[1] else 175,
-            "edad": data[2] if data[2] else 25,
-            "objetivo": data[3] if data[3] else "Hipertrofia",
-            "nivel": data[4] if data[4] else "Intermedio"
-        }
+        sheet = get_db_sheet()
+        cell = sheet.find(email, in_column=1)
+        if cell:
+            # Leemos toda la fila para sacar los datos (Devuelve una lista de textos)
+            row_values = sheet.row_values(cell.row)
+            
+            # Mapeamos las columnas (Ten cuidado, las listas en Python empiezan en 0)
+            # Col E (Peso) es índice 4, F (Altura) es 5...
+            datos = {
+                "peso": float(row_values[4]) if len(row_values) > 4 else 70.0,
+                "altura": int(row_values[5]) if len(row_values) > 5 else 170,
+                "edad": int(row_values[6]) if len(row_values) > 6 else 25,
+                "objetivo": row_values[8] if len(row_values) > 8 else "Hipertrofia",
+                "nivel": row_values[9] if len(row_values) > 9 else "Intermedio"
+            }
+            return datos
     except:
-        return {"peso": 70.0, "altura": 175, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
+        pass
+    # Si falla, devolvemos valores por defecto
+    return {"peso": 70.0, "altura": 170, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
 
 def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
     try:
-        conn = sqlite3.connect('zynte_users.db')
-        c = conn.cursor()
-        datos = (peso, altura, edad, objetivo, nivel, email)
-        c.execute('UPDATE users SET peso=?, altura=?, edad=?, objetivo=?, nivel=? WHERE email=?', datos)
-        conn.commit()
-        conn.close()
-        registrar_peso_historico(email, peso) 
-        return True
+        sheet = get_db_sheet()
+        cell = sheet.find(email, in_column=1)
+        if cell:
+            r = cell.row
+            # Actualizamos las celdas específicas (Columna, Valor)
+            sheet.update_cell(r, 5, peso)      # E: Peso
+            sheet.update_cell(r, 6, altura)    # F: Altura
+            sheet.update_cell(r, 7, edad)      # G: Edad
+            sheet.update_cell(r, 9, objetivo)  # I: Objetivo
+            sheet.update_cell(r, 10, nivel)    # J: Nivel
+            
+            # --- LOGICA DE HISTORIAL DE PESO (Guardado en una sola celda 'L') ---
+            fecha_hoy = str(datetime.date.today())
+            nuevo_dato = f"{fecha_hoy}:{peso}|"
+            
+            # Leemos lo que había antes en la Columna L (12)
+            historial_actual = sheet.cell(r, 12).value
+            if not historial_actual: historial_actual = ""
+            
+            # Añadimos el nuevo dato al final
+            sheet.update_cell(r, 12, historial_actual + nuevo_dato)
+            return True
+    except Exception as e:
+        st.error(f"Error guardando: {e}")
+    return False
+
+def obtener_historial_df(email):
+    try:
+        sheet = get_db_sheet()
+        cell = sheet.find(email, in_column=1)
+        if cell:
+            # Leemos la celda L (12)
+            raw_data = sheet.cell(cell.row, 12).value
+            if raw_data:
+                # Convertimos el texto "fecha:peso|fecha:peso|" a Tabla
+                registros = raw_data.split("|")
+                data = []
+                for r in registros:
+                    if ":" in r:
+                        f, p = r.split(":")
+                        try: data.append({"fecha": f, "peso": float(p)})
+                        except: pass
+                
+                if data:
+                    df = pd.DataFrame(data)
+                    return df.sort_values("fecha")
     except:
-        return False
+        pass
+    return None
 
 # --- FUNCIONES DE PAGO (PLAN PRO) ---
 def activar_plan_pro(email):
@@ -957,6 +1007,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
