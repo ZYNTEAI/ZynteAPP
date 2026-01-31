@@ -692,9 +692,31 @@ def app_principal():
         objetivo = st.selectbox("Objetivo:", obj_ops, index=idx_o)
         nivel = st.select_slider("Experiencia:", options=niv_ops, value=niv_ops[idx_n])
         
+        # --- NUEVO: DÍAS DISPONIBLES ---
+        dias_entreno = st.slider("Días disponibles/semana:", 1, 7, 4)
+        
         if st.button("💾 Guardar Perfil", use_container_width=True):
+            # (Nota: Por ahora esto no se guarda en la base de datos hasta que hagamos el Paso A, 
+            # pero funcionará en la sesión actual para el Chat)
             if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel): st.toast("Datos Guardados")
             else: st.toast("Error")
+
+        # --- NUEVO: BOTÓN PARA VACIAR CHAT ---
+        st.write("---")
+        if st.button("🗑️ Limpiar Conversación", use_container_width=True):
+            # Reiniciamos el historial pero MANTENIENDO la personalidad de Zynte
+            st.session_state.history = [
+                {"role": "user", "content": """
+                Actúa como Zynte AI, un entrenador personal de élite y experto en nutrición.
+                TU PERSONALIDAD:
+                - Eres enérgico, motivador y vas al grano.
+                - NUNCA respondas con un simple "Hola, ¿cómo estás?".
+                - Cuando el usuario salude, preséntate con fuerza y lanza un reto. 
+                Ejemplo: "¡Hola! Soy Zynte AI. ¿Listo para romper tus límites hoy?"
+                """},
+                {"role": "model", "content": "¡Entendido! Soy Zynte AI. Modo motivación activado. ¡A entrenar!"}
+            ]
+            st.rerun()
         
         # ==========================================
         # 👑 PANEL DE CONTROL TOTAL (GOD MODE)
@@ -926,6 +948,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
