@@ -10,6 +10,32 @@ import re
 import pandas as pd  
 import requests
 
+# --- FUNCIONES DE VENTANAS EMERGENTES (MODALES) ---
+@st.dialog("🧠 Personalización Total con IA")
+def modal_personalizacion():
+    st.write("Zynte no usa plantillas genéricas. Nuestra IA analiza:")
+    st.markdown("- **Tu Biometría:** Peso, altura, edad y género.")
+    st.markdown("- **Tu Objetivo:** Ganar masa, definir o perder peso.")
+    st.markdown("- **Tu Disponibilidad:** Días a la semana y tiempo.")
+    st.info("El resultado es una rutina calculada matemáticamente para tu cuerpo.")
+
+@st.dialog("⚡ Resultados Rápidos y Eficientes")
+def modal_resultados():
+    st.write("Optimizamos tu tiempo en el gimnasio.")
+    st.metric(label="Tiempo medio de creación", value="3.5 seg", delta="-99% vs Humano")
+    st.write("Generamos:")
+    st.markdown("1. **Rutinas de Fuerza:** Series y repeticiones exactas.")
+    st.markdown("2. **Cardio HIIT:** Intervalos de alta intensidad.")
+    st.markdown("3. **Estiramientos:** Para evitar lesiones.")
+
+@st.dialog("📄 Informes PDF Profesionales")
+def modal_pdf():
+    st.write("Llévate tu entrenamiento donde quieras.")
+    st.success("✅ Diseño limpio y minimalista.")
+    st.write("Al terminar de generar tu rutina, aparecerá un botón de descarga. El PDF incluye:")
+    st.markdown("- Tabla completa de ejercicios.")
+    st.markdown("- Casillas para apuntar tus pesos reales.")
+    st.markdown("- Notas del entrenador IA.")
 # 1. DEFINE TU API KEY AQUÍ PARA QUE TODO EL CÓDIGO LA VEA
 API_KEY_GLOBAL = st.secrets["GOOGLE_API_KEY"]
 
@@ -1168,7 +1194,41 @@ def main():
                         st.success("Cuenta creada. ¡Entra!")
                     else: st.error("Email ya registrado")
                 else: st.error("Email inválido")
+# ... (Dentro de main, sección Login, debajo del formulario de registro) ...
 
+    st.divider() # Línea separadora elegante
+    
+    st.subheader("🚀 ¿Por qué elegir Zynte?")
+    
+    # Creamos 3 columnas para las 3 tarjetas
+    col_card1, col_card2, col_card3 = st.columns(3)
+    
+    # --- TARJETA 1: PERSONALIZACIÓN ---
+    with col_card1:
+        with st.container(border=True):
+            st.markdown("### 🧠\n**Personalización**")
+            st.caption("Análisis biométrico avanzado para crear una rutina única.")
+            st.write("") # Espacio
+            if st.button("Cómo funciona", key="btn_c1", use_container_width=True):
+                modal_personalizacion() # Llama al pop-up
+                
+    # --- TARJETA 2: RESULTADOS ---
+    with col_card2:
+        with st.container(border=True):
+            st.markdown("### ⚡\n**Velocidad**")
+            st.caption("Planificación completa lista para descargar en segundos.")
+            st.write("") # Espacio
+            if st.button("Ver velocidad", key="btn_c2", use_container_width=True):
+                modal_resultados() # Llama al pop-up
+
+    # --- TARJETA 3: PDF ---
+    with col_card3:
+        with st.container(border=True):
+            st.markdown("### 📄\n**Exportar PDF**")
+            st.caption("Llévate tu rutina en formato limpio y sin distracciones.")
+            st.write("") # Espacio
+            if st.button("Ver ejemplo", key="btn_c3", use_container_width=True):
+                modal_pdf() # Llama al pop-up
     # ---------------------------------------------------------
     # PÁGINA 2: PRICING (AQUÍ ESTÁ EL CAMBIO CLAVE)
     # ---------------------------------------------------------
@@ -1200,6 +1260,7 @@ def main():
 if __name__ == "__main__":
     init_db() # Iniciamos base de datos
     main()    # Arrancamos la app
+
 
 
 
