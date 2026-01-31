@@ -875,7 +875,7 @@ def app_principal():
              st.rerun()
              
         # Botón secreto de Admin (si eres tú)
-        if st.session_state.email == "admin@zynte.com": # <--- Tu email de admin
+        if st.session_state.email == "pablonavarrorui@gmail.com": # <--- Tu email de admin
             st.write("---")
             if st.button("👮‍♂️ Volver a God Mode", type="primary", use_container_width=True):
                 st.session_state.page = 'admin'
@@ -893,11 +893,12 @@ def app_principal():
     nivel = nuevo_nivel
     
     # -------------------------------------------------------
-    
-    # A partir de aquí, tu código original de IMC y Macros funcionará:
-    # st.title(f"Panel de Control - {st.session_state.datos_usuario.get('nombre', 'Usuario')}")
-    # ...
-        # ==========================================
+   st.write("---") # Una línea separadora elegante
+
+        # 1. BOTÓN DE CERRAR SESIÓN (Para todo el mundo) 🚪
+        if st.button("Log Out / Salir", use_container_width=True):
+            st.session_state.clear() # Borra la memoria
+            st.rerun() # Recarga y te manda al Login
 
     st.write("---")
     if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
@@ -1283,6 +1284,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
