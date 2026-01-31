@@ -1118,119 +1118,88 @@ def main():
     if "page" not in st.session_state:
         st.session_state.page = "login"
 
-    # =========================================================
-    # ESCENA 1: PANTALLA DE LOGIN (COMPLETA)
-    # =========================================================
+    # ---------------------------------------------------------
+    # PÁGINA 1: LOGIN
+    # ---------------------------------------------------------
     if st.session_state.page == "login":
+        # ... (Toda tu lógica de login que ya tienes, NO LA TOQUES) ...
+        # Simplemente mantén el código de login que ya te funcionaba.
+        # Si quieres, puedo pasarte el bloque de login también, 
+        # pero idealmente solo cambia lo de abajo:
         
-        # 1. LOGO CENTRADO
-        col_izq, col_centro, col_der = st.columns([1, 1, 1])
-        with col_centro:
-            try:
-                st.image("logo.png", width=200) # Asegúrate que tu archivo se llama así
-            except:
-                st.markdown("<div style='text-align: center; font-size: 80px;'>💪</div>", unsafe_allow_html=True)
-
-        st.markdown("<h1 style='text-align: center;'>Zynte AI Login</h1>", unsafe_allow_html=True)
-        st.write("---")
-        
-        # 2. FORMULARIO DE ACCESO (Centrado también)
+        # --- (AQUÍ IRÍA TU CÓDIGO DE LOGIN ACTUAL) ---
         c1, c2, c3 = st.columns([1, 2, 1])
         with c2:
-            email = st.text_input("📧 Email")
-            password = st.text_input("🔑 Contraseña", type="password")
+            try: st.image("logo.png", width=200)
+            except: st.title("ZYNTE")
             
-            st.write("") # Espacio
-            
-            # --- BOTÓN DE ENTRAR (CON LÓGICA ADMIN Y BANEO) ---
-            if st.button("Entrar", use_container_width=True):
-                if verificar_login(email, password):
-                    st.session_state.email = email
-                    
-                    # 1. ¿ERES EL JEFE? (Pon aquí tu email real de admin) 👇
-                    if email == "pablonavarrorui@gmail.com":  # <--- CAMBIA ESTO POR TU EMAIL
-                        st.session_state.page = 'admin'
-                        st.rerun()
-
-                    # 2. Si no eres el jefe, cargamos perfil normal
-                    datos = cargar_perfil(email)
-                    st.session_state.datos_usuario = datos
-                    status = datos.get("status", "free")
-
-                    # 3. FILTRO ANTI-BANEADOS 🛑
-                    if status == "banned":
-                        st.error("⛔ TU CUENTA HA SIDO SUSPENDIDA POR INFRINGIR LAS NORMAS.")
-                        st.stop() # Detiene la ejecución aquí mismo
-
-                    # 4. Lógica Pro vs Free
-                    if status == "pro":
-                        st.session_state.page = 'app'
-                        st.toast(f"¡Hola de , {datos['nombre']}! 🌟")
-                    else:
-                        st.session_state.page = 'pricing'
-                        st.toast("Verificado. Selecciona tu plan.")
+            with st.form("login_form"):
+                email = st.text_input("📧 Email")
+                password = st.text_input("🔑 Contraseña", type="password")
+                if st.form_submit_button("Entrar", use_container_width=True):
+                    # Lógica rápida de login para que no se pierda
+                    if verificar_login(email, password):
+                        st.session_state.email = email
                         
-                    time.sleep(0.5)
-                    st.rerun()
-                else:
-                    st.error("❌ Usuario o contraseña incorrectos")
-            
-            # --- BOTÓN DE REGISTRO ---
-            if st.button("Crear Cuenta Gratis", use_container_width=True):
-                if validar_email_estricto(email)[0]:
-                    # Al registrarse, por defecto eres 'free' (ver función registrar_usuario_sql)
-                    if registrar_usuario_sql(email, password):
-                        st.success("✅ Cuenta creada. ¡Ahora pulsa 'Entrar'!")
+                        # --- MODIFICACIÓN IMPORTANTE AQUÍ ---
+                        # Al entrar, decidimos a dónde va:
+                        if email == "pablonavarrorui@gmail.com": # Tu email de jefe
+                            st.session_state.page = "admin"
+                        else:
+                            # Cargamos perfil para ver si es PRO o FREE
+                            datos = cargar_perfil(email)
+                            st.session_state.datos_usuario = datos
+                            status = datos.get("status", "free")
+                            
+                            if status == "pro":
+                                st.session_state.page = "app"
+                                st.session_state.is_premium = True
+                            else:
+                                st.session_state.page = "pricing" # Los nuevos van al pricing primero
+                                st.session_state.is_premium = False
+                        st.rerun()
                     else:
-                        st.warning("⚠️ Ese email ya existe.")
-                else:
-                    st.error("Email inválido o dominio no permitido.")
-            
-    # =========================================================
-    # ESCENA 2: PANTALLA DE PRECIOS (La que faltaba)
-    # =========================================================
-    elif st.session_state.page == "pricing":
-        st.title("💎 Desbloquea tu Potencial")
-        st.write("Tu cuenta actual es **Gratuita**. Elige cómo quieres entrenar.")
-        
-        col_free, col_pro = st.columns(2)
-        
-        # Columna Gratis
-        with col_free:
-            st.info("### Plan Básico\n* Acceso a Chat (Limitado)\n* Registro de Peso\n* Rutinas Estándar")
-            if st.button("➡️ Continuar con Versión Gratis", use_container_width=True):
-                st.session_state.page = 'app'
-                st.rerun()
-                
-        # Columna Pro
-        with col_pro:
-            st.error("### 🚀 Zynte PRO (19.99€)\n* **IA Nutricionista Avanzada**\n* **Exportar PDF**\n* Soporte Prioritario")
-            st.link_button("💳 Pagar Ahora (Stripe)", "https://stripe.com/es") 
-            
-            st.write("---")
-            # TRUCO DE DESARROLLADOR: Botón para simular que pagaste
-            if st.button("🛠️ Simular Pago Exitoso (Solo tú lo ves)"):
-                # 1. Cambiamos el estado en la sesión
-                st.session_state.datos_usuario['status'] = 'pro'
-                # 2. (Opcional) Aquí deberíamos actualizar Google Sheets a 'pro' también
-                st.session_state.page = 'app'
-                st.rerun()
+                        st.error("Usuario no encontrado")
+                        
+            # Botón de registro (fuera del form)
+            if st.button("Crear Cuenta Gratis"):
+                if validar_email_estricto(email):
+                    if registrar_usuario_sql(email, password):
+                        st.success("Cuenta creada. ¡Entra!")
+                    else: st.error("Email ya registrado")
+                else: st.error("Email inválido")
 
-    # =========================================================
-    # ESCENA 3: LA APP PRINCIPAL (Gimnasio)
-    # =========================================================
+    # ---------------------------------------------------------
+    # PÁGINA 2: PRICING (AQUÍ ESTÁ EL CAMBIO CLAVE)
+    # ---------------------------------------------------------
+    elif st.session_state.page == "pricing":
+        # Borramos todo el código viejo y ponemos SOLO ESTO:
+        mostrar_pricing() 
+
+    # ---------------------------------------------------------
+    # PÁGINA 3: APP PRINCIPAL
+    # ---------------------------------------------------------
     elif st.session_state.page == "app":
-        # Ejecutamos toda la app que programaste antes
         app_principal()
+
+    # ---------------------------------------------------------
+    # PÁGINA 4: ADMIN
+    # ---------------------------------------------------------
     elif st.session_state.page == "admin":
-        # Solo dibujamos el panel si estamos en modo admin
         admin_panel()
         
-        if st.button("🔙 Salir al Login"):
+    # Botón de Salir (visible si no estamos en login)
+    if st.session_state.page != "login":
+        st.sidebar.divider()
+        if st.sidebar.button("🔙 Cerrar Sesión"):
+            st.session_state.clear()
             st.session_state.page = "login"
             st.rerun()
+
+# EJECUCIÓN DEL PROGRAMA
 if __name__ == "__main__":
-    main()
+    init_db() # Iniciamos base de datos
+    main()    # Arrancamos la app
 
 
 
