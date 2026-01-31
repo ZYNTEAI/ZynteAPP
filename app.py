@@ -737,7 +737,7 @@ def app_principal():
             with st.spinner("Zynte está pensando..."):
                 try:
                     # USAMOS LA LIBRERÍA OFICIAL (Esto evita el error 404 de la URL)
-                    genai.configure(api_key=api_key)
+                    genai.configure(api_key=API_KEY_GLOBAL)
                     model = genai.GenerativeModel('gemini-1.5-flash')
                     
                     # Llamada directa
@@ -811,6 +811,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
