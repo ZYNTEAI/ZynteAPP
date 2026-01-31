@@ -592,8 +592,8 @@ def app_principal():
     # --- HASTA AQUÍ ---
 
     # El resto de tu código sigue igual...
-    error_currido = False 
-    if not error_currido:
+    error_ocurrido = False 
+    if not error_ocurrido:
         # --- CONFIGURACIÓN DEL JEFE ---
         EMAIL_JEFE = "pablonavarrorui@gmail.com" 
         
@@ -704,29 +704,33 @@ def app_principal():
         st.divider()
 
 # --- SECCIÓN DE CHAT PRINCIPAL ---
+    # --- SECCIÓN DE CHAT PRINCIPAL ---
     st.write("---") 
     st.subheader("💬 Chat con Zynte AI")
 
-    # El input del chat
-    prompt = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_input_final")
+    # Inicializar historial si no existe
+    if "history" not in st.session_state:
+        st.session_state.history = []
+
+    # Mostrar mensajes previos
+    for msg in st.session_state.history: 
+        st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
+
+    # Input del chat
+    prompt = st.chat_input("¿En qué puedo ayudarte hoy?")
 
     if prompt:
-        if "history" not in st.session_state:
-            st.session_state.history = []
-        
         st.session_state.history.append({"role": "user", "content": prompt})
-        
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
             with st.spinner("Zynte está pensando..."):
                 try:
-                    # Usamos la URL v1 para evitar el error 404 de v1beta
+                    # Usamos requests para máxima compatibilidad y evitar errores 404 de la librería
                     url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
                     payload = {"contents": [{"parts": [{"text": prompt}]}]}
                     
-                    import requests
                     res = requests.post(url_estable, json=payload, timeout=30)
                     
                     if res.status_code == 200:
@@ -734,11 +738,11 @@ def app_principal():
                         respuesta_texto = datos['candidates'][0]['content']['parts'][0]['text']
                         st.markdown(respuesta_texto)
                         st.session_state.history.append({"role": "model", "content": respuesta_texto})
+                        st.rerun()
                     else:
-                        st.error(f"Error de Google: {res.status_code}")
+                        st.error(f"Error de Google: {res.status_code}. Revisa tu API Key.")
                 except Exception as e:
                     st.error(f"Error de conexión: {e}")
-            
             # El rerun debe ir SIEMPRE fuera del try/except
             if not error_ocurrido:
                 st.rerun()
@@ -817,6 +821,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
