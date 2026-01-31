@@ -587,97 +587,87 @@ def mostrar_login():
 import requests # Asegúrate de tener esto arriba del todo
 
 def mostrar_pricing():
-    st.markdown("<h2 style='text-align: center;'>💎 Automatización Total</h2>", unsafe_allow_html=True)
-    
-    # 1. TUS DATOS DE GUMROAD
-    LINK_GUMROAD = "https://tu-usuario.gumroad.com/l/zynte-pro" 
+    st.markdown("<h2 style='text-align: center;'>💎 Acceso Anticipado (Beta)</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #ccc;'>Estamos en fase de lanzamiento. Consigue tu acceso PRO totalmente gratis hoy.</p>", unsafe_allow_html=True)
+    st.write("")
     
     col_free, col_pro = st.columns(2, gap="medium")
     
+    # --- COLUMNA 1: VERSIÓN BÁSICA ---
     with col_free:
-        st.info("Plan Gratuito")
-        if st.button("➡️ Seguir Gratis", use_container_width=True):
+        st.markdown("""
+        <div class='price-card'>
+            <h3 style="color: #a0aaba;">🌱 VISITANTE</h3>
+            <h1 style="font-size: 3rem; margin: 10px 0;">0€</h1>
+            <ul style="text-align: left; list-style: none; padding: 0; color: #ccc;">
+                <li>✅ Acceso Básico</li>
+                <li>❌ Sin Inteligencia Artificial</li>
+                <li>❌ Sin Guardado de Datos</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        st.write("")
+        if st.button("➡️ Quedarme en Básico", use_container_width=True):
              st.session_state.is_premium = False
              st.session_state.page = 'app'
              st.rerun()
 
+    # --- COLUMNA 2: VERSIÓN PRO (AUTO-GENERABLE) ---
     with col_pro:
         st.markdown("""
-        <div class='price-card' style='border: 1px solid #ff90e8; box-shadow: 0 0 15px rgba(255, 144, 232, 0.3);'>
-            <h3 style="color: #ff90e8;">🦄 GUMROAD PRO</h3>
-            <h1 style="font-size: 3rem; margin: 10px 0;">9.99€</h1>
+        <div class='price-card' style='border: 1px solid #33ffaa; box-shadow: 0 0 20px rgba(51, 255, 170, 0.4);'>
+            <h3 style="color: #33ffaa;">🔥 ZYNTE PRO (BETA)</h3>
+            <h1 style="font-size: 3rem; margin: 10px 0;">GRATIS</h1>
             <ul style="text-align: left; list-style: none; padding: 0; color: #fff;">
-                <li>✅ <b>Clave de Licencia Inmediata</b></li>
-                <li>✅ <b>Pago Seguro</b></li>
-                <li>✅ <b>Activación Automática</b></li>
+                <li>✅ <b>Generador de Dietas IA</b></li>
+                <li>✅ <b>Entrenador Personal IA</b></li>
+                <li>✅ <b>Analíticas de Progreso</b></li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
         st.write("")
         
-        # Botón para ir a comprar
-        st.link_button("💳 COMPRAR LICENCIA", LINK_GUMROAD, type="primary", use_container_width=True)
+        st.info("👇 **¿Cómo activar tu cuenta?**")
+        
+        # 1. BOTÓN GENERADOR DE CÓDIGO
+        # Al pulsarlo, mostramos el código en pantalla
+        if st.button("🎁 GENERAR CÓDIGO DE INVITACIÓN", type="primary", use_container_width=True):
+            st.session_state.codigo_generado = "ZYNTE-VIP-2026"
+            st.balloons()
+            
+        # Si ya se ha pulsado el botón, mostramos el código
+        if "codigo_generado" in st.session_state:
+            st.success(f"🔑 Tu clave de acceso es: **{st.session_state.codigo_generado}**")
+            st.caption("Copia la clave de arriba y pégala en el recuadro.")
         
         st.divider()
         
-        st.write("📩 Gumroad te enviará tu **Clave de Licencia** al correo al instante.")
-        license_key = st.text_input("Pega tu Clave de Licencia aquí:", placeholder="Ej: AAAA-BBBB-CCCC-DDDD").strip()
+        # 2. CAMPO PARA INTRODUCIR Y VALIDAR
+        codigo_input = st.text_input("Introduce tu Clave:", placeholder="Pega el código aquí...").strip()
         
-        if st.button("🚀 VALIDAR LICENCIA", use_container_width=True):
-            if not license_key:
-                st.warning("Por favor, introduce la clave.")
-            else:
-                with st.spinner("Conectando con Gumroad..."):
-                    # --- AQUÍ OCURRE LA MAGIA AUTOMÁTICA ---
-                    verified = verificar_gumroad(license_key)
+        if st.button("🚀 ACTIVAR MODO PRO", use_container_width=True):
+            # Validamos si el código es el correcto (el mismo que generamos arriba)
+            if codigo_input == "ZYNTE-VIP-2026":
+                
+                # A) Actualizamos Base de Datos (Para que sea permanente)
+                email_user = st.session_state.email
+                if admin_update_status(email_user, "pro"): # Reusamos tu función admin
                     
-                    if verified:
-                        # 1. Guardamos en Base de Datos que es PRO
-                        email_user = st.session_state.email
-                        if admin_update_status(email_user, "pro"): # Reutilizamos tu función de admin
-                            
-                            # 2. Guardamos la licencia en el Excel para que no la usen otros
-                            # (Opcional: Podrías crear una columna 'license_key' en tu Excel)
-                            
-                            st.session_state.datos_usuario['status'] = 'pro'
-                            st.session_state.is_premium = True
-                            st.balloons()
-                            st.success("✅ ¡Licencia Válida! Disfruta de Zynte PRO.")
-                            time.sleep(2)
-                            st.session_state.page = 'app'
-                            st.rerun()
-                        else:
-                            st.error("Error al guardar en base de datos.")
-                    else:
-                        st.error("❌ Licencia no válida, reembolsada o ya usada.")
-
-# --- FUNCIÓN AUXILIAR PARA VERIFICAR CON GUMROAD ---
-def verificar_gumroad(key):
-    try:
-        # Endpoint oficial de Gumroad
-        url = "https://api.gumroad.com/v2/licenses/verify"
-        
-        # Pide esto en Gumroad: Settings -> Advanced -> Application Token
-        # Pégalo en tu secrets.toml como GUMROAD_TOKEN = "..."
-        # O usa uno temporal aquí para probar (no recomendado para producción real)
-        product_permalink = "zynte-pro" # La parte final de tu URL de Gumroad
-        
-        response = requests.post(url, data={
-            "product_permalink": product_permalink,
-            "license_key": key
-        })
-        
-        data = response.json()
-        
-        # Gumroad nos dice si es válido ('success': true) y si no ha sido devuelto
-        if data.get("success") == True and data.get("purchase", {}).get("refunded") == False:
-            return True
-        else:
-            return False
-            
-    except Exception as e:
-        st.error(f"Error de conexión: {e}")
-        return False
+                    # B) Actualizamos Sesión Actual (Para entrar ya)
+                    st.session_state.datos_usuario['status'] = 'pro'
+                    st.session_state.is_premium = True
+                    
+                    st.success("✅ ¡CÓDIGO CORRECTO! Bienvenido al equipo.")
+                    time.sleep(1.5)
+                    st.session_state.page = 'app'
+                    st.rerun()
+                else:
+                    st.error("Error de conexión. Inténtalo de nuevo.")
+            else:
+                if not codigo_input:
+                    st.warning("Primero debes generar y pegar un código.")
+                else:
+                    st.error("❌ Código incorrecto.")
 # --- FUNCIÓN VISUAL PARA BLOQUEAR PESTAÑAS (La pieza que falta) ---
 def mostrar_bloqueo_pro(nombre_funcion):
     st.markdown(f"""
@@ -1241,6 +1231,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
