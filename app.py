@@ -576,11 +576,10 @@ def mostrar_login():
             pass_login = st.text_input("Contraseña", type="password", key="login_pass").strip()
             st.write("")
             if st.button("ENTRAR ▶", type="primary", use_container_width=True):
-                if verificar_login(email, password):
-                st.session_state.page = 'app'
-                st.session_state.email = email  # <--- ¡ESTA ES LA CLAVE! 🔑
+          if verificar_login(email, password):
+                st.session_state.page = 'app'   <-- ¡Empujado a la derecha!
+                st.session_state.email = email
                 st.rerun()
-                    
                     # AQUÍ MIRAMOS SI YA PAGÓ ANTES
                     es_pro = comprobar_plan(email_login)
                     st.session_state.is_premium = es_pro # Guardamos el estado
@@ -1037,6 +1036,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
