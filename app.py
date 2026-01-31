@@ -745,12 +745,22 @@ def app_principal():
         with st.chat_message("assistant"):
             with st.spinner("Zynte está pensando..."):
                 try:
-                    # USAMOS LA LIBRERÍA OFICIAL (Esto evita el error 404 de la URL)
+                    # 1. Configuración básica
                     genai.configure(api_key=API_KEY_GLOBAL)
-                    model = genai.GenerativeModel('gemini-flash-latest')
+                    model = genai.GenerativeModel(MODELO_USADO)
                     
-                    # Llamada directa
-                    response = model.generate_content(prompt_chat)
+                    # 2. TRADUCTOR DE MEMORIA: Convertimos tu historial para Google
+                    chat_history_google = []
+                    for msg in st.session_state.history:
+                        # Convertimos "user/model" a lo que pide la API
+                        role_google = "user" if msg["role"] == "user" else "model"
+                        chat_history_google.append({
+                            "role": role_google,
+                            "parts": [{"text": msg["content"]}]
+                        })
+                    
+                    # 3. ENVIAMOS TODO EL PAQUETE (Instrucciones + Chat previo + Mensaje nuevo)
+                    response = model.generate_content(chat_history_google)
                     
                     if response.text:
                         st.markdown(response.text)
@@ -865,6 +875,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
