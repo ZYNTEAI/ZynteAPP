@@ -709,11 +709,11 @@ def app_principal():
 
     # 1. Aseguramos que el historial exista
     if "history" not in st.session_state:
-    # Le inyectamos la personalidad en el primer mensaje (invisible para el usuario)
-    st.session_state.history = [
-        {"role": "user", "content": "Hola, a partir de ahora eres Zynte AI, un entrenador personal experto en biomecánica y nutrición deportiva. Eres motivador, directo y te basas en la ciencia. Tus respuestas son breves y útiles."},
-        {"role": "model", "content": "¡Entendido! Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
-    ]
+        # Le inyectamos la personalidad en el primer mensaje (invisible para el usuario)
+        st.session_state.history = [
+            {"role": "user", "content": "Hola, a partir de ahora eres Zynte AI, un entrenador personal experto en biomecánica y nutrición deportiva. Eres motivador, directo y te basas en la ciencia. Tus respuestas son breves y útiles."},
+            {"role": "model", "content": "¡Entendido! Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
+        ]
     # 2. Mostramos los mensajes previos
     for msg in st.session_state.history: 
         with st.chat_message(msg["role"]):
@@ -830,6 +830,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
