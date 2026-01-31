@@ -782,7 +782,13 @@ def app_principal():
                     
                     # 4. ENVIAMOS TODO
                     response = model.generate_content(chat_history_google)
-    
+                    if response.text:
+                        st.markdown(response.text)
+                        st.session_state.history.append({"role": "model", "content": response.text})
+                        st.rerun()
+                        
+            except Exception as e:
+                st.error(f"Error de conexión: {e}")
     with tab_nutri:
         # --- 1. VERIFICAMOS SI ES PRO ---
         if not st.session_state.get('is_premium'):
@@ -888,6 +894,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
