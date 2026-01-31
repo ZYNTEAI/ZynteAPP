@@ -1040,50 +1040,20 @@ def main():
     # ESCENA 1: PANTALLA DE LOGIN
     # =========================================================
     if st.session_state.page == "login":
-        st.markdown("<h1 style='text-align: center;'>🤖 Zynte AI Login</h1>", unsafe_allow_html=True)
-        st.write("---")
         
-        col1, col2, col3 = st.columns([1,2,1])
-        with col2:
-            email = st.text_input("📧 Email")
-            password = st.text_input("🔑 Contraseña", type="password")
-            
-            # BOTÓN ENTRAR (Con la lógica de Free vs Pro)
-            if st.button("Entrar", use_container_width=True):
-                if verificar_login(email, password):
-                    st.session_state.email = email
-                    # Cargamos datos para ver si es VIP
-                    datos = cargar_perfil(email)
-                    st.session_state.datos_usuario = datos
-                    
-                    # Semáforo: ¿Es Pro o Free?
-                    es_pro = (datos.get("status") == "pro")
-                    
-                    if es_pro:
-                        st.session_state.page = 'app'
-                        st.toast(f"¡Bienvenido Pro, {datos['nombre']}! 🌟")
-                    else:
-                        st.session_state.page = 'pricing' # <--- Aquí redirige a ventas
-                        st.toast("Verificado. Selecciona tu plan.")
-                        
-                    time.sleep(0.5)
-                    st.rerun()
-                else:
-                    st.error("❌ Usuario o contraseña incorrectos")
-            
-            st.markdown("---")
-            st.caption("¿Nuevo aquí?")
-            
-            # BOTÓN REGISTRO (Simple)
-            if st.button("Crear Cuenta Gratis"):
-                if validar_email_estricto(email)[0]:
-                    if registrar_usuario_sql(email, password):
-                        st.success("✅ Cuenta creada. ¡Ahora entra!")
-                    else:
-                        st.warning("⚠️ Ese email ya existe.")
-                else:
-                    st.error("Email inválido.")
+        # --- BLOQUE DEL LOGO (RECUPERADO) ---
+        col_izq, col_centro, col_der = st.columns([1, 1, 1]) # 3 columnas para centrar
+        with col_centro:
+            try:
+                # ⚠️ Asegúrate de que el archivo se llama "logo.png" o cambia el nombre aquí
+                st.image("logo.png", width=200) 
+            except:
+                # Si no encuentra la imagen, pone un emoji gigante como plan B
+                st.markdown("<div style='text-align: center; font-size: 80px;'>💪</div>", unsafe_allow_html=True)
+        # ------------------------------------
 
+        st.markdown("<h1 style='text-align: center;'>Zynte AI Login</h1>", unsafe_allow_html=True)
+        st.write("---")
     # =========================================================
     # ESCENA 2: PANTALLA DE PRECIOS (La que faltaba)
     # =========================================================
@@ -1123,6 +1093,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
