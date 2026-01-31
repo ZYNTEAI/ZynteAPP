@@ -717,41 +717,28 @@ def app_principal():
         st.session_state.history.append({"role": "user", "content": prompt_rapido})
         # Aquí puedes añadir la llamada a la IA si quieres que los botones respondan
 
-# --- SECCIÓN DE CHAT PRINCIPAL ---
-    st.write("---") 
-    st.subheader("💬 Chat con Zynte AI")
-
-    # El input del chat
-    prompt = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_input_final")
-
-    if prompt:
-        if "history" not in st.session_state:
-            st.session_state.history = []
-        
-        st.session_state.history.append({"role": "user", "content": prompt})
-        
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        with st.chat_message("assistant"):
-            with st.spinner("Zynte está pensando..."):
-                try:
-                    # Usamos la URL v1 para evitar el error 404 de v1beta
-                    url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    payload = {"contents": [{"parts": [{"text": prompt}]}]}
-                    
-                    import requests
-                    res = requests.post(url_estable, json=payload, timeout=30)
-                    
-                    if res.status_code == 200:
-                        datos = res.json()
-                        respuesta_texto = datos['candidates'][0]['content']['parts'][0]['text']
-                        st.markdown(respuesta_texto)
-                        st.session_state.history.append({"role": "model", "content": respuesta_texto})
-                    else:
-                        st.error(f"Error de Google: {res.status_code}")
-                except Exception as e:
-                    st.error(f"Error de conexión: {e}")
+# --- SECCIÓN DE CHAT PRINCIPAL CORREGIDA ---
+with st.chat_message("assistant"):
+    with st.spinner("Zynte está pensando..."):
+        try:
+            # Obtenemos la key de los secrets
+            api_key = st.secrets["GOOGLE_API_KEY"]
+            url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            
+            res = requests.post(url_estable, json=payload, timeout=30)
+            
+            if res.status_code == 200:
+                datos = res.json()
+                respuesta_texto = datos['candidates'][0]['content']['parts'][0]['text']
+                st.markdown(respuesta_texto)
+                st.session_state.history.append({"role": "model", "content": respuesta_texto})
+                # Eliminamos la condición de 'error_ocurrido' si no la usas
+                st.rerun() 
+            else:
+                st.error(f"Error de Google: {res.status_code}")
+        except Exception as e:
+            st.error(f"Error de conexión: {e}")
             
             # El rerun debe ir SIEMPRE fuera del try/except
             if not error_ocurrido:
@@ -760,20 +747,6 @@ def app_principal():
         for msg in st.session_state.history: 
             st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
         # -------------------------------------------------------
-
-        for msg in st.session_state.history: 
-            st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        for msg in st.session_state.history: st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        if prompt := st.chat_input("Pregunta al coach..."):
-            st.chat_message("user").markdown(prompt)
-            st.session_state.history.append({"role": "user", "content": prompt})
-        try:
-            # Todo lo que esté aquí dentro debe tener 4 espacios más que el 'try'
-            if prompt := st.chat_input("¿En qué puedo ayudarte hoy?"):
-                st.session_state.history.append({"role": "user", "content": prompt})
-                # ... resto del código del chat ...
-        except Exception as e:
-            st.error(f"Error: {e}")
     with tab_nutri:
         st.header("Plan Nutricional")
         c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
@@ -831,6 +804,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
