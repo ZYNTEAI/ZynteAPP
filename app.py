@@ -41,8 +41,11 @@ if prompt_rapido:
     
     with st.spinner("Zynte está pensando..."):
         try:
-           # CAMBIA ESTO EN LA SECCIÓN DE GENERADORES RÁPIDOS:
-url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY_GLOBAL}"
+            # Tienes que añadir 4 espacios antes de 'url' para que esté DENTRO del try
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY_GLOBAL}"
+            
+            # Estas líneas TAMBIÉN deben estar alineadas con 'url'
+            payload = {"contents": [{"parts": [{"text": prompt_rapido}]}]}
             
             res = requests.post(url, json=payload)
             
@@ -52,6 +55,7 @@ url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash
                 st.rerun()
             else:
                 st.error(f"Error de Google: {res.status_code}")
+                
         except Exception as e:
             st.error(f"Error de red: {e}")
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
@@ -805,6 +809,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
