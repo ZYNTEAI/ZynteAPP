@@ -323,6 +323,21 @@ def comprobar_plan(email):
 
 # Iniciamos DB al arrancar
 init_db()
+# --- FUNCIÓN DE ADMINISTRADOR (CAMBIAR STATUS) ---
+def admin_update_status(email_usuario, nuevo_status):
+    """
+    Cambia el status de un usuario a 'pro', 'free' o 'banned'
+    """
+    try:
+        sheet = get_db_sheet()
+        cell = sheet.find(email_usuario, in_column=1)
+        if cell:
+            # La columna M (Status) es la número 13
+            sheet.update_cell(cell.row, 13, nuevo_status)
+            return True
+    except Exception as e:
+        st.error(f"Error admin: {e}")
+    return False
 # --- 3. ESTILOS CSS PREMIUM (FONDO NUEVO) ---
 st.markdown("""
     <style>
@@ -1136,6 +1151,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
