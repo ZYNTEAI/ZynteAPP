@@ -777,21 +777,17 @@ def app_principal():
         # Le inyectamos la personalidad en el primer mensaje (invisible para el usuario)
         st.session_state.history = [
             {"role": "user", "content": "Hola, a partir de ahora eres Zynte AI, un entrenador personal experto en biomecánica y nutrición deportiva. Eres motivador, directo y te basas en la ciencia. Tus respuestas son breves y útiles."},
-            {"role": "model", "content": "¡Entendido! Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
+            {"role": "model", "content": "¡Hola!Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
         ]
     # 2. Mostramos los mensajes (Ocultando la configuración interna)
     for msg in st.session_state.history:
         texto = msg["content"]
         
-        # 1. SI ES LA ORDEN SECRETA, LA SALTAMOS (NO SE DIBUJA)
-        if "Actúa como Zynte AI" in texto or "TU PERSONALIDAD" in texto:
-            continue 
+        # 1. OCULTAMOS SOLO LAS INSTRUCCIONES TÉCNICAS (El primer mensaje)
+        if "Actúa como Zynte AI" in texto and "TU PERSONALIDAD" in texto:
+            continue  # Este se salta, no se ve
             
-        # 2. SI ES LA CONFIRMACIÓN INTERNA, TAMBIÉN LA SALTAMOS
-        if "Modo motivación activado" in texto:
-            continue
-
-        # 3. SOLO DIBUJAMOS LOS MENSAJES REALES
+        # 2. MOSTRAMOS TODO LO DEMÁS (Incluido el saludo de "¡Entendido!")
         with st.chat_message(msg["role"]):
             st.markdown(texto)
 
@@ -954,6 +950,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
