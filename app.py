@@ -692,24 +692,25 @@ def mostrar_bloqueo_pro(nombre_funcion):
     </div>
     """, unsafe_allow_html=True)
 def app_principal():
-    # --- SEGURIDAD INICIAL ---
+    # --- 1. VERIFICACIÓN DE SESIÓN ---
     if "email" not in st.session_state or not st.session_state.email:
         st.session_state.page = "login"
         st.rerun()
         return
 
-    # --- SINCRONIZACIÓN AUTOMÁTICA DE PAGOS ---
-    # Si en la memoria de la web aparece como "free", verificamos la DB
+    # --- 2. CARGA INICIAL DE DATOS (Arregla el AttributeError) ---
+    if "datos_usuario" not in st.session_state:
+        st.session_state.datos_usuario = cargar_perfil(st.session_state.email)
+
+    # --- 3. SINCRONIZADOR AUTOMÁTICO PRO ---
+    # Si en la web sale FREE, preguntamos a Google Sheets si ya cambió a PRO
     if st.session_state.datos_usuario.get("status") == "free":
-        # Traemos los datos frescos de Google Sheets
-        datos_actualizados = cargar_perfil(st.session_state.email)
-        
-        # Si el status en el Excel ya es "pro", actualizamos la web al instante
-        if datos_actualizados.get("status") == "pro":
+        datos_recientes = cargar_perfil(st.session_state.email)
+        if datos_recientes.get("status") == "pro":
             st.session_state.datos_usuario["status"] = "pro"
-            st.toast("🚀 ¡Pago verificado! Funciones PRO desbloqueadas.")
+            st.toast("🚀 ¡Suscripción PRO activada automáticamente!")
             time.sleep(1)
-            st.rerun() # Esto recarga la página y quita los candados rojos
+            st.rerun()
 
     # ... (Resto de lógica nutricional y PDF igual que antes) ...
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
@@ -1229,6 +1230,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
