@@ -781,13 +781,19 @@ def app_principal():
         ]
     # 2. Mostramos los mensajes (Ocultando la configuración interna)
     for msg in st.session_state.history:
-        # SI EL MENSAJE ES LA ORDEN SECRETA, NO LO MOSTRAMOS
-        if "a partir de ahora eres Zynte AI" in msg["content"] or "¡Entendido! Soy Zynte AI" in msg["content"]:
-            continue # Saltamos al siguiente mensaje sin pintar nada
+        texto = msg["content"]
+        
+        # 1. SI ES LA ORDEN SECRETA, LA SALTAMOS (NO SE DIBUJA)
+        if "Actúa como Zynte AI" in texto or "TU PERSONALIDAD" in texto:
+            continue 
             
-        # Si es un mensaje normal, lo pintamos
+        # 2. SI ES LA CONFIRMACIÓN INTERNA, TAMBIÉN LA SALTAMOS
+        if "Modo motivación activado" in texto:
+            continue
+
+        # 3. SOLO DIBUJAMOS LOS MENSAJES REALES
         with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+            st.markdown(texto)
 
     # 3. Caja de texto con Key única (evita el error de Duplicate ID)
     prompt_chat = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_zynte_final_fixed")
@@ -948,6 +954,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
