@@ -942,13 +942,83 @@ def app_principal():
                     st.info("👈 **Instrucciones:**\n1. Selecciona tu tipo de dieta.\n2. Escribe tus alergias (si tienes).\n3. Pulsa 'Generar' para ver tu plan aquí.")
 
     with tab_prog:
-        if not st.session_state.is_premium:
-            mostrar_bloqueo_pro("Gráficas de Progreso")
+        if not st.session_state.get('is_premium'):
+            mostrar_bloqueo_pro("Centro de Datos")
         else:
-            st.header("📈 Gráficas PRO")
+            st.header("📈 Tu Centro de Rendimiento")
+            
+            # 1. OBTENCIÓN DE DATOS
             df = obtener_historial_df(email_actual)
-            if df is not None: st.line_chart(df.set_index('fecha'))
-            else: st.info("Sin datos aún.")
+            
+            if df is not None and not df.empty:
+                # Ordenamos por fecha
+                df = df.sort_values("fecha")
+                peso_actual = df.iloc[-1]['peso']
+                peso_inicial = df.iloc[0]['peso']
+                cambio_total = peso_actual - peso_inicial
+                
+                # 2. DEFINIR META (Input rápido para calcular progreso)
+                col_meta1, col_meta2 = st.columns([2, 1])
+                with col_meta1:
+                    st.caption("🎯 ¿Cuál es tu Peso Objetivo?")
+                    # Usamos un valor por defecto lógico según el objetivo
+                    def_target = peso_actual - 5 if "Grasa" in objetivo else peso_actual + 5
+                    target_weight = st.number_input("Peso Meta (kg)", value=float(def_target), step=0.5, label_visibility="collapsed")
+                
+                with col_meta2:
+                    # Cálculo de % completado
+                    if peso_inicial != target_weight:
+                        # Lógica: Cuánto he recorrido del camino total
+                        total_camino = abs(target_weight - peso_inicial)
+                        recorrido = abs(peso_actual - peso_inicial)
+                        progreso_pct = min(recorrido / total_camino, 1.0) if total_camino > 0 else 0.0
+                    else:
+                        progreso_pct = 1.0
+                    
+                    st.caption(f"Progreso: {int(progreso_pct*100)}%")
+                    st.progress(progreso_pct)
+
+                st.divider()
+
+                # 3. TARJETAS DE ESTADÍSTICAS (KPIs)
+                kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+                
+                kpi1.metric("Peso Actual", f"{peso_actual} kg", f"{cambio_total:.1f} kg totales")
+                kpi2.metric("Inicio", f"{peso_inicial} kg")
+                kpi3.metric("Más Bajo", f"{df['peso'].min()} kg")
+                kpi4.metric("Más Alto", f"{df['peso'].max()} kg")
+                
+                st.write("") # Espacio
+
+                # 4. GRÁFICA INTERACTIVA (Altair)
+                st.subheader("📊 Evolución Temporal")
+                
+                # Creamos un gráfico de área con degradado (más pro que la línea simple)
+                chart_data = df.set_index("fecha")
+                st.area_chart(chart_data, color="#33ffaa", height=300)
+                
+                with st.expander("📝 Ver Historial de Registros"):
+                    st.dataframe(df.style.highlight_max(axis=0, color='#33ffaa'), use_container_width=True)
+
+                st.divider()
+
+                # 5. NUEVO: REGISTRO DE MARCAS (PRs)
+                st.subheader("🏆 Registro de Fuerza (Personal Records)")
+                st.info("Guarda tus mejores levantamientos para ver cómo te vuelves más fuerte.")
+                
+                c_pr1, c_pr2, c_pr3 = st.columns(3)
+                # Estos inputs son visuales por ahora (se guardan en sesión), 
+                # para guardarlos en DB habría que crear una nueva tabla/columna.
+                pr_bench = c_pr1.number_input("Press Banca (kg)", value=0.0, step=2.5)
+                pr_squat = c_pr2.number_input("Sentadilla (kg)", value=0.0, step=2.5)
+                pr_dead = c_pr3.number_input("Peso Muerto (kg)", value=0.0, step=2.5)
+                
+                if st.button("💾 Actualizar mis PRs"):
+                    st.toast("🔥 ¡Marcas registradas! Eres más fuerte que ayer.")
+                    # Aquí podrías añadir una función para guardar esto en Google Sheets en el futuro
+            
+            else:
+                st.info("👋 Aún no tienes datos. Guarda tu perfil hoy para empezar a trazar la gráfica.")
 
 def admin_panel():
     st.title("👮‍♂️ Panel de Control - Zynte God Mode")
@@ -1161,6 +1231,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
