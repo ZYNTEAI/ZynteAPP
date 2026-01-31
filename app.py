@@ -759,34 +759,34 @@ def app_principal():
                     try:
                         # Asegúrate de usar el modelo Flash
                         try:
-                        # Usamos la variable global para no fallar
-                        model = genai.GenerativeModel(MODELO_USADO) 
-
-                        # --- PEGA EL PROMPT EXPERTO AQUÍ ---
-                        prompt_nutri = f"""
-                        Actúa como un Nutricionista Deportivo de alto rendimiento.
-                        Objetivo: Crear un plan de alimentación {dieta} perfecto de {c} kcal diarias.
-                        Contexto del cliente: Objetivo {objetivo}.
-
-                        Estructura de la respuesta obligatoria:
-                        1. 📊 RESUMEN MACROS: Proteínas, Grasas, Carbohidratos totales.
-                        2. 🍽️ MENÚ DIARIO (Desayuno, Almuerzo, Cena, Snacks):
-                           - Usa formato Tabla Markdown.
-                           - Indica peso exacto de los alimentos en crudo (gramos).
-                           - Incluye una breve instrucción de cocinado.
-                        3. 🛒 LISTA DE LA COMPRA SEMANAL:
-                           - Agrupada por pasillos del supermercado (Verdulería, Carnicería, Varios).
-                        4. 💡 CONSEJO PRO: Un tip específico para {objetivo}.
-
-                        Mantén un tono motivador y profesional.
-                        """
-                        # ------------------------------------
-
-                        # Enviamos el prompt mejorado
-                        res = model.generate_content(prompt_nutri)
-                        
-                        st.session_state.plan_nutri = res.text
-                        st.rerun()
+                            # Usamos la variable global para no fallar
+                            model = genai.GenerativeModel(MODELO_USADO) 
+    
+                            # --- PEGA EL PROMPT EXPERTO AQUÍ ---
+                            prompt_nutri = f"""
+                            Actúa como un Nutricionista Deportivo de alto rendimiento.
+                            Objetivo: Crear un plan de alimentación {dieta} perfecto de {c} kcal diarias.
+                            Contexto del cliente: Objetivo {objetivo}.
+    
+                            Estructura de la respuesta obligatoria:
+                            1. 📊 RESUMEN MACROS: Proteínas, Grasas, Carbohidratos totales.
+                            2. 🍽️ MENÚ DIARIO (Desayuno, Almuerzo, Cena, Snacks):
+                               - Usa formato Tabla Markdown.
+                               - Indica peso exacto de los alimentos en crudo (gramos).
+                               - Incluye una breve instrucción de cocinado.
+                            3. 🛒 LISTA DE LA COMPRA SEMANAL:
+                               - Agrupada por pasillos del supermercado (Verdulería, Carnicería, Varios).
+                            4. 💡 CONSEJO PRO: Un tip específico para {objetivo}.
+    
+                            Mantén un tono motivador y profesional.
+                            """
+                            # ------------------------------------
+    
+                            # Enviamos el prompt mejorado
+                            res = model.generate_content(prompt_nutri)
+                            
+                            st.session_state.plan_nutri = res.text
+                            st.rerun()
                     except Exception as e: # Capturamos el error real
                         st.error(f"Error detallado de la IA: {e}")
         with col_d2:
@@ -830,6 +830,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
