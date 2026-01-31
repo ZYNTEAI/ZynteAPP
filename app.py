@@ -940,87 +940,49 @@ def app_principal():
                 else:
                     # Mensaje de espera bonito
                     st.info("👈 **Instrucciones:**\n1. Selecciona tu tipo de dieta.\n2. Escribe tus alergias (si tienes).\n3. Pulsa 'Generar' para ver tu plan aquí.")
-
-   with tab_prog:
+# PESTAÑA 3: PROGRESO (La que daba error, ahora corregida)
+    # ---------------------------------------------------------
+    with tab_prog:
         if not st.session_state.get('is_premium'):
             mostrar_bloqueo_pro("Centro de Datos")
         else:
             st.header("📈 Tu Centro de Rendimiento")
-            
-            # 1. OBTENCIÓN DE DATOS
             df = obtener_historial_df(email_actual)
             
             if df is not None and not df.empty:
-                # Ordenamos por fecha
                 df = df.sort_values("fecha")
                 peso_actual = df.iloc[-1]['peso']
                 peso_inicial = df.iloc[0]['peso']
-                cambio_total = peso_actual - peso_inicial
                 
-                # 2. DEFINIR META (Input rápido para calcular progreso)
+                # SECCIÓN DE META (Corregido el error de variable 'objetivo')
                 col_meta1, col_meta2 = st.columns([2, 1])
                 with col_meta1:
-                    st.caption("🎯 ¿Cuál es tu Peso Objetivo?")
-                    # --- CORRECCIÓN AQUÍ: Usamos 'objetivo_new' en vez de 'objetivo' ---
-                    if "Grasa" in objetivo_new:
-                        def_target = peso_actual - 5
-                    else:
-                        def_target = peso_actual + 5
-                        
-                    target_weight = st.number_input("Peso Meta (kg)", value=float(def_target), step=0.5, label_visibility="collapsed")
+                    # Usamos 'objetivo_new' que es la variable correcta del sidebar
+                    def_target = peso_actual - 5 if "Grasa" in objetivo_new else peso_actual + 5
+                    target_weight = st.number_input("Peso Meta (kg)", value=float(def_target), step=0.5)
                 
                 with col_meta2:
-                    # Cálculo de % completado
                     if peso_inicial != target_weight:
-                        total_camino = abs(target_weight - peso_inicial)
                         recorrido = abs(peso_actual - peso_inicial)
-                        # Evitamos división por cero
-                        if total_camino > 0:
-                            progreso_pct = min(recorrido / total_camino, 1.0)
-                        else:
-                            progreso_pct = 0.0
-                    else:
-                        progreso_pct = 1.0
-                    
-                    st.caption(f"Progreso: {int(progreso_pct*100)}%")
-                    st.progress(progreso_pct)
-
+                        total = abs(target_weight - peso_inicial)
+                        prog_pct = min(recorrido / total, 1.0) if total > 0 else 0.0
+                    else: prog_pct = 1.0
+                    st.caption(f"Progreso: {int(prog_pct*100)}%")
+                    st.progress(prog_pct)
+                
                 st.divider()
+                st.area_chart(df.set_index("fecha"), color="#33ffaa")
 
-                # 3. TARJETAS DE ESTADÍSTICAS (KPIs)
-                kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-                
-                kpi1.metric("Peso Actual", f"{peso_actual} kg", f"{cambio_total:.1f} kg totales")
-                kpi2.metric("Inicio", f"{peso_inicial} kg")
-                kpi3.metric("Más Bajo", f"{df['peso'].min()} kg")
-                kpi4.metric("Más Alto", f"{df['peso'].max()} kg")
-                
-                st.write("") 
-
-                # 4. GRÁFICA INTERACTIVA
-                st.subheader("📊 Evolución Temporal")
-                chart_data = df.set_index("fecha")
-                st.area_chart(chart_data, color="#33ffaa", height=300)
-                
-                with st.expander("📝 Ver Historial de Registros"):
-                    st.dataframe(df.style.highlight_max(axis=0, color='#33ffaa'), use_container_width=True)
-
-                st.divider()
-
-                # 5. REGISTRO DE MARCAS (PRs)
-                st.subheader("🏆 Registro de Fuerza (Personal Records)")
-                st.info("Guarda tus mejores levantamientos para ver cómo te vuelves más fuerte.")
-                
+                # Registro de Marcas (PRs)
+                st.subheader("🏆 Tus Récords")
                 c_pr1, c_pr2, c_pr3 = st.columns(3)
-                pr_bench = c_pr1.number_input("Press Banca (kg)", value=0.0, step=2.5)
-                pr_squat = c_pr2.number_input("Sentadilla (kg)", value=0.0, step=2.5)
-                pr_dead = c_pr3.number_input("Peso Muerto (kg)", value=0.0, step=2.5)
-                
-                if st.button("💾 Actualizar mis PRs"):
-                    st.toast("🔥 ¡Marcas registradas! Eres más fuerte que ayer.")
+                c_pr1.number_input("Banca (kg)", 0.0, step=2.5, key="pr_bench")
+                c_pr2.number_input("Sentadilla (kg)", 0.0, step=2.5, key="pr_squat")
+                c_pr3.number_input("Peso Muerto (kg)", 0.0, step=2.5, key="pr_dead")
+                if st.button("💾 Guardar Récords"): st.toast("¡Marcas actualizadas!")
             
             else:
-                st.info("👋 Aún no tienes datos. Guarda tu perfil hoy para empezar a trazar la gráfica.")
+                st.info("Guarda tu perfil hoy para ver tu primera gráfica.")
 def admin_panel():
     st.title("👮‍♂️ Panel de Control - Zynte God Mode")
     st.warning("⚠️ Zona restringida. Los cambios se aplican directamente a la Base de Datos.")
@@ -1232,6 +1194,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
