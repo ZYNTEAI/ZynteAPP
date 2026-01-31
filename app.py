@@ -578,28 +578,210 @@ def mostrar_pricing():
                 else:
                     st.error("❌ Código incorrecto.")
 
-# 1. PRIMERO: Creamos las pestañas (Tabs)
-    tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
+def app_principal():
+    # Recuperamos los datos del usuario actual
+    email_actual = st.session_state.get('user_email', 'invitado')
+    datos_usuario = cargar_perfil(email_actual)
 
-    # 2. SEGUNDO: El contenido de Entrenamiento
-    with tab_train:
-        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
-        # ... (Tu código de botones HIIT, Estiramientos, etc.) ...
+    class PDF(FPDF):
+        def header(self):
+            try: self.image('logo.png', 10, 8, 33)
+            except: pass
+            self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME DE ENTRENAMIENTO', 0, 0, 'C'); self.ln(20)
+        def footer(self):
+            self.set_y(-15); self.set_font('Arial', 'I', 8); self.cell(0, 10, f'Pagina {self.page_no()} - Zynte Elite Performance', 0, 0, 'C')
 
-    # 3. TERCERO: El contenido de Nutrición (Donde te daba el error)
-    with tab_nutri:
-        st.header("🥗 Plan Nutricional")
-        # ... (Tu código de macros y dieta) ...
+    def crear_pdf(historial, nombre, peso, objetivo):
+        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12); pdf.set_fill_color(200, 220, 255)
+        pdf.cell(0, 10, txt=f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}", ln=1, align='L', fill=True)
+        pdf.cell(0, 10, txt=f"PERFIL: {peso}kg | META: {objetivo}", ln=1, align='L', fill=True)
+        pdf.ln(10); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1); pdf.set_font("Arial", size=11)
+        for mensaje in historial:
+            if mensaje["role"] == "model":
+                texto_limpio = mensaje["content"].replace("**", "").replace("*", "-")
+                pdf.multi_cell(0, 7, txt=texto_limpio); pdf.ln(5); pdf.line(10, pdf.get_y(), 200, pdf.get_y()); pdf.ln(5)
+        return pdf.output(dest="S").encode("latin-1", "replace")
 
-    # 4. CUARTO: El contenido de Progreso
-    with tab_prog:
-        st.header("📈 Tu Evolución")
-        # ... (Tu código de gráficas) ...
+    with st.sidebar:
+        try: st.image("logo.png", width=180)
+        except: st.header("ZYNTE")
+        
+        if st.session_state.get('is_premium', False): st.success("🌟 MIEMBRO PRO")
+        else: st.info("🌱 CUENTA GRATUITA"); st.button("⬆️ Mejorar Plan", use_container_width=True, on_click=lambda: setattr(st.session_state, 'page', 'pricing'))
+        
+        st.write("---"); st.caption("PERFIL BIOMÉTRICO")
+        
+        # LOS VALORES POR DEFECTO AHORA VIENEN DE LA BASE DE DATOS
+        nombre = st.text_input("Alias", "Atleta")
+        peso = st.slider("Peso (kg)", 40.0, 150.0, float(datos_usuario['peso']), 0.5)
+        altura = st.slider("Altura (cm)", 120, 220, int(datos_usuario['altura']), 1)
+        edad = st.slider("Edad", 16, 80, int(datos_usuario['edad']))
+        
+        # Índices para los selectbox
+        obj_options = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
+        niv_options = ["Principiante", "Intermedio", "Avanzado"]
+        
+        try: idx_obj = obj_options.index(datos_usuario['objetivo'])
+        except: idx_obj = 0
+        try: idx_niv = niv_options.index(datos_usuario['nivel'])
+        except: idx_niv = 1
 
-    # 5. AL FINAL (FUERA DE LAS TABS): El Chat
-    st.write("---")
-    st.subheader("💬 Chat con Zynte AI")
-    # ... (El bloque del chat que pegamos antes) ...
+        objetivo = st.selectbox("Objetivo:", obj_options, index=idx_obj)
+        nivel = st.select_slider("Experiencia:", options=niv_options, value=niv_options[idx_niv])
+        
+        # BOTÓN NUEVO PARA GUARDAR CAMBIOS
+        if st.button("💾 Guardar Perfil", use_container_width=True):
+            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel):
+                st.toast("✅ Perfil actualizado con éxito")
+            else:
+                st.toast("❌ Error al guardar")
+
+        st.write("---")
+        if "history" in st.session_state and len(st.session_state.history) > 1:
+            if st.session_state.get('is_premium', False):
+                pdf_bytes = crear_pdf(st.session_state.history, nombre, peso, objetivo)
+                st.download_button("📥 DESCARGAR INFORME", pdf_bytes, f"Plan_{nombre}.pdf", "application/pdf", use_container_width=True)
+            else: st.warning("🔒 DESCARGA BLOQUEADA (PRO)")
+            
+        st.write("---"); st.button("Cerrar Sesión", use_container_width=True, on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'))
+        st.caption("© 2026 Zynte Performance")
+
+    imc = peso / ((altura/100)**2); estado_imc = "Normal"
+    if imc >= 25: estado_imc = "Sobrepeso"
+    if imc < 18.5: estado_imc = "Bajo peso"
+    try: st.image("banner.jpg", use_column_width=True)
+    except: st.title("ZYNTE COACH")
+    
+    col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
+    with col1: st.metric("IMC", f"{imc:.1f}", estado_imc)
+    with col2: st.metric("Peso", f"{peso} kg")
+    with col3: st.metric("Meta", objetivo)
+    with col4: st.metric("Nivel", nivel)
+    st.divider(); st.caption("⚠️ **Aviso:** Zynte es una herramienta de soporte. Consulta siempre con un médico antes de iniciar actividad física.")
+
+    if "history" not in st.session_state:
+        st.session_state.history = []
+        # Mensaje personalizado
+        st.session_state.history.append({"role": "model", "content": f"Hola. Veo que pesas {peso}kg y buscas {objetivo}. He cargado tu perfil. ¿Qué entrenamos hoy?"})
+        
+    for msg in st.session_state.history:
+        role = "assistant" if msg["role"] == "model" else "user"
+        avatar = "logo.png" if role == "assistant" else None
+        try: st.chat_message(role, avatar=avatar).markdown(msg["content"])
+        except: st.chat_message(role).markdown(msg["content"])
+
+    if prompt := st.chat_input("Describe tu necesidad o equipamiento..."):
+        st.chat_message("user").markdown(prompt)
+        st.session_state.history.append({"role": "user", "content": prompt})
+        with st.chat_message("assistant", avatar="logo.png"):
+            placeholder = st.empty(); placeholder.markdown("...")
+            try:
+                ctx = f"Eres Zynte, entrenador de élite. Hablas con un atleta de {peso}kg, {altura}cm, nivel {nivel}. Objetivo: {objetivo}. Responde con autoridad técnica pero cercano."
+                model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
+                chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
+                chat = model.start_chat(history=chat_history)
+                try: response = chat.send_message(prompt)
+                except Exception as e:
+                    if "429" in str(e):
+                        placeholder.warning("⏳ Alta demanda en el servidor. Re-calculando ruta..."); time.sleep(6); response = chat.send_message(prompt)
+                    else: raise e
+                placeholder.markdown(response.text); st.session_state.history.append({"role": "model", "content": response.text})
+            except Exception as e: placeholder.error(f"Error: {e}")
+
+    # --- Sidebar ---
+    with st.sidebar:
+        try: st.image("logo.png", width=180)
+        except: st.header("ZYNTE")
+        
+        if st.session_state.get('is_premium', False):
+            st.success("🌟 MIEMBRO PRO")
+        else:
+            st.info("🌱 CUENTA GRATUITA")
+            if st.button("⬆️ Mejorar Plan", use_container_width=True):
+                st.session_state.page = 'pricing'
+                st.rerun()
+
+        st.write("---")
+        st.caption("CONFIGURACIÓN DE ATLETA")
+        nombre = st.text_input("Nombre", "Atleta")
+        with st.expander("Datos Biométricos", expanded=True):
+            peso = st.slider("Peso (kg)", 40.0, 150.0, 72.5, 0.5)
+            altura = st.slider("Altura (cm)", 120, 220, 176, 1)
+            edad = st.slider("Edad", 16, 80, 25)
+        with st.expander("Objetivos", expanded=True):
+            objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"])
+            nivel = st.select_slider("Experiencia:", options=["Principiante", "Intermedio", "Avanzado"])
+
+        st.write("---")
+        if "history" in st.session_state and len(st.session_state.history) > 1:
+            if st.session_state.get('is_premium', False):
+                pdf_bytes = crear_pdf(st.session_state.history, nombre, peso, objetivo)
+                st.download_button("📥 DESCARGAR INFORME", pdf_bytes, f"Plan_{nombre}.pdf", "application/pdf", use_container_width=True)
+            else:
+                st.warning("🔒 DESCARGA BLOQUEADA (PRO)")
+        
+        st.write("---")
+        if st.button("Cerrar Sesión", use_container_width=True):
+            st.session_state.page = 'landing'
+            st.session_state.logged_in = False
+            st.rerun()
+            
+        st.caption("© 2026 Zynte Performance")
+
+    # --- Dashboard ---
+    imc = peso / ((altura/100)**2)
+    estado_imc = "Normal"
+    if imc >= 25: estado_imc = "Sobrepeso"
+    if imc < 18.5: estado_imc = "Bajo peso"
+
+    try: st.image("banner.jpg", use_column_width=True)
+    except: st.title("ZYNTE COACH")
+
+    col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
+    with col1: st.metric("IMC", f"{imc:.1f}", estado_imc)
+    with col2: st.metric("Peso", f"{peso} kg")
+    with col3: st.metric("Meta", objetivo)
+    with col4: st.metric("Nivel", nivel)
+    st.divider()
+    st.caption("⚠️ **Aviso:** Zynte es una herramienta de soporte. Consulta siempre con un médico antes de iniciar actividad física.")
+
+    # --- Chat ---
+    if "history" not in st.session_state:
+        st.session_state.history = []
+        st.session_state.history.append({"role": "model", "content": f"Hola {nombre}. He analizado tus datos ({peso}kg, {nivel}). Estoy listo para diseñar tu plan de {objetivo}. ¿Comenzamos?"})
+
+    for msg in st.session_state.history:
+        role = "assistant" if msg["role"] == "model" else "user"
+        avatar = "logo.png" if role == "assistant" else None
+        try: st.chat_message(role, avatar=avatar).markdown(msg["content"])
+        except: st.chat_message(role).markdown(msg["content"])
+
+    if prompt := st.chat_input("Describe tu necesidad o equipamiento..."):
+        st.chat_message("user").markdown(prompt)
+        st.session_state.history.append({"role": "user", "content": prompt})
+        
+        with st.chat_message("assistant", avatar="logo.png"):
+            placeholder = st.empty()
+            placeholder.markdown("...")
+            try:
+                ctx = f"Eres Zynte, entrenador de élite. Hablas con {nombre}. Datos: {peso}kg, {objetivo}. Responde con autoridad técnica pero cercano."
+                model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
+                chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
+                chat = model.start_chat(history=chat_history)
+                
+                try:
+                    response = chat.send_message(prompt)
+                except Exception as e:
+                    if "429" in str(e):
+                        placeholder.warning("⏳ Alta demanda en el servidor. Re-calculando ruta...")
+                        time.sleep(6)
+                        response = chat.send_message(prompt)
+                    else: raise e
+                
+                placeholder.markdown(response.text)
+                st.session_state.history.append({"role": "model", "content": response.text})
+            except Exception as e:
+                placeholder.error(f"Error: {e}")
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -621,6 +803,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
