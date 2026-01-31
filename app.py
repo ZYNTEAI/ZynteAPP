@@ -489,7 +489,9 @@ def mostrar_landing():
         st.markdown(f"""<div style="{card_css}">
             <div style="font-size: 2.8rem; margin-bottom: 15px;">📄</div>
             <h3 style="color: #33ffaa; font-size: 1.2rem; margin: 0 0 10px 0;">Informes PDF</h3>
-            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.4;">Exporta tu
+            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.4;">Exporta tu progreso en un formato profesional, limpio y ordenado.</p>
+        </div>""", unsafe_allow_html=True)
+        st.button("Ver ejemplo", key="L_btn_fix3", use_container_width=True)
     
 # --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
 def conectar_db():
@@ -839,6 +841,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
