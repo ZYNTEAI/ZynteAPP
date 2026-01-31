@@ -334,16 +334,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- CONFIGURACIÓN DE IA CORREGIDA ---
-try:
-    # Forzamos la versión 'v1' para evitar el error 404 de la v1beta
-    genai.configure(
-        =st.secrets["GOOGLE_"],
-        transport='rest' # Esto ayuda en algunos entornos de Windows
-    )
-except:
-    # Si estás en local sin secrets:
-    genai.configure(api_key="AIzaSyDskaqeWzjFH7U2SGE6kfRi6k2MsY6SH2E")
 
 # Usamos el nombre sin el prefijo "models/" para que la librería lo gestione
 MODELO_USADO = "gemini-1.5-flash"
@@ -595,19 +585,19 @@ def mostrar_pricing():
                     st.error("❌ Código incorrecto.")
 
 def app_principal():
-    # 1. Configuración de seguridad inicial
+    # --- MUEVE ESTO AQUÍ ARRIBA (Línea 335 aprox) ---
+    EMAIL_JEFE = "pablonavarrorui@gmail.com" 
+    email_actual = st.session_state.get('user_email', 'invitado')
+    
+    # ESTA LÍNEA ES LA CLAVE: Cargar los datos ANTES de cualquier 'try' o 'if'
+    datos_usuario = cargar_perfil(email_actual)
+    # ------------------------------------------------
+
+    # Luego sigue con la configuración de la IA
     try:
         genai.configure(api_key=API_KEY_GLOBAL)
     except Exception as e:
         st.error(f"Error config: {e}")
-
-    # 2. CARGA DE DATOS OBLIGATORIA (Solución a tu error)
-    # Definimos esto ANTES de cualquier if/try para que siempre exista
-    EMAIL_JEFE = "pablonavarrorui@gmail.com" 
-    email_actual = st.session_state.get('user_email', 'invitado')
-    
-    # Cargamos el perfil aquí mismo para que esté disponible para los Sliders
-    datos_usuario = cargar_perfil(email_actual)
 
     # ... (Resto de lógica nutricional y PDF igual que antes) ...
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
@@ -811,6 +801,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
