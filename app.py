@@ -849,15 +849,97 @@ def app_principal():
                 except Exception as e: st.error(f"Error IA: {e}")
 
     with tab_nutri:
-        # Aquí la comprobación es inmediata contra la variable 'is_premium'
-        if not st.session_state.is_premium:
+        # 1. BLOQUEO PRO: Si no es premium, mostramos el candado
+        if not st.session_state.get('is_premium'):
             mostrar_bloqueo_pro("Nutrición Avanzada")
+        
+        # 2. CONTENIDO PRO: Si paga, ve la herramienta completa
         else:
-            st.header("🥗 Plan Nutricional PRO")
-            k, p, c, f = calcular_macros(peso_new, altura_new, edad_new, genero, objetivo_new, nivel_new)
+            st.header("🥗 Tu Plan Nutricional Inteligente")
+            
+            # A) Cálculo de Macros en tiempo real
+            kcal, p, ch, g = calcular_macros(peso_new, altura_new, edad_new, genero, objetivo_new, nivel_new)
+            
+            # Tarjetas de Macros
             c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Kcal", k); c2.metric("Prot", f"{p}g"); c3.metric("Carb", f"{c}g"); c4.metric("Grasa", f"{f}g")
-            st.info("Generador de dieta disponible (Copia tu código aquí)")
+            c1.metric("Kcal Diarias", kcal, help="Calorías objetivo para tu meta")
+            c2.metric("Proteínas", f"{p}g", help="Base para construir músculo")
+            c3.metric("Carbos", f"{ch}g", help="Energía para entrenar")
+            c4.metric("Grasas", f"{g}g", help="Regulación hormonal")
+            
+            st.divider()
+            
+            # B) CONFIGURADOR DE MENÚ (Lo que faltaba)
+            col_izq, col_der = st.columns([1, 2], gap="large")
+            
+            with col_izq:
+                st.subheader("⚙️ Configura tu Menú")
+                
+                # Selectores que pediste
+                tipo_dieta = st.selectbox("Tipo de Alimentación", 
+                                          ["Omnívora (Todo)", "Vegetariana", "Vegana", "Keto", "Paleo", "Sin Gluten"],
+                                          key="nutri_tipo")
+                
+                alergias = st.text_input("Alergias o Intolerancias", 
+                                         placeholder="Ej: Nueces, Lactosa, Marisco...",
+                                         key="nutri_alergias")
+                
+                comidas = st.slider("Comidas al día", 3, 6, 4, key="nutri_comidas")
+                
+                st.write("") # Espacio
+                
+                # BOTÓN GENERADOR
+                if st.button("🥑 GENERAR DIETA AHORA", type="primary", use_container_width=True):
+                    with st.spinner("El Chef Zynte está calculando raciones..."):
+                        try:
+                            # Configuración de IA
+                            genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+                            model = genai.GenerativeModel("gemini-1.5-flash")
+                            
+                            # Prompt Avanzado con Alergias
+                            texto_alergias = f"EVITAR ESTRICTAMENTE: {alergias}" if alergias else "Sin alergias."
+                            
+                            prompt_diet = f"""
+                            Actúa como Nutricionista Deportivo Experto.
+                            Crea un plan de alimentación de 1 DÍA completo.
+                            
+                            🎯 OBJETIVOS:
+                            - Calorías: {kcal} kcal.
+                            - Macros: {p}g Proteína, {ch}g Carbos, {g}g Grasas.
+                            - Estilo: {tipo_dieta}.
+                            - Estructura: {comidas} comidas.
+                            - ⚠️ {texto_alergias}
+                            
+                            FORMATO DE RESPUESTA (Usa Markdown bonito):
+                            1. 🥗 MENÚ DETALLADO:
+                               - Desglose por comidas (Desayuno, etc).
+                               - PESOS EXACTOS en crudo (ej: 150g Pechuga).
+                            2. 🛒 LISTA DE LA COMPRA:
+                               - Organizada por pasillos (Verdulería, Carnicería...).
+                            
+                            Sé preciso con las cantidades para cuadrar los macros.
+                            """
+                            
+                            res = model.generate_content(prompt_diet)
+                            st.session_state.plan_nutri = res.text
+                            st.rerun() # Recargamos para mostrar el resultado
+                            
+                        except Exception as e:
+                            st.error(f"Error al conectar con la IA: {e}")
+
+            # C) VISOR DE RESULTADOS
+            with col_der:
+                if "plan_nutri" in st.session_state:
+                    st.markdown(st.session_state.plan_nutri)
+                    
+                    st.write("---")
+                    # Botón extra para descargar/copiar (simulado)
+                    st.download_button("📥 Descargar Dieta (TXT)", 
+                                       st.session_state.plan_nutri, 
+                                       "dieta_zynte.txt")
+                else:
+                    # Mensaje de espera bonito
+                    st.info("👈 **Instrucciones:**\n1. Selecciona tu tipo de dieta.\n2. Escribe tus alergias (si tienes).\n3. Pulsa 'Generar' para ver tu plan aquí.")
 
     with tab_prog:
         if not st.session_state.is_premium:
@@ -1079,6 +1161,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
