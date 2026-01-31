@@ -594,7 +594,7 @@ def mostrar_login():
                         st.success("Verificado.")
                     
                     time.sleep(0.5); st.rerun()
-                else: st.error("Error de credenciales.")
+                    else: st.error("Error de credenciales.")
         
         with tab2:
             st.write("")
@@ -1038,6 +1038,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
