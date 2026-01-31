@@ -1,9 +1,7 @@
 streamlit
-
-google-generativeai
-
+google-generativeai>=0.8.3
+requests
+pandas
 fpdf
-
 gspread
-
 oauth2client
