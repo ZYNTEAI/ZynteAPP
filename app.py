@@ -689,21 +689,25 @@ def mostrar_bloqueo_pro(nombre_funcion):
     """, unsafe_allow_html=True)
 def app_principal():
     # --- 1. GUARDIA DE SEGURIDAD (Anti-Crash) ---
-    # Si por alguna razón el email se borró, mandamos al usuario al Login
+    # Si no hay email, al login
     if "email" not in st.session_state or not st.session_state.email:
         st.session_state.page = "login"
         st.rerun()
         return
 
     # --- 2. RECUPERADOR DE MEMORIA ---
-    # Si tenemos email pero nos faltan los datos, los cargamos AHORA
+    # Si no hay datos, los cargamos
     if "datos_usuario" not in st.session_state or not st.session_state.datos_usuario:
         st.session_state.datos_usuario = cargar_perfil(st.session_state.email)
 
-    # --- CONFIGURACIÓN DE IA (Tu código sigue aquí igual que antes) ---
+    # --- 3. CONFIGURACIÓN DE IA (Ahora con su cierre correcto) ---
     try:
         genai.configure(api_key=API_KEY_GLOBAL)
-    # ------------------------------------------------
+    except Exception as e:
+        # Esta es la parte que te faltaba 👇
+        st.error(f"Error configurando IA: {e}")
+
+    # ... A partir de aquí sigue el resto de tu código normal ...
 
     # Luego sigue con la configuración de la IA
     try:
@@ -1262,6 +1266,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
