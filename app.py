@@ -18,23 +18,6 @@ API_KEY_GLOBAL = st.secrets["GOOGLE_API_KEY"]
 # 2. CONFIGURA LA IA INMEDIATAMENTE
 genai.configure(api_key=API_KEY_GLOBAL)
 
-# --- GENERADORES RÁPIDOS (FREE) ---
-st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
-col_b1, col_b2, col_b3 = st.columns(3)
-
-# 1. Definimos la variable al principio para evitar NameError
-prompt_rapido = None 
-
-# 2. Botones con 'key' única para evitar DuplicateElementId
-if col_b1.button("🔥 Rutina HIIT 20'", key="btn_hiit_free", use_container_width=True):
-    prompt_rapido = "Créame una rutina de HIIT de 20 minutos intensa para hacer en casa."
-if col_b2.button("🧘 Estiramientos", key="btn_estira_free", use_container_width=True):
-    prompt_rapido = "Dame una tabla de estiramientos de espalda y cuello para después de trabajar."
-if col_b3.button("💪 Reto de Flexiones", key="btn_flex_free", use_container_width=True):
-    prompt_rapido = "Dime un reto de flexiones para hacer hoy según mi nivel."
-
-# 3. Lógica de envío directo (Salta el error 404)
-if prompt_rapido:
     # 1. Aseguramos que el historial exista con la NUEVA PERSONALIDAD
     if "history" not in st.session_state:
         st.session_state.history = [
@@ -1236,6 +1219,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
