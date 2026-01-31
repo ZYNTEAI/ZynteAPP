@@ -431,67 +431,32 @@ def mostrar_info_pdf():
 # 🌟 VISTAS PRINCIPALES
 # ==============================================================================
 def mostrar_landing():
-    """Portada Principal - Versión de Tamaño Grande con Textos Completos"""
-    st.write("") 
-    st.write("") 
-    
-    # 1. Logo centrado
-    col_l1, col_l2, col_l3 = st.columns([0.8, 1.5, 0.8])
-    with col_l2:
-        try: 
-            st.image("logo.png", use_container_width=True)
-        except: 
-            st.markdown("<h1 style='text-align:center; color:white;'>ZYNTE</h1>", unsafe_allow_html=True)
-    
-    st.markdown('<p class="hero-title">TU ENTRENADOR DE ÉLITE</p>', unsafe_allow_html=True)
-    st.markdown('<p class="hero-subtitle">Planes de entrenamiento personalizados generados en segundos.</p>', unsafe_allow_html=True)
-    
-    # 2. Botón central
-    _, col_btn, _ = st.columns([1.2, 1, 1.2])
-    with col_btn:
-        if st.button("🚀 COMENZAR AHORA", use_container_width=True, type="primary"):
-            st.session_state.page = 'login'
-            st.rerun()
+    # ... (mantén tu código del logo y títulos igual) ...
 
-    st.write("---")
-
-    # 3. TARJETAS DE INFORMACIÓN - TAMAÑO MAXIMIZADO PARA TEXTOS LARGOS
+    # TARJETAS CON BOTONES FUNCIONALES
     c1, c2, c3 = st.columns(3, gap="medium")
     
-    # Estilo CSS con altura de 320px y padding optimizado
-    card_css = (
-        "background: rgba(30, 30, 30, 0.6); "
-        "padding: 35px 20px; "
-        "border-radius: 15px; "
-        "border: 2px solid #33ffaa; " # Borde neón original
-        "text-align: center; "
-        "min-height: 320px; " # Altura extra para que quepan los títulos de dos líneas
-        "display: flex; flex-direction: column; justify-content: center; align-items: center;"
-    )
+    card_css = ("background: rgba(30, 30, 30, 0.6); padding: 35px 20px; border-radius: 15px; "
+                "border: 2px solid #33ffaa; text-align: center; min-height: 320px; "
+                "display: flex; flex-direction: column; justify-content: center;")
 
     with c1:
-        st.markdown(f"""<div style="{card_css}">
-            <div style="font-size: 3rem; margin-bottom: 15px;">🧠</div>
-            <h3 style="color: #33ffaa; font-size: 1.2rem; margin: 0 0 10px 0; line-height: 1.2;">Personalización<br>Total</h3>
-            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.4;">Rutinas únicas basadas en tu biometría y metas personales.</p>
-        </div>""", unsafe_allow_html=True)
-        st.button("Cómo funciona", key="L_btn_final1", use_container_width=True)
+        st.markdown(f'<div style="{card_css}"><h3>🧠 Personalización Total</h3><p>Rutinas únicas basadas en tu biometría.</p></div>', unsafe_allow_html=True)
+        if st.button("Cómo funciona", key="info_1", use_container_width=True):
+            st.session_state.page = "info_personalizacion"
+            st.rerun()
             
     with c2:
-        st.markdown(f"""<div style="{card_css}">
-            <div style="font-size: 3rem; margin-bottom: 15px;">⚡</div>
-            <h3 style="color: #33ffaa; font-size: 1.2rem; margin: 0 0 10px 0; line-height: 1.2;">Resultados<br>Rápidos</h3>
-            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.4;">Planes listos para descargar en segundos antes de entrenar.</p>
-        </div>""", unsafe_allow_html=True)
-        st.button("Ver velocidad", key="L_btn_final2", use_container_width=True)
+        st.markdown(f'<div style="{card_css}"><h3>⚡ Resultados Rápidos</h3><p>Planes listos para descargar en segundos.</p></div>', unsafe_allow_html=True)
+        if st.button("Ver velocidad", key="info_2", use_container_width=True):
+            st.session_state.page = "info_velocidad"
+            st.rerun()
             
     with c3:
-        st.markdown(f"""<div style="{card_css}">
-            <div style="font-size: 3rem; margin-bottom: 15px;">📄</div>
-            <h3 style="color: #33ffaa; font-size: 1.2rem; margin: 0 0 10px 0; line-height: 1.2;">Informes<br>PDF</h3>
-            <p style="color: #ccc; font-size: 0.95rem; line-height: 1.4;">Exporta tu progreso en un formato profesional, limpio y ordenado.</p>
-        </div>""", unsafe_allow_html=True)
-        st.button("Ver ejemplo", key="L_btn_final3", use_container_width=True)
+        st.markdown(f'<div style="{card_css}"><h3>📄 Informes PDF</h3><p>Exporta tu progreso en formato profesional.</p></div>', unsafe_allow_html=True)
+        if st.button("Ver ejemplo", key="info_3", use_container_width=True):
+            st.session_state.page = "info_pdf"
+            st.rerun()
     
 # --- FUNCIÓN DE CONEXIÓN SEGURA POR ID (ACTUALIZADA) ---
 def conectar_db():
@@ -841,6 +806,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
