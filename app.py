@@ -730,7 +730,7 @@ def app_principal():
             with st.spinner("Zynte está pensando..."):
                 try:
                     # USAMOS LA VERSIÓN V1 QUE ES LA ESTABLE (ARREGLA EL 404)
-                    url_api = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                    url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
                     
                     payload = {
                         "contents": [{
@@ -809,6 +809,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
