@@ -10,7 +10,44 @@ import re
 import pandas as pd  
 import requests
 
+# --- GENERADORES RÁPIDOS (FREE) ---
+st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
+col_b1, col_b2, col_b3 = st.columns(3)
 
+# 1. Definimos la variable al principio para evitar NameError
+prompt_rapido = None 
+
+# 2. Botones con 'key' única para evitar DuplicateElementId
+if col_b1.button("🔥 Rutina HIIT 20'", key="btn_hiit_free", use_container_width=True):
+    prompt_rapido = "Créame una rutina de HIIT de 20 minutos intensa para hacer en casa."
+if col_b2.button("🧘 Estiramientos", key="btn_estira_free", use_container_width=True):
+    prompt_rapido = "Dame una tabla de estiramientos de espalda y cuello para después de trabajar."
+if col_b3.button("💪 Reto de Flexiones", key="btn_flex_free", use_container_width=True):
+    prompt_rapido = "Dime un reto de flexiones para hacer hoy según mi nivel."
+
+# 3. Lógica de envío directo (Salta el error 404)
+if prompt_rapido:
+    if "history" not in st.session_state:
+        st.session_state.history = []
+    
+    st.session_state.history.append({"role": "user", "content": prompt_rapido})
+    
+    with st.spinner("Zynte está pensando..."):
+        try:
+            # Petición directa a la versión estable v1
+            url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+            payload = {"contents": [{"parts": [{"text": prompt_rapido}]}]}
+            
+            res = requests.post(url, json=payload)
+            
+            if res.status_code == 200:
+                respuesta_ia = res.json()['candidates'][0]['content']['parts'][0]['text']
+                st.session_state.history.append({"role": "model", "content": respuesta_ia})
+                st.rerun()
+            else:
+                st.error(f"Error de Google: {res.status_code}")
+        except Exception as e:
+            st.error(f"Error de red: {e}")
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
@@ -794,6 +831,31 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
