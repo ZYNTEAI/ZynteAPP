@@ -35,12 +35,22 @@ if col_b3.button("💪 Reto de Flexiones", key="btn_flex_free", use_container_wi
 
 # 3. Lógica de envío directo (Salta el error 404)
 if prompt_rapido:
+    # 1. Aseguramos que el historial exista con la NUEVA PERSONALIDAD
     if "history" not in st.session_state:
-        st.session_state.history = []
-    
-    st.session_state.history.append({"role": "user", "content": prompt_rapido})
-    
-    with st.spinner("Zynte está pensando..."):
+        st.session_state.history = [
+            # --- INSTRUCCIÓN OCULTA AL CEREBRO DE LA IA ---
+            {"role": "user", "content": """
+            Actúa como Zynte AI, un entrenador personal de élite y experto en nutrición.
+            TU PERSONALIDAD:
+            - Eres enérgico, motivador y vas al grano.
+            - NUNCA respondas con un simple "Hola, ¿cómo estás?".
+            - Cuando el usuario salude, preséntate con fuerza y lanza un reto. 
+            Ejemplo: "¡Hola! Soy Zynte AI. ¿Listo para romper tus límites hoy?"
+            """},
+            
+            # --- RESPUESTA DE CONFIRMACIÓN (TAMBIÉN OCULTA) ---
+            {"role": "model", "content": "¡Entendido! Soy Zynte AI. Modo motivación activado. ¡A entrenar!"}
+        ]
         try:
             # Tienes que añadir 4 espacios antes de 'url' para que esté DENTRO del try
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={API_KEY_GLOBAL}"
@@ -855,6 +865,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
