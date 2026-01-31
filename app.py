@@ -688,185 +688,108 @@ def mostrar_bloqueo_pro(nombre_funcion):
     </div>
     """, unsafe_allow_html=True)
 def app_principal():
-    # --- 1. GUARDIA DE SEGURIDAD (Ya lo tienes) ---
+    # ==========================================
+    # 1. GUARDIA DE SEGURIDAD (Anti-Crash) 👮‍♂️
+    # ==========================================
     if "email" not in st.session_state or not st.session_state.email:
         st.session_state.page = "login"
         st.rerun()
         return
 
-    # --- 2. RECUPERADOR DE MEMORIA (Ya lo tienes) ---
+    # ==========================================
+    # 2. CARGA DE DATOS INICIAL 📥
+    # ==========================================
+    # Si la memoria está vacía, leemos de Google Sheets
     if "datos_usuario" not in st.session_state or not st.session_state.datos_usuario:
-        st.session_state.datos_usuario = cargar_perfil(st.session_state.email)
+        with st.spinner("Cargando perfil..."):
+            st.session_state.datos_usuario = cargar_perfil(st.session_state.email)
 
     # ==========================================
-    # --- 3. SINCRONIZADOR AUTOMÁTICO DE PAGOS (NUEVO) ---
+    # 3. SINCRONIZADOR SILENCIOSO (AUTO-PRO) 🔄
     # ==========================================
-    # Solo comprobamos si el usuario figura como "free" en memoria
-    # Así, en cuanto pague, al hacer cualquier clic, se actualizará solo.
+    # Si la memoria dice "free", comprobamos disimuladamente la DB por si ya pagó.
+    # Esto soluciona que el cliente pague y siga viendo el candado.
     if st.session_state.datos_usuario.get("status") == "free":
         try:
-            # Consultamos "en silencio" a la base de datos
+            # Hacemos una consulta rápida fresca
             datos_frescos = cargar_perfil(st.session_state.email)
             status_real = datos_frescos.get("status", "free")
             
-            # Si en la DB dice PRO, pero en memoria decía FREE... ¡ACTUALIZAMOS!
+            # Si la realidad (DB) es mejor que la memoria... ¡ACTUALIZAMOS!
             if status_real == "pro":
                 st.session_state.datos_usuario['status'] = 'pro'
-                st.toast("🎉 ¡Pago detectado! Funciones PRO desbloqueadas.")
+                st.toast("🎉 ¡Pago confirmado! Bienvenido a Zynte PRO.")
                 time.sleep(1)
-                st.rerun() # Recargamos la página para pintar todo verde
+                st.rerun() # Recargamos para pintar todo de verde
         except:
-            pass # Si falla la conexión, no molestamos al usuario
+            pass # Si falla internet, no molestamos, seguimos con lo que hay.
 
-    # --- 3. CONFIGURACIÓN DE IA (Ahora con su cierre correcto) ---
+    # Configuración de la IA (Tu código original)
     try:
         genai.configure(api_key=API_KEY_GLOBAL)
     except Exception as e:
-        # Esta es la parte que te faltaba 👇
-        st.error(f"Error configurando IA: {e}")
+        st.error(f"Error conexión IA: {e}")
 
-    # ... A partir de aquí sigue el resto de tu código normal ...
-
-    # Luego sigue con la configuración de la IA
-    try:
-        genai.configure(api_key=API_KEY_GLOBAL)
-    except Exception as e:
-        st.error(f"Error config: {e}")
-
-    # ... (Resto de lógica nutricional y PDF igual que antes) ...
-    def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
-        if genero == "Hombre": tmb = 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
-        else: tmb = 447.6 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad)
-        factores = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
-        tdee = tmb * factores.get(nivel, 1.2)
-        if "Grasa" in objetivo: return int(tdee - 400), int(peso*2.2), int((tdee-400 - peso*2.2*4 - peso*0.9*9)/4), int(peso*0.9)
-        elif "Hipertrofia" in objetivo: return int(tdee + 300), int(peso*2.0), int((tdee+300 - peso*2*4 - peso*1*9)/4), int(peso*1)
-        else: return int(tdee), int(peso*1.6), int((tdee - peso*1.6*4 - peso*1*9)/4), int(peso*1)
-
-    class PDF(FPDF):
-        def header(self):
-            try: self.image('logo.png', 10, 8, 33)
-            except: pass
-            self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME', 0, 0, 'C'); self.ln(20)
-
-    def crear_pdf(historial, nombre, peso, objetivo):
-        class PDF(FPDF):
-            def header(self):
-                try: self.image('logo.png', 10, 8, 33)
-                except: pass
-                self.set_font('Arial', 'B', 15)
-                self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME', 0, 0, 'C')
-                self.ln(20)
-
-        pdf = PDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        pdf.set_fill_color(200, 220, 255)
-
-        # --- FUNCIÓN DE LIMPIEZA (El truco para que no falle) ---
-        def limpiar_texto(texto):
-            # Esto quita los emojis y caracteres raros que rompen el PDF
-            return str(texto).encode('latin-1', 'replace').decode('latin-1')
-
-        # Cabecera con datos limpios
-        pdf.cell(0, 10, txt=limpiar_texto(f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}"), ln=1, align='L', fill=True)
-        pdf.cell(0, 10, txt=limpiar_texto(f"PERFIL: {peso}kg | META: {objetivo}"), ln=1, align='L', fill=True)
-        pdf.ln(10)
-        
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1)
-        
-        pdf.set_font("Arial", size=11)
-        
-        # Cuerpo del PDF (Limpiando cada mensaje)
-        for mensaje in historial:
-            if mensaje["role"] == "model":
-                # 1. Quitamos negritas de Markdown (**texto**)
-                texto_base = mensaje["content"].replace("**", "").replace("*", "-")
-                # 2. Quitamos emojis
-                texto_final = limpiar_texto(texto_base)
-                
-                pdf.multi_cell(0, 7, txt=texto_final)
-                pdf.ln(5)
-                
-        return pdf.output(dest="S").encode("latin-1", "replace")
-
-   # --- BARRA LATERAL INTELIGENTE ---
+    # ==========================================
+    # 4. BARRA LATERAL (Conexión Directa) 🎛️
+    # ==========================================
     with st.sidebar:
-        # 1. LOGO Y ESTADO DE SUSCRIPCIÓN
-        try:
-            st.image("logo.png", use_container_width=True)
-        except:
-            st.header("💪 Zynte AI")
+        try: st.image("logo.png", use_container_width=True)
+        except: st.header("💪 Zynte AI")
 
-        # Leemos el estado REAL del usuario desde la memoria
+        # --- ESTADO DE SUSCRIPCIÓN ---
         estado_actual = st.session_state.datos_usuario.get("status", "free")
         
-        # --- CARTEL DINÁMICO (PRO vs FREE) ---
         if estado_actual == "pro":
-            # Si es PRO: Cartel verde y sin botón de pagar
-            st.success(f"🌟 MIEMBRO PRO ACTIVO")
-            st.caption(f"Hola, **{st.session_state.datos_usuario.get('nombre', 'Atleta')}**")
+            st.success(f"🌟 MIEMBRO PRO")
+            st.caption(f"Usuario: **{st.session_state.datos_usuario.get('nombre', 'Atleta')}**")
         else:
-            # Si es FREE: Cartel azul y botón de mejorar
             st.info("🌱 PLAN GRATUITO")
             if st.button("⬆️ Mejorar Plan", use_container_width=True):
                 st.session_state.page = "pricing"
                 st.rerun()
+            # Botón de emergencia por si el auto-sync falla
+            if st.button("🔄 Forzar Sincronización", use_container_width=True):
+                del st.session_state['datos_usuario'] # Borramos memoria
+                st.rerun() # Obligamos a recargar
 
         st.divider()
-
-        # 2. PERFIL BIOMÉTRICO (Con datos persistentes)
         st.header("TUS DATOS")
-        
-        # Usamos los datos de la memoria como valor inicial ("value")
-        # Si no hay dato, usamos un valor seguro por defecto
+
+        # --- SLIDERS CONECTADOS A MEMORIA ---
+        # Usamos los datos de session_state como "value" por defecto
         db = st.session_state.datos_usuario
         
-        # -- ALIAS --
         nuevo_nombre = st.text_input("Alias", value=db.get("nombre", "Usuario"))
-        
-        # -- PESO --
         nuevo_peso = st.slider("Peso (kg)", 40.0, 150.0, float(db.get("peso", 70.0)))
-        
-        # -- ALTURA --
         nueva_altura = st.slider("Altura (cm)", 140, 220, int(db.get("altura", 170)))
-        
-        # -- EDAD --
         nueva_edad = st.slider("Edad", 14, 90, int(db.get("edad", 25)))
         
-        # -- GÉNERO --
-        gen_guardado = db.get("genero", "Hombre")
-        idx_gen = 0 if gen_guardado == "Hombre" else 1
-        nuevo_genero = st.radio("Género", ["Hombre", "Mujer"], index=idx_gen, horizontal=True)
+        gen_idx = 0 if db.get("genero") == "Hombre" else 1
+        nuevo_genero = st.radio("Género", ["Hombre", "Mujer"], index=gen_idx, horizontal=True)
         
-        # -- OBJETIVO --
-        obj_ops = ["Hipertrofia", "Pérdida de Grasa", "Fuerza", "Resistencia"]
-        obj_guardado = db.get("objetivo", "Hipertrofia")
-        try: idx_obj = obj_ops.index(obj_guardado)
-        except: idx_obj = 0
-        nuevo_objetivo = st.selectbox("Objetivo", obj_ops, index=idx_obj)
+        objs = ["Hipertrofia", "Pérdida de Grasa", "Fuerza", "Resistencia"]
+        try: obj_idx = objs.index(db.get("objetivo"))
+        except: obj_idx = 0
+        nuevo_objetivo = st.selectbox("Objetivo", objs, index=obj_idx)
         
-        # -- EXPERIENCIA --
-        niv_ops = ["Principiante", "Intermedio", "Avanzado", "Atleta"]
-        niv_guardado = db.get("nivel", "Intermedio")
-        try: idx_niv = niv_ops.index(niv_guardado)
-        except: idx_niv = 1
-        nuevo_nivel = st.select_slider("Experiencia", options=niv_ops, value=niv_ops[idx_niv])
+        nivs = ["Principiante", "Intermedio", "Avanzado", "Atleta"]
+        try: niv_idx = nivs.index(db.get("nivel"))
+        except: niv_idx = 1
+        nuevo_nivel = st.select_slider("Experiencia", options=nivs, value=nivs[niv_idx])
         
-        # -- DÍAS --
-        dias_guardado = int(db.get("dias", 4))
-        nuevos_dias = st.slider("Días/semana", 1, 7, dias_guardado)
+        nuevos_dias = st.slider("Días/semana", 1, 7, int(db.get("dias", 4)))
 
-        # 3. BOTÓN DE GUARDAR (Que actualiza todo)
         st.write("---")
+
+        # --- BOTÓN DE GUARDADO (EL CEREBRO) 💾 ---
         if st.button("💾 Guardar Cambios", use_container_width=True):
-            with st.spinner("Actualizando perfil..."):
-                # Guardamos en Google Sheets
+            with st.spinner("Guardando..."):
+                # 1. Guardamos en la Nube (Google Sheets)
                 if guardar_perfil_db(st.session_state.email, nuevo_nombre, nuevo_peso, nueva_altura, nueva_edad, nuevo_genero, nuevo_objetivo, nuevo_nivel, nuevos_dias):
                     
-                    # ¡IMPORTANTE! Actualizamos la memoria local INMEDIATAMENTE
-                    # Así los sliders no "saltan" hacia atrás al recargar
+                    # 2. ACTUALIZAMOS LA MEMORIA LOCAL INMEDIATAMENTE
+                    # Esto evita que los sliders "salten" atrás al recargar
                     st.session_state.datos_usuario.update({
                         "nombre": nuevo_nombre,
                         "peso": nuevo_peso,
@@ -877,66 +800,135 @@ def app_principal():
                         "nivel": nuevo_nivel,
                         "dias": nuevos_dias
                     })
-                    
-                    st.toast("✅ Perfil guardado correctamente")
-                    time.sleep(1)
-                    st.rerun() # Recargamos para asentar cambios visuales
+                    st.toast("✅ Datos actualizados")
+                    time.sleep(0.5)
+                    st.rerun() # Recargamos para aplicar cambios a la calculadora
                 else:
-                    st.error("Error al conectar con la base de datos.")
+                    st.error("Error de conexión.")
 
-        # 4. BOTONES EXTRA (Limpiar chat y Admin)
+        # Botones extra
         if st.button("🗑️ Limpiar Chat", use_container_width=True):
-             st.session_state.history = [
-                {"role": "user", "content": "Actúa como Zynte AI... TU PERSONALIDAD..."},
-                {"role": "model", "content": "¡Entendido! Soy Zynte AI..."}
-            ]
+             st.session_state.history = []
              st.rerun()
-             
-        # Botón secreto de Admin (si eres tú)
-        if st.session_state.email == "pablonavarrorui@gmail.com": # <--- Tu email de admin
-            st.write("---")
-            if st.button("👮‍♂️ Volver a God Mode", type="primary", use_container_width=True):
-                st.session_state.page = 'admin'
-                st.rerun()
-        # ... (Aquí termina tu código de la barra lateral) ...
 
-    # --- PUENTE DE COMPATIBILIDAD (IMPORTANTE) ---
-    # Convertimos las variables nuevas a las que usa tu calculadora
-    # Esto arregla el error "NameError: name 'peso' is not defined"
+        st.write("---")
+        if st.button("Log Out / Salir", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+
+        # Botón GOD MODE (Solo Admin)
+        if st.session_state.email == "admin@zynte.com" or st.session_state.email == "TU_EMAIL_REAL_AQUI":
+            st.write("---")
+            if st.button("👮‍♂️ God Mode"):
+                st.session_state.page = "admin"
+                st.rerun()
+
+    # ==========================================
+    # 5. EL PUENTE (SINCRONIZACIÓN VISUAL) 🌉
+    # ==========================================
+    # Aquí pasamos los datos de los sliders al resto de la app
+    # IMPORTANTE: Esto está FUERA del "with st.sidebar"
+    
     peso = nuevo_peso
     altura = nueva_altura
     edad = nueva_edad
     genero = nuevo_genero
     objetivo = nuevo_objetivo
     nivel = nuevo_nivel
+    dias = nuevos_dias
+    nombre = nuevo_nombre
+
+    # ==========================================
+    # 6. LA APP PRINCIPAL (CONTENIDO) 🏋️‍♂️
+    # ==========================================
     
-    # A) BOTÓN DE CERRAR SESIÓN (Para todos)
-    if st.button("Log Out / Salir", use_container_width=True):
-        st.session_state.clear()
-        st.rerun()
-
-    st.write("---")
-    if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
-        pdf = crear_pdf(st.session_state.history, nombre, peso, objetivo)
-        st.download_button("📥 PDF", pdf, "Rutina.pdf")
-        st.write("---"); st.button("Cerrar Sesión", on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'))
-
-    # MAIN TABS (Igual que antes)
-    try: st.image("banner.jpg", use_column_width=True)
-    except: st.title("ZYNTE COACH")
+    # Pestañas Superiores
+    tabs = st.tabs(["🏋️‍♂️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
     
-    tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
+    # --- PESTAÑA 1: ENTRENAMIENTO ---
+    with tabs[0]:
+        st.header(f"Hola, {nombre} 👋")
+        
+        # Calculadora IMC (Ahora usa los datos sincronizados del Puente)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            imc = peso / ((altura/100)**2)
+            st.metric("Tu IMC", f"{imc:.1f}")
+        with col2:
+            st.metric("Peso Objetivo", f"{objetivo}")
+        with col3:
+            st.metric("Nivel", f"{nivel}")
 
-    with tab_train:
-        imc = peso / ((altura/100)**2)
-        col1, col2, col3, col4 = st.columns([0.8, 1.2, 1.8, 1.5])
-        with col1: st.metric("IMC", f"{imc:.1f}", "Normal" if 18.5 < imc < 25 else "Atención")
-        with col2: st.metric("Peso", f"{peso} kg")
-        with col3: st.metric("Meta", objetivo)
-        with col4: st.metric("Nivel", nivel)
+        # Chatbot
         st.divider()
+        st.subheader("💬 Chat con tu Entrenador IA")
+        
+        # Historial de Chat
+        if "history" not in st.session_state:
+            st.session_state.history = []
 
-        st.divider()
+        for msg in st.session_state.history:
+            role = msg["role"]
+            content = msg["content"]
+            with st.chat_message("user" if role == "user" else "assistant"):
+                st.markdown(content)
+
+        # Input de Chat
+        if prompt := st.chat_input("Ej: Dame una rutina de pecho para hoy..."):
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            st.session_state.history.append({"role": "user", "content": prompt})
+
+            with st.chat_message("assistant"):
+                with st.spinner("Analizando tu perfil..."):
+                    try:
+                        # Construimos el prompt con los datos frescos del Puente
+                        contexto = f"""
+                        Eres Zynte, un entrenador experto.
+                        Datos del usuario:
+                        - Peso: {peso}kg, Altura: {altura}cm
+                        - Objetivo: {objetivo}
+                        - Nivel: {nivel}
+                        - Días disponibles: {dias}
+                        - Género: {genero}
+                        
+                        Pregunta del usuario: {prompt}
+                        Responde de forma motivadora y técnica.
+                        """
+                        model = genai.GenerativeModel('gemini-2.0-flash')
+                        response = model.generate_content(contexto)
+                        reply = response.text
+                        st.markdown(reply)
+                        st.session_state.history.append({"role": "model", "content": reply})
+                    except Exception as e:
+                        st.error(f"Error IA: {e}")
+
+    # --- PESTAÑA 2: NUTRICIÓN (BLOQUEADA SI ES FREE) ---
+    with tabs[1]:
+        st.header("🍎 Nutrición Inteligente")
+        
+        if estado_actual == "pro":
+            st.success("✅ MÓDULO PRO DESBLOQUEADO")
+            # Calculadora de Macros Real
+            tmb = (10 * peso) + (6.25 * altura) - (5 * edad) + 5
+            if genero == "Mujer": tmb = (10 * peso) + (6.25 * altura) - (5 * edad) - 161
+            
+            st.info(f"🔥 Tu Metabolismo Basal: **{int(tmb)} kcal**")
+            st.write("Aquí iría tu dieta personalizada generada por IA...")
+            
+        else:
+            # Función de bloqueo
+            mostrar_bloqueo_pro("Plan Nutricional & Macros")
+
+    # --- PESTAÑA 3: PROGRESO ---
+    with tabs[2]:
+        st.header("📈 Tu Evolución")
+        historial_df = obtener_historial_df(st.session_state.email)
+        
+        if historial_df is not None and not historial_df.empty:
+            st.line_chart(historial_df.set_index("fecha"))
+        else:
+            st.info("Aún no tienes historial. Guarda tu perfil hoy para empezar a registrar.")
 
 # --- SECCIÓN DE CHAT ÚNICA ---
     st.write("---") 
@@ -1299,6 +1291,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
