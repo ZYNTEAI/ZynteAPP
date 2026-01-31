@@ -812,35 +812,47 @@ def app_principal():
     
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
-    with tab_train:
+   with tab_train:
+        # 1. CÁLCULO DEL IMC Y SU ESTADO
         imc = peso_new / ((altura_new/100)**2)
+        
+        if imc < 18.5:
+            estado_imc = "Bajo Peso 🔵"
+        elif 18.5 <= imc < 25:
+            estado_imc = "Normal ✅"
+        elif 25 <= imc < 30:
+            estado_imc = "Sobrepeso ⚠️"
+        else:
+            estado_imc = "Obesidad 🚨"
+
+        # 2. COLUMNAS (Mantenemos el ancho [1,1,2,2] para que no se corten las palabras)
         c1, c2, c3, c4 = st.columns([1, 1, 2, 2])
-        c1.metric("IMC", f"{imc:.1f}")
+        
+        # 3. VISUALIZACIÓN
+        # Usamos 'delta' para mostrar el texto debajo del número
+        # 'delta_color="off"' hace que el texto sea gris/neutro en vez de rojo/verde
+        c1.metric("IMC", f"{imc:.1f}", delta=estado_imc, delta_color="off") 
         c2.metric("Peso", f"{peso_new}kg")
         c3.metric("Meta", objetivo_new)
         c4.metric("Nivel", nivel_new)
+        
         st.divider()
 
-        # Chat IA
+        # Chat con tu preparador (Sin cambios)
         st.subheader("💬 Chat con tu preparador")
         if "history" not in st.session_state: st.session_state.history = []
         for msg in st.session_state.history:
             if msg.get("role") != "system": st.chat_message(msg["role"]).markdown(msg["content"])
 
-        if prompt := st.chat_input("Pregunta algo..."):
+        if prompt := st.chat_input("Escribe aquí..."):
             st.chat_message("user").markdown(prompt)
             st.session_state.history.append({"role": "user", "content": prompt})
             
             with st.chat_message("assistant"):
                 try:
-                    # Configuración IA
                     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-                    model = genai.GenerativeModel("gemini-flash-latest")
-                    
-                    # Contexto actualizado al segundo
+                    model = genai.GenerativeModel("gemini-1.5-flash")
                     ctx = f"Cliente {peso_new}kg, {altura_new}cm. Meta: {objetivo_new}."
-                    
-                    # Llamada IA
                     hist = [{"role": ("user" if m["role"]=="user" else "model"), "parts": [{"text": m["content"]}]} for m in st.session_state.history]
                     chat = model.start_chat(history=hist[:-1])
                     res = chat.send_message(f"{ctx}\nUsuario: {prompt}")
@@ -1194,6 +1206,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
