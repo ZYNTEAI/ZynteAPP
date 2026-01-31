@@ -644,7 +644,24 @@ def mostrar_pricing():
                         st.error("Error al actualizar base de datos.")
                 else:
                     st.error("❌ Código incorrecto.")
-
+# --- FUNCIÓN VISUAL PARA BLOQUEAR PESTAÑAS (La pieza que falta) ---
+def mostrar_bloqueo_pro(nombre_funcion):
+    st.markdown(f"""
+    <div style="background-color: rgba(255, 75, 75, 0.1); border: 1px solid #ff4b4b; border-radius: 10px; padding: 30px; text-align: center; margin: 20px 0;">
+        <h2 style="color: #ff4b4b; margin-bottom: 10px;">🔒 Función PRO Bloqueada</h2>
+        <p style="color: #ddd; font-size: 1.1rem;">
+            El módulo de <b>{nombre_funcion}</b> es exclusivo para miembros Zynte PRO.
+        </p>
+        <hr style="border-color: #ff4b4b; opacity: 0.3; margin: 20px 0;">
+        <p style="color: #aaa; font-size: 0.9rem;">
+            Desbloquea Nutrición Avanzada, Exportación PDF y Soporte Prioritario.
+        </p>
+        <br>
+        <a href="#" style="background-color: #ff4b4b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            🚀 Desbloquear Todo por 19.99€
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
 def app_principal():
     # --- MUEVE ESTO AQUÍ ARRIBA (Línea 335 aprox) ---
     EMAIL_JEFE = "pablonavarrorui@gmail.com" 
@@ -1007,6 +1024,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
