@@ -11,52 +11,7 @@ import pandas as pd
 import requests
 
 
-        # --- BLOQUE DE GENERADORES RÁPIDOS ---
-        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
-        
-        # 1. Definición de la Llave API (Evita el error 'api_key not defined')
-        try:
-            llave_final = st.secrets["GOOGLE_API_KEY"]
-        except:
-            llave_final = "TU_CLAVE_AQUI"
-
-        # 2. Configuración de los Botones
-        c1, c2, c3 = st.columns(3)
-        prompt_rapido = None
-        
-        if c1.button("🔥 Rutina HIIT 20'"): 
-            prompt_rapido = "Genera una rutina HIIT de 20 minutos intensa para quemar grasa."
-        if c2.button("🧘 Estiramientos"): 
-            prompt_rapido = "Dame una tabla de estiramientos completa para después de entrenar."
-        if c3.button("💪 Reto de Flexiones"): 
-            prompt_rapido = "Crea un plan progresivo de flexiones para 30 días, nivel principiante a intermedio."
-
-        # 3. Lógica de Envío a la IA (Resuelve el IndentationError)
-        if prompt_rapido:
-            # URL v1 estable para evitar el error 404
-            url_api = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={llave_final}"
-            payload = {"contents": [{"parts": [{"text": prompt_rapido}]}]}
-            
-            with st.spinner("Zynte está preparando tu rutina..."):
-                try:
-                    # Petición a la API de Google
-                    res_google = requests.post(url_api, json=payload, timeout=30)
-                    
-                    if res_google.status_code == 200:
-                        respuesta_ia = res_google.json()['candidates'][0]['content']['parts'][0]['text']
-                        
-                        # Inicializar historial si no existe
-                        if "history" not in st.session_state:
-                            st.session_state.history = []
-                        
-                        # Guardar en el historial y refrescar la pantalla
-                        st.session_state.history.append({"role": "user", "content": prompt_rapido})
-                        st.session_state.history.append({"role": "model", "content": respuesta_ia})
-                        st.rerun() 
-                    else:
-                        st.error(f"Error de respuesta (Código {res_google.status_code}). Revisa tu API Key.")
-                except Exception as e_error:
-                    st.error(f"Error de conexión: {e_error}")
+     
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
 def init_db():
     conn = sqlite3.connect('zynte_users.db')
@@ -917,6 +872,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
