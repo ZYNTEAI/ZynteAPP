@@ -820,32 +820,15 @@ def app_principal():
                 {"role": "model", "content": "¡Entendido! Soy Zynte AI. Modo motivación activado. ¡A entrenar!"}
             ]
             st.rerun()
-        
-        # ==========================================
-        # 👑 PANEL DE CONTROL TOTAL (GOD MODE)
-        # ==========================================
-        if email_actual == EMAIL_JEFE:
+        # --- BOTÓN SECRETO DE RETORNO (Solo para el Admin) ---
+        # Asegúrate de poner aquí TU email de administrador exacto
+        if st.session_state.email == "admin@zynte.com": 
             st.write("---")
-            with st.expander("🔐 PANEL DE CONTROL"):
-                accion = st.radio("Acción:", ["Dar VIP 🌟", "Quitar VIP 💀", "Borrar Usuario ❌"])
-                email_target = st.text_input("Email objetivo:").strip().lower()
-                
-                if st.button("EJECUTAR ORDEN ⚡", type="primary"):
-                    if not email_target:
-                        st.error("Escribe un email.")
-                    else:
-                        if accion == "Dar VIP 🌟":
-                            if activar_plan_pro(email_target): st.success(f"{email_target} ahora es PRO.")
-                            else: st.error("No encontrado.")
-                        
-                        elif accion == "Quitar VIP 💀":
-                            if revocar_plan_pro(email_target): st.warning(f"{email_target} vuelve a ser FREE.")
-                            else: st.error("Error o no existe.")
-                            
-                        elif accion == "Borrar Usuario ❌":
-                            if eliminar_usuario_total(email_target): st.error(f"{email_target} ha sido ELIMINADO.")
-                            else: st.error("No se pudo borrar.")
-        # ==========================================
+            st.caption("🔧 Controles de Admin")
+            if st.button("👮‍♂️ Volver a God Mode", type="primary", use_container_width=True):
+                st.session_state.page = 'admin'
+                st.rerun()
+
         # ==========================================
 
         st.write("---")
@@ -1095,6 +1078,19 @@ def admin_panel():
                         
     except Exception as e:
         st.error(f"Error cargando panel admin: {e}")
+# ... (código anterior del panel donde banean usuarios) ...
+
+    st.write("---")
+    st.subheader("👤 Tu Zona Personal")
+    
+    col_a, col_b = st.columns([3, 1])
+    with col_a:
+        st.info("Como administrador, también tienes tu propio perfil de entrenamiento.")
+    with col_b:
+        # BOTÓN PUENTE: Cambia la página de 'admin' a 'app'
+        if st.button("🚀 Ir a mi App / Entrenar", use_container_width=True):
+            st.session_state.page = 'app'
+            st.rerun()
 # ==============================================================================
 # 🚀 ROUTER
 # ==============================================================================
@@ -1219,6 +1215,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
