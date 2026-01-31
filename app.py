@@ -788,7 +788,7 @@ def app_principal():
                             st.session_state.plan_nutri = res.text
                             st.rerun()
                         except Exception as e: # Capturamos el error real
-                        st.error(f"Error detallado de la IA: {e}")
+                            st.error(f"Error detallado de la IA: {e}")
         with col_d2:
             if "plan_nutri" in st.session_state: st.markdown(st.session_state.plan_nutri)
             else: st.info("Configura y genera tu plan.")
@@ -830,6 +830,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
