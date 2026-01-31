@@ -728,7 +728,7 @@ def app_principal():
                 try:
                     # USAMOS LA LIBRERÍA OFICIAL (Esto evita el error 404 de la URL)
                     genai.configure(api_key=API_KEY_GLOBAL)
-                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    model = genai.GenerativeModel('gemini-pro')
                     
                     # Llamada directa
                     response = model.generate_content(prompt_chat)
@@ -801,6 +801,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
