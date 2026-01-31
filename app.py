@@ -587,14 +587,19 @@ def mostrar_login():
                         else: st.error("Email ocupado.")
     st.write("---"); st.button("⬅️ Volver", on_click=lambda: setattr(st.session_state, 'page', 'landing'))
 def mostrar_pricing():
-    st.markdown("<h2 style='text-align: center;'>💎 Elige tu Nivel</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>💎 Únete al Club Zynte</h2>", unsafe_allow_html=True)
     
-    # TU ENLACE DE PAGO DE STRIPE
-    LINK_STRIPE = "https://buy.stripe.com/test_4gM00lgIK1x3b3l8Z9eZ200"
+    # 1. ENLACE A TU KO-FI (O PAYPAL)
+    # Crea tu cuenta en ko-fi.com, configura una "Membership" y pega el link aquí
+    LINK_PAGO = "https://ko-fi.com/TU_USUARIO" 
     
+    # 2. EL CÓDIGO QUE DARÁS AL PAGAR
+    # Configura en Ko-fi que el "Thank you message" muestre este código
+    CODIGO_SECRETO_REAL = "ZYNTE-PRO-START" 
+
     col_free, col_pro = st.columns(2, gap="medium")
     
-    # --- COLUMNA GRATIS ---
+    # --- COLUMNA FREE ---
     with col_free:
         st.markdown("""
         <div class='price-card'>
@@ -602,8 +607,7 @@ def mostrar_pricing():
             <h1 style="font-size: 3rem; margin: 10px 0;">0€</h1>
             <ul style="text-align: left; list-style: none; padding: 0; color: #ccc;">
                 <li>✅ Acceso Básico</li>
-                <li>❌ Sin Dietas IA</li>
-                <li>❌ Sin PDF</li>
+                <li>❌ Sin IA Nutricionista</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -613,66 +617,51 @@ def mostrar_pricing():
              st.session_state.page = 'app'
              st.rerun()
 
-    # --- COLUMNA PRO (CON VERIFICACIÓN AUTOMÁTICA) ---
+    # --- COLUMNA PRO (SISTEMA MANUAL) ---
     with col_pro:
         st.markdown("""
         <div class='price-card' style='border: 1px solid #33ffaa; box-shadow: 0 0 15px rgba(51, 255, 170, 0.3);'>
             <h3 style="color: #33ffaa;">🔥 ZYNTE PRO</h3>
-            <h1 style="font-size: 3rem; margin: 10px 0;">19.99€</h1>
+            <h1 style="font-size: 3rem; margin: 10px 0;">9.99€</h1>
             <ul style="text-align: left; list-style: none; padding: 0; color: #fff;">
-                <li>✅ <b>Nutrición IA Completa</b></li>
-                <li>✅ <b>Exportación PDF</b></li>
-                <li>✅ <b>Gráficas Avanzadas</b></li>
+                <li>✅ <b>Dieta IA Completa</b></li>
+                <li>✅ <b>Descarga PDF</b></li>
+                <li>✅ <b>Soporte Prioritario</b></li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
         st.write("")
         
-        # 1. BOTÓN PARA IR A PAGAR
-        st.link_button("💳 PAGAR AHORA (Stripe)", LINK_STRIPE, type="primary", use_container_width=True)
+        # 1. BOTÓN DE PAGO EXTERNO
+        st.link_button("💳 PAGAR SUSCRIPCIÓN (Ko-fi / PayPal)", LINK_PAGO, type="primary", use_container_width=True)
         
         st.divider()
         
-        # 2. BOTÓN DE "YA HE PAGADO" (La Magia)
-        st.info("¿Acabas de realizar el pago? Pulsa abajo para activar tu cuenta.")
+        # 2. ACTIVACIÓN POR CÓDIGO
+        st.info("👇 **Instrucciones:**\n1. Realiza el pago en el botón de arriba.\n2. Al finalizar, verás un **CÓDIGO DE ACTIVACIÓN**.\n3. Pégalo aquí abajo.")
         
-        if st.button("🔄 VERIFICAR MI PAGO", use_container_width=True):
-            with st.spinner("Conectando con Stripe..."):
-                try:
-                    # A) Leemos tu clave secreta de los secrets
-                    stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
+        codigo_input = st.text_input("Introduce tu Código de Activación:", placeholder="Ej: ZYNTE-PRO...").strip()
+        
+        if st.button("🚀 ACTIVAR CUENTA PRO", use_container_width=True):
+            if codigo_input == CODIGO_SECRETO_REAL:
+                # Obtenemos email
+                email_user = st.session_state.email
+                
+                # Activamos en Base de Datos
+                if activar_plan_pro(email_user):
+                    # Activamos en Sesión actual
+                    st.session_state.datos_usuario['status'] = 'pro'
+                    st.session_state.is_premium = True
                     
-                    # B) Obtenemos el email del usuario actual
-                    email_usuario = st.session_state.email.lower().strip()
-                    
-                    # C) Preguntamos a Stripe por los últimos 20 pagos
-                    sessions = stripe.checkout.Session.list(limit=20)
-                    
-                    encontrado = False
-                    for s in sessions.data:
-                        # Verificamos si el email coincide Y si está pagado ('paid')
-                        if s.customer_details and s.customer_details.email:
-                            if s.customer_details.email.lower() == email_usuario and s.payment_status == 'paid':
-                                encontrado = True
-                                break
-                    
-                    # D) Si lo encontramos, activamos el PRO
-                    if encontrado:
-                        if activar_plan_pro(email_usuario):
-                            st.session_state.datos_usuario['status'] = 'pro'
-                            st.session_state.is_premium = True
-                            st.balloons()
-                            st.success("✅ ¡PAGO CONFIRMADO! Eres PRO.")
-                            time.sleep(2)
-                            st.session_state.page = 'app'
-                            st.rerun()
-                        else:
-                            st.error("Error al guardar en la base de datos.")
-                    else:
-                        st.warning(f"No veo ningún pago reciente para {email_usuario}. Asegúrate de usar el mismo email en Stripe.")
-                        
-                except Exception as e:
-                    st.error(f"Error de conexión: {e}")
+                    st.balloons()
+                    st.success("✅ ¡CÓDIGO CORRECTO! BIENVENIDO A ÉLITE.")
+                    time.sleep(2)
+                    st.session_state.page = 'app'
+                    st.rerun()
+                else:
+                    st.error("Error al guardar en la base de datos. Contacta al soporte.")
+            else:
+                st.error("❌ Código incorrecto. Revisa el mensaje de confirmación de pago.")
 # --- FUNCIÓN VISUAL PARA BLOQUEAR PESTAÑAS (La pieza que falta) ---
 def mostrar_bloqueo_pro(nombre_funcion):
     st.markdown(f"""
@@ -1236,6 +1225,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
