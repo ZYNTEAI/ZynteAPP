@@ -811,7 +811,14 @@ def app_principal():
         
         objetivo_new = st.selectbox("Objetivo:", obj_ops, index=idx_o)
         nivel_new = st.select_slider("Nivel:", options=niv_ops, value=niv_ops[idx_n])
-        
+        # ... (Después de tus sliders de Peso, Altura, Días, etc.) ...
+    
+        st.sidebar.divider() # Una línea separadora para que quede ordenado
+    
+        # BOTÓN DE BORRAR MEMORIA (Ahora en la barra lateral)
+        if st.sidebar.button("🗑️ Reiniciar Chat IA", use_container_width=True, help="Borra la conversación para empezar un tema nuevo"):
+            st.session_state.history = []
+            st.rerun()
         if st.button("💾 Guardar Datos", use_container_width=True):
             if guardar_perfil_db(email_actual, nombre, peso_new, altura_new, edad_new, genero, objetivo_new, nivel_new, 4):
                 st.toast("✅ Guardado")
@@ -1262,6 +1269,7 @@ def main():
 if __name__ == "__main__":
     init_db() # Iniciamos base de datos
     main()    # Arrancamos la app
+
 
 
 
