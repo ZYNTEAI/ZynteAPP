@@ -686,54 +686,58 @@ def app_principal():
     with tab_nutri:
         st.subheader("🥗 Plan Nutricional Personalizado")
         
-        # 1. Ejecutar el cálculo basado en los datos del Sidebar
-        # Usamos la función calcular_macros que definiste al inicio de app_principal
-        kcal, prot, carb, grasa = calcular_macros(peso, altura, edad, "Hombre", objetivo, nivel)
+        # 1. Definición local de la lógica (Evita el NameError)
+        def obtener_macros(p, a, e, g, obj, niv):
+            # Ecuación Harris-Benedict revisada
+            if g == "Hombre": tmb = 88.36 + (13.4 * p) + (4.8 * a) - (5.7 * e)
+            else: tmb = 447.6 + (9.2 * p) + (3.1 * a) - (4.3 * e)
+            
+            factores = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
+            tdee = tmb * factores.get(niv, 1.2)
+            
+            if "Grasa" in obj: kcal = tdee - 450; p_g = p * 2.2; g_g = p * 0.8
+            elif "Hipertrofia" in obj: kcal = tdee + 350; p_g = p * 2.0; g_g = p * 1.0
+            else: kcal = tdee; p_g = p * 1.8; g_g = p * 0.9
+            
+            c_g = (kcal - (p_g * 4) - (g_g * 9)) / 4
+            return int(kcal), int(p_g), int(c_g), int(g_g)
+
+        # 2. Ejecutar cálculo con tus variables actuales
+        kcal, prot, carb, grasa = obtener_macros(peso, altura, edad, "Hombre", objetivo, nivel)
         
-        # 2. Visualización de Métricas Nutricionales
-        n_col1, n_col2, n_col3, n_col4 = st.columns(4)
-        n_col1.metric("Calorías Diarias", f"{kcal} kcal")
-        n_col2.metric("Proteínas", f"{prot}g")
-        n_col3.metric("Carbohidratos", f"{carb}g")
-        n_col4.metric("Grasas", f"{grasa}g")
+        # 3. Mostrar métricas (Sustituye el mensaje de "Próximamente")
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Objetivo Kcal", f"{kcal}")
+        c2.metric("Proteína", f"{prot}g")
+        c3.metric("Carbohidratos", f"{carb}g")
+        c4.metric("Grasas", f"{grasa}g")
         
         st.divider()
-        
-        # 3. Generador de Menú mediante IA
-        st.markdown("### 🍳 Generador de Menú del Día")
-        tipo_dieta = st.selectbox("Selecciona tu preferencia:", 
-                                  ["Omnívora", "Vegetariana", "Vegana", "Keto", "Sin Gluten"], 
-                                  key="diet_type_select")
-        
-        if st.button("🍎 GENERAR MENÚ CON IA", use_container_width=True, key="gen_diet_btn"):
-            with st.spinner("Zynte está diseñando tu menú..."):
-                try:
-                    # Construimos un prompt específico para nutrición
-                    prompt_nutri = f"Actúa como nutricionista deportivo. Crea un menú diario de {tipo_dieta} para un objetivo de {objetivo}. " \
-                                   f"Total: {kcal} kcal ({prot}g Proteína, {carb}g Carb, {grasa}g Grasa). " \
-                                   f"Incluye desayuno, almuerzo, merienda y cena con ingredientes exactos."
-                    
-                    url_api = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    res_diet = requests.post(url_api, json={"contents": [{"parts": [{"text": prompt_nutri}]}]}, timeout=30)
-                    
-                    if res_diet.status_code == 200:
-                        menu_ia = res_diet.json()['candidates'][0]['content']['parts'][0]['text']
-                        # Guardamos el plan en session_state para que no se borre al refrescar
-                        st.session_state.plan_nutri = menu_ia
-                        st.success("¡Menú generado con éxito!")
-                    else:
-                        st.error("Error al conectar con el servicio de nutrición.")
-                except Exception as e:
-                    st.error(f"Fallo de conexión: {e}")
 
-        # 4. Mostrar el plan si existe
-        if "plan_nutri" in st.session_state:
-            st.markdown("---")
-            st.markdown(st.session_state.plan_nutri)
-            # Opción para que el plan aparezca en el chat para descargar en PDF
-            if st.button("💬 Enviar Menú al Chat (para PDF)", key="send_diet_to_chat"):
-                st.session_state.history.append({"role": "model", "content": f"📋 TU PLAN NUTRICIONAL:\n\n{st.session_state.plan_nutri}"})
-                st.rerun()
+        # 4. Generador de Dieta con IA
+        st.markdown("### 🍳 Menú Diario Sugerido")
+        if st.button("✨ GENERAR DIETA ESPECÍFICA", key="btn_gen_diet"):
+            with st.spinner("Zynte calculando raciones..."):
+                try:
+                    prompt_dieta = f"Como nutricionista, crea una dieta de un día para {objetivo}. " \
+                                   f"Macros: {kcal}kcal, {prot}g P, {carb}g CH, {grasa}g G. " \
+                                   f"Estructura: Desayuno, Comida, Merienda, Cena."
+                    
+                    url_ia = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                    res = requests.post(url_ia, json={"contents": [{"parts": [{"text": prompt_dieta}]}]}, timeout=30)
+                    
+                    if res.status_code == 200:
+                        dieta_txt = res.json()['candidates'][0]['content']['parts'][0]['text']
+                        st.session_state.current_diet = dieta_txt
+                        st.markdown(dieta_txt)
+                    else:
+                        st.error("Error al conectar con la IA nutricional.")
+                except Exception as e:
+                    st.error(f"Fallo de red: {e}")
+        
+        # Mostrar dieta guardada si existe
+        elif "current_diet" in st.session_state:
+            st.markdown(st.session_state.current_diet)
 
     with tab_prog:
         st.subheader("📈 Tu Evolución")
@@ -788,6 +792,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
