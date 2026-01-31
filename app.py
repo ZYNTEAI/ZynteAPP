@@ -802,10 +802,9 @@ def app_principal():
         peso_new = st.slider("Peso (kg)", 40.0, 150.0, peso, 0.5)
         altura_new = st.slider("Altura (cm)", 120, 220, altura, 1)
         edad_new = st.slider("Edad", 16, 80, edad)
-        
         obj_ops = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
         niv_ops = ["Principiante", "Intermedio", "Avanzado"]
-        
+        dias_new = st.sidebar.slider("📅 Días disponibles (semana)", min_value=1, max_value=7, value=4)
         # Índices seguros
         idx_o = obj_ops.index(objetivo_actual) if objetivo_actual in obj_ops else 0
         idx_n = niv_ops.index(nivel_actual) if nivel_actual in niv_ops else 1
@@ -1248,18 +1247,12 @@ def main():
     elif st.session_state.page == "admin":
         admin_panel()
         
-    # Botón de Salir (visible si no estamos en login)
-    if st.session_state.page != "login":
-        st.sidebar.divider()
-        if st.sidebar.button("🔙 Cerrar Sesión"):
-            st.session_state.clear()
-            st.session_state.page = "login"
-            st.rerun()
 
 # EJECUCIÓN DEL PROGRAMA
 if __name__ == "__main__":
     init_db() # Iniciamos base de datos
     main()    # Arrancamos la app
+
 
 
 
