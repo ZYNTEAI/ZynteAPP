@@ -1083,6 +1083,21 @@ def main():
                         st.warning("⚠️ Ese email ya existe.")
                 else:
                     st.error("Email inválido.")
+            # --- BLOQUE DEL LOGO (RECUPERADO) ---
+        col_izq, col_centro, col_der = st.columns([1, 1, 1]) # 3 columnas para centrar
+        with col_centro:
+            try:
+                # ⚠️ Asegúrate de que el archivo se llama "logo.png" o cambia el nombre aquí
+                st.image("logo.png", width=200) 
+            except:
+                # Si no encuentra la imagen, pone un emoji gigante como plan B
+                st.markdown("<div style='text-align: center; font-size: 80px;'>💪</div>", unsafe_allow_html=True)
+        # ------------------------------------
+
+        st.markdown("<h1 style='text-align: center;'>Zynte AI Login</h1>", unsafe_allow_html=True)
+        st.write("---")
+        
+        # ... (El resto del código con los botones de Entrar/Registro sigue igual) ...        
     # =========================================================
     # ESCENA 2: PANTALLA DE PRECIOS (La que faltaba)
     # =========================================================
@@ -1122,6 +1137,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
