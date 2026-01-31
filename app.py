@@ -703,43 +703,56 @@ def app_principal():
 
         st.divider()
 
-# --- SECCIÓN DE CHAT ÚNICA ---
+# --- SECCIÓN DE CHAT ÚNICA Y CORREGIDA ---
     st.write("---") 
     st.subheader("💬 Chat con Zynte AI")
 
-    # 1. Inicializar historial
+    # 1. Definimos la variable correctamente para evitar NameError
+    error_ocurrido = False 
+
+    # 2. Inicializar historial en la sesión si no existe
     if "history" not in st.session_state:
         st.session_state.history = []
 
-    # 2. Mostrar mensajes previos una sola vez
+    # 3. Mostrar mensajes previos (Solo un bucle for)
     for msg in st.session_state.history: 
-        st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-    # 3. UN SOLO input con una clave (key) única
-    prompt_chat = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_input_principal")
+    # 4. Input del chat con KEY ÚNICA para evitar el error de ID duplicado
+    prompt_chat = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_input_zynte_final")
 
     if prompt_chat:
+        # Guardar y mostrar mensaje del usuario
         st.session_state.history.append({"role": "user", "content": prompt_chat})
         with st.chat_message("user"):
             st.markdown(prompt_chat)
 
+        # Respuesta de la IA
         with st.chat_message("assistant"):
             with st.spinner("Zynte está pensando..."):
                 try:
-                    # Usamos la api_key definida al inicio de app_principal
-                    url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    payload = {"contents": [{"parts": [{"text": prompt_chat}]}]}
+                    # URL actualizada a v1beta para evitar el Error 404
+                    url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                     
-                    res = requests.post(url_estable, json=payload, timeout=30)
+                    payload = {
+                        "contents": [{
+                            "parts": [{"text": prompt_chat}]
+                        }]
+                    }
+                    
+                    res = requests.post(url_api, json=payload, timeout=30)
                     
                     if res.status_code == 200:
                         datos = res.json()
-                        respuesta_texto = datos['candidates'][0]['content']['parts'][0]['text']
-                        st.markdown(respuesta_texto)
-                        st.session_state.history.append({"role": "model", "content": respuesta_texto})
+                        # Extraer el texto de la respuesta
+                        respuesta_ia = datos['candidates'][0]['content']['parts'][0]['text']
+                        st.markdown(respuesta_ia)
+                        # Guardar en historial y refrescar
+                        st.session_state.history.append({"role": "model", "content": respuesta_ia})
                         st.rerun() 
                     else:
-                        st.error(f"Error de Google: {res.status_code}")
+                        st.error(f"Error de Google ({res.status_code}): {res.text}")
                 except Exception as e:
                     st.error(f"Error de conexión: {e}")
     with tab_nutri:
@@ -799,6 +812,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
