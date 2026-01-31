@@ -709,8 +709,11 @@ def app_principal():
 
     # 1. Aseguramos que el historial exista
     if "history" not in st.session_state:
-        st.session_state.history = []
-
+    # Le inyectamos la personalidad en el primer mensaje (invisible para el usuario)
+    st.session_state.history = [
+        {"role": "user", "content": "Hola, a partir de ahora eres Zynte AI, un entrenador personal experto en biomecánica y nutrición deportiva. Eres motivador, directo y te basas en la ciencia. Tus respuestas son breves y útiles."},
+        {"role": "model", "content": "¡Entendido! Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
+    ]
     # 2. Mostramos los mensajes previos
     for msg in st.session_state.history: 
         with st.chat_message(msg["role"]):
@@ -755,10 +758,35 @@ def app_principal():
                 with st.spinner("Creando menú..."):
                     try:
                         # Asegúrate de usar el modelo Flash
-                        model = genai.GenerativeModel('gemini-flash-latest') 
-                        res = model.generate_content(f"Crea dieta {dieta} de {c}kcal para {objetivo}. Incluye lista compra.")
+                        try:
+                        # Usamos la variable global para no fallar
+                        model = genai.GenerativeModel(MODELO_USADO) 
+
+                        # --- PEGA EL PROMPT EXPERTO AQUÍ ---
+                        prompt_nutri = f"""
+                        Actúa como un Nutricionista Deportivo de alto rendimiento.
+                        Objetivo: Crear un plan de alimentación {dieta} perfecto de {c} kcal diarias.
+                        Contexto del cliente: Objetivo {objetivo}.
+
+                        Estructura de la respuesta obligatoria:
+                        1. 📊 RESUMEN MACROS: Proteínas, Grasas, Carbohidratos totales.
+                        2. 🍽️ MENÚ DIARIO (Desayuno, Almuerzo, Cena, Snacks):
+                           - Usa formato Tabla Markdown.
+                           - Indica peso exacto de los alimentos en crudo (gramos).
+                           - Incluye una breve instrucción de cocinado.
+                        3. 🛒 LISTA DE LA COMPRA SEMANAL:
+                           - Agrupada por pasillos del supermercado (Verdulería, Carnicería, Varios).
+                        4. 💡 CONSEJO PRO: Un tip específico para {objetivo}.
+
+                        Mantén un tono motivador y profesional.
+                        """
+                        # ------------------------------------
+
+                        # Enviamos el prompt mejorado
+                        res = model.generate_content(prompt_nutri)
+                        
                         st.session_state.plan_nutri = res.text
-                        st.rerun() # Añade esto para refrescar la pantalla
+                        st.rerun()
                     except Exception as e: # Capturamos el error real
                         st.error(f"Error detallado de la IA: {e}")
         with col_d2:
@@ -802,6 +830,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
