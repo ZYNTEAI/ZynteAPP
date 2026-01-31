@@ -585,6 +585,15 @@ def mostrar_pricing():
                     st.error("❌ Código incorrecto.")
 
 def app_principal():
+    api_key = "AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE" 
+    
+    # Opción B: Si usas Secrets de Streamlit (Más seguro para subir a la nube)
+    # api_key = st.secrets["OPENAI_API_KEY"]
+    # --- HASTA AQUÍ ---
+
+    # El resto de tu código sigue igual...
+    error_currido = False 
+    if not error_currido:
     # --- CONFIGURACIÓN DEL JEFE ---
     EMAIL_JEFE = "pablonavarrorui@gmail.com" # <--- ¡PON AQUÍ TU EMAIL EXACTO!
     
@@ -808,6 +817,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
