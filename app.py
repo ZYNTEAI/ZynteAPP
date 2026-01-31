@@ -587,41 +587,92 @@ def mostrar_login():
                         else: st.error("Email ocupado.")
     st.write("---"); st.button("⬅️ Volver", on_click=lambda: setattr(st.session_state, 'page', 'landing'))
 def mostrar_pricing():
-    st.markdown("<h2 style='text-align: center;'>Selecciona tu Plan</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>💎 Elige tu Nivel</h2>", unsafe_allow_html=True)
     
-    # ENLACE DE PAGO (PON AQUÍ EL TUYO DE STRIPE) 👇
-    LINK_STRIPE = "https://buy.stripe.com/test_4gM00lgIK1x3b3l8Z9eZ200" 
+    # TU ENLACE DE PAGO DE STRIPE
+    LINK_STRIPE = "https://buy.stripe.com/test_4gM00lgIK1x3b3l8Z9eZ200"
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("<div class='price-card'><h3>🌱 Starter</h3><h1>0€</h1></div>", unsafe_allow_html=True)
-        if st.button("Continuar Gratis", use_container_width=True):
-             st.session_state.is_premium = False; st.session_state.page = 'app'; st.rerun()
-             
-    with col2:
-        st.markdown("<div class='price-card' style='border-color:#33ffaa;'><h3>🔥 PRO</h3><h1>19.99€</h1></div>", unsafe_allow_html=True)
+    col_free, col_pro = st.columns(2, gap="medium")
+    
+    # --- COLUMNA GRATIS ---
+    with col_free:
+        st.markdown("""
+        <div class='price-card'>
+            <h3 style="color: #a0aaba;">🌱 STARTER</h3>
+            <h1 style="font-size: 3rem; margin: 10px 0;">0€</h1>
+            <ul style="text-align: left; list-style: none; padding: 0; color: #ccc;">
+                <li>✅ Acceso Básico</li>
+                <li>❌ Sin Dietas IA</li>
+                <li>❌ Sin PDF</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        st.write("")
+        if st.button("➡️ Seguir Gratis", use_container_width=True):
+             st.session_state.is_premium = False
+             st.session_state.page = 'app'
+             st.rerun()
+
+    # --- COLUMNA PRO (CON VERIFICACIÓN AUTOMÁTICA) ---
+    with col_pro:
+        st.markdown("""
+        <div class='price-card' style='border: 1px solid #33ffaa; box-shadow: 0 0 15px rgba(51, 255, 170, 0.3);'>
+            <h3 style="color: #33ffaa;">🔥 ZYNTE PRO</h3>
+            <h1 style="font-size: 3rem; margin: 10px 0;">19.99€</h1>
+            <ul style="text-align: left; list-style: none; padding: 0; color: #fff;">
+                <li>✅ <b>Nutrición IA Completa</b></li>
+                <li>✅ <b>Exportación PDF</b></li>
+                <li>✅ <b>Gráficas Avanzadas</b></li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
         st.write("")
         
-        # 1. BOTÓN DE PAGO (Abre pestaña nueva)
-        st.link_button("💳 PAGAR CON TARJETA", LINK_STRIPE, type="primary", use_container_width=True)
+        # 1. BOTÓN PARA IR A PAGAR
+        st.link_button("💳 PAGAR AHORA (Stripe)", LINK_STRIPE, type="primary", use_container_width=True)
         
-        # 2. ÁREA DE CANJEO
-        with st.expander("¿Ya tienes tu código? Canjéalo aquí"):
-            codigo = st.text_input("Código de licencia:", placeholder="Ej: ZYNTE-PRO").strip()
-            if st.button("Validar Licencia"):
-                if codigo == "ZYNTE2026": # <--- ESTA ES TU CONTRASEÑA SECRETA
-                    email_actual = st.session_state.get('user_email')
-                    if activar_plan_pro(email_actual):
-                        st.balloons()
-                        st.success("✅ ¡PLAN PRO ACTIVADO!")
-                        st.session_state.is_premium = True
-                        time.sleep(2)
-                        st.session_state.page = 'app'
-                        st.rerun()
+        st.divider()
+        
+        # 2. BOTÓN DE "YA HE PAGADO" (La Magia)
+        st.info("¿Acabas de realizar el pago? Pulsa abajo para activar tu cuenta.")
+        
+        if st.button("🔄 VERIFICAR MI PAGO", use_container_width=True):
+            with st.spinner("Conectando con Stripe..."):
+                try:
+                    # A) Leemos tu clave secreta de los secrets
+                    stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
+                    
+                    # B) Obtenemos el email del usuario actual
+                    email_usuario = st.session_state.email.lower().strip()
+                    
+                    # C) Preguntamos a Stripe por los últimos 20 pagos
+                    sessions = stripe.checkout.Session.list(limit=20)
+                    
+                    encontrado = False
+                    for s in sessions.data:
+                        # Verificamos si el email coincide Y si está pagado ('paid')
+                        if s.customer_details and s.customer_details.email:
+                            if s.customer_details.email.lower() == email_usuario and s.payment_status == 'paid':
+                                encontrado = True
+                                break
+                    
+                    # D) Si lo encontramos, activamos el PRO
+                    if encontrado:
+                        if activar_plan_pro(email_usuario):
+                            st.session_state.datos_usuario['status'] = 'pro'
+                            st.session_state.is_premium = True
+                            st.balloons()
+                            st.success("✅ ¡PAGO CONFIRMADO! Eres PRO.")
+                            time.sleep(2)
+                            st.session_state.page = 'app'
+                            st.rerun()
+                        else:
+                            st.error("Error al guardar en la base de datos.")
                     else:
-                        st.error("Error al actualizar base de datos.")
-                else:
-                    st.error("❌ Código incorrecto.")
+                        st.warning(f"No veo ningún pago reciente para {email_usuario}. Asegúrate de usar el mismo email en Stripe.")
+                        
+                except Exception as e:
+                    st.error(f"Error de conexión: {e}")
 # --- FUNCIÓN VISUAL PARA BLOQUEAR PESTAÑAS (La pieza que falta) ---
 def mostrar_bloqueo_pro(nombre_funcion):
     st.markdown(f"""
@@ -1185,6 +1236,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
