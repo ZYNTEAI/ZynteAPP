@@ -550,17 +550,18 @@ def mostrar_pricing():
 def app_principal():
     # --- 1. CONFIGURACIÓN INICIAL Y SEGURIDAD ---
     try:
+        # Extraemos la clave de los secrets para que esté disponible en toda la función
         api_key = st.secrets["GOOGLE_API_KEY"]
     except Exception:
         st.error("Error: No se encontró 'GOOGLE_API_KEY' en los Secrets de Streamlit.")
         st.stop()
 
-    EMAIL_JEFE = "pablonavarrorui@gmail.com" 
+    EMAIL_JEFE = "pablonavarrorui@gmail.com"
     email_actual = st.session_state.get('user_email', 'invitado')
     datos_usuario = cargar_perfil(email_actual)
     error_ocurrido = False 
 
-    # --- 2. FUNCIONES INTERNAS (MACROS Y PDF) ---
+    # --- 2. FUNCIONES INTERNAS ---
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
         if genero == "Hombre": tmb = 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
         else: tmb = 447.6 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad)
@@ -586,7 +587,7 @@ def app_principal():
                 pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
 
-    # --- 3. SIDEBAR (MENÚ LATERAL) ---
+    # --- 3. SIDEBAR ---
     with st.sidebar:
         try: st.image("logo.png", width=180)
         except: st.header("ZYNTE")
@@ -599,18 +600,22 @@ def app_principal():
                 st.rerun()
         
         st.write("---")
-        st.caption("PERFIL BIOMÉTRICO")
         nombre = st.text_input("Alias", "Atleta")
         peso = st.slider("Peso (kg)", 40.0, 150.0, float(datos_usuario['peso']), 0.5)
         altura = st.slider("Altura (cm)", 120, 220, int(datos_usuario['altura']), 1)
         edad = st.slider("Edad", 16, 80, int(datos_usuario['edad']))
         genero = st.radio("Género:", ["Hombre", "Mujer"], horizontal=True)
-        objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"], index=0)
-        nivel = st.select_slider("Experiencia:", options=["Principiante", "Intermedio", "Avanzado"], value="Intermedio")
+        objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"])
+        nivel = st.select_slider("Experiencia:", options=["Principiante", "Intermedio", "Avanzado"])
         
         if st.button("💾 Guardar Datos", use_container_width=True):
             if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel):
                 st.toast("Perfil actualizado correctamente")
+
+        if email_actual == EMAIL_JEFE:
+            with st.expander("🔐 PANEL DE CONTROL"):
+                # Panel admin (opcional)
+                pass
 
         st.write("---")
         if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
@@ -619,11 +624,10 @@ def app_principal():
         
         st.button("Cerrar Sesión", on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'), use_container_width=True)
 
-    # --- 4. PANEL PRINCIPAL (TABS) ---
+    # --- 4. PANEL PRINCIPAL ---
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
     with tab_train:
-        # Métricas rápidas
         imc = peso / ((altura/100)**2)
         m1, m2, m3 = st.columns(3)
         m1.metric("IMC", f"{imc:.1f}")
@@ -631,10 +635,9 @@ def app_principal():
         m3.metric("Nivel", nivel)
         st.divider()
 
-        # Generadores Rápidos
         st.caption("⚡ Generadores Rápidos")
         col_b1, col_b2, col_b3 = st.columns(3)
-        prompt_ejecutar = None
+        prompt_ejecutar = None 
 
         if col_b1.button("🔥 Rutina HIIT 20'", use_container_width=True):
             prompt_ejecutar = "Genera una rutina HIIT de 20 minutos para hacer en casa sin material."
@@ -643,79 +646,54 @@ def app_principal():
         if col_b3.button("💪 Reto Flexiones", use_container_width=True):
             prompt_ejecutar = f"Crea un reto de flexiones para un nivel {nivel}."
 
-        # Inicializar historial
         if "history" not in st.session_state:
             st.session_state.history = []
 
-        # Mostrar chat
         for msg in st.session_state.history:
             st.chat_message(msg["role"]).markdown(msg["content"])
 
-        # Lógica de Chat e IA
         prompt_chat = st.chat_input("Escribe tu duda o pide una rutina...")
-        
-        # Unificamos el prompt (sea por botón o por texto)
-        final_prompt = prompt_chat if prompt_chat else prompt_ejecutar
+        final_prompt = prompt_chat if prompt_chat else prompt_ejecutar 
 
         if final_prompt:
             st.session_state.history.append({"role": "user", "content": final_prompt})
             st.chat_message("user").markdown(final_prompt)
             
-           with st.chat_message("assistant"):
-    with st.spinner("Zynte AI está procesando..."):
-        try:
-            # 1. Definimos el modelo exacto que declaraste al inicio del archivo
-            modelo_nombre = "gemini-1.5-flash-001" 
+            with st.chat_message("assistant"):
+                with st.spinner("Zynte AI está procesando..."):
+                    try:
+                        # Usamos v1beta para evitar el error 404
+                        modelo_nombre = "gemini-1.5-flash" 
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_nombre}:generateContent?key={api_key}"
+                        
+                        payload = {"contents": [{"parts": [{"text": final_prompt}]}]}
+                        res = requests.post(url, json=payload, timeout=30)
+                        
+                        if res.status_code == 200:
+                            respuesta_ia = res.json()['candidates'][0]['content']['parts'][0]['text']
+                            st.markdown(respuesta_ia)
+                            st.session_state.history.append({"role": "model", "content": respuesta_ia})
+                        else:
+                            st.error(f"Error de Google API: {res.status_code}")
+                            error_ocurrido = True 
+                    except Exception as e:
+                        st.error(f"Error de conexión: {e}")
+                        error_ocurrido = True 
             
-            # 2. Usamos la URL de la v1beta que es más flexible para modelos flash
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_nombre}:generateContent?key={api_key}"
-            
-            payload = {
-                "contents": [{
-                    "parts": [{"text": final_prompt}]
-                }]
-            }
-            
-            res = requests.post(url, json=payload, timeout=30)
-            
-            if res.status_code == 200:
-                respuesta_ia = res.json()['candidates'][0]['content']['parts'][0]['text']
-                st.markdown(respuesta_ia)
-                st.session_state.history.append({"role": "model", "content": respuesta_ia})
-            elif res.status_code == 404:
-                st.error("Error 404: El modelo no se encontró. Intentando con URL alternativa...")
-                # Intento alternativo con URL estándar si falla la beta
-                url_alt = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                res_alt = requests.post(url_alt, json=payload, timeout=30)
-                if res_alt.status_code == 200:
-                    respuesta_ia = res_alt.json()['candidates'][0]['content']['parts'][0]['text']
-                    st.markdown(respuesta_ia)
-                    st.session_state.history.append({"role": "model", "content": respuesta_ia})
-                else:
-                    st.error(f"Error definitivo de Google: {res_alt.status_code}")
-                    error_ocurrido = True
-            else:
-                st.error(f"Error de Google API: {res.status_code} - {res.text}")
-                error_ocurrido = True
-        except Exception as e:
-            st.error(f"Error de conexión: {e}")
-            error_ocurrido = True
+            if not error_ocurrido:
+                st.rerun()
 
     with tab_nutri:
         st.header("Plan Nutricional")
         kcal, prot, carb, gras = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
         n1, n2, n3, n4 = st.columns(4)
         n1.metric("Kcal", kcal); n2.metric("Proteína", f"{prot}g"); n3.metric("Carbos", f"{carb}g"); n4.metric("Grasas", f"{gras}g")
-        st.info("Utiliza el chat en la pestaña de Entrenamiento para pedir recetas basadas en estos macros.")
 
     with tab_prog:
         st.header("📈 Tu Evolución")
         df_progreso = obtener_historial_df(email_actual)
         if df_progreso is not None and not df_progreso.empty:
             st.area_chart(df_progreso.set_index('fecha'), color="#33ffaa")
-        else:
-            st.info("Registra tu peso en el perfil para ver tu progreso aquí.")
-
 # ==============================================================================
 # 🚀 ROUTER
 # ==============================================================================
@@ -736,6 +714,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
