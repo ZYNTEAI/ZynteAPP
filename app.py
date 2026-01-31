@@ -692,19 +692,24 @@ def mostrar_bloqueo_pro(nombre_funcion):
     </div>
     """, unsafe_allow_html=True)
 def app_principal():
-    # --- MUEVE ESTO AQUÍ ARRIBA (Línea 335 aprox) ---
-    EMAIL_JEFE = "pablonavarrorui@gmail.com" 
-    email_actual = st.session_state.get('user_email', 'invitado')
-    
-    # ESTA LÍNEA ES LA CLAVE: Cargar los datos ANTES de cualquier 'try' o 'if'
-    datos_usuario = cargar_perfil(email_actual)
-    # ------------------------------------------------
+    # --- SEGURIDAD INICIAL ---
+    if "email" not in st.session_state or not st.session_state.email:
+        st.session_state.page = "login"
+        st.rerun()
+        return
 
-    # Luego sigue con la configuración de la IA
-    try:
-        genai.configure(api_key=API_KEY_GLOBAL)
-    except Exception as e:
-        st.error(f"Error config: {e}")
+    # --- SINCRONIZACIÓN AUTOMÁTICA DE PAGOS ---
+    # Si en la memoria de la web aparece como "free", verificamos la DB
+    if st.session_state.datos_usuario.get("status") == "free":
+        # Traemos los datos frescos de Google Sheets
+        datos_actualizados = cargar_perfil(st.session_state.email)
+        
+        # Si el status en el Excel ya es "pro", actualizamos la web al instante
+        if datos_actualizados.get("status") == "pro":
+            st.session_state.datos_usuario["status"] = "pro"
+            st.toast("🚀 ¡Pago verificado! Funciones PRO desbloqueadas.")
+            time.sleep(1)
+            st.rerun() # Esto recarga la página y quita los candados rojos
 
     # ... (Resto de lógica nutricional y PDF igual que antes) ...
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
@@ -1224,6 +1229,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
