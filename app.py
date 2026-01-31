@@ -8,12 +8,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import sqlite3
 import re
 import pandas as pd  
-import requests
-import google.generativeai as genai
-import streamlit as st
 
-# Esto te mostrará la versión en la pantalla de la app
-st.warning(f"Versión de la librería en la Nube: {genai.__version__}")
 # --- PEGA ESTO AL PRINCIPIO DEL ARCHIVO (Línea 12 aprox) ---
 import requests
 
@@ -816,6 +811,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
