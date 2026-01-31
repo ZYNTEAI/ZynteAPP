@@ -17,6 +17,19 @@ API_KEY_GLOBAL = "AIzaSyABV_48UyYBsnA_K8MMSmwjPXMrVf0oe9E" # Tu clave real
 
 # 2. CONFIGURA LA IA INMEDIATAMENTE
 genai.configure(api_key=API_KEY_GLOBAL)
+# --- BLOQUE DE DIAGNÓSTICO (Bórralo cuando lo arreglemos) ---
+try:
+    st.warning("🔍 BUSCANDO MODELOS DISPONIBLES...")
+    modelos = list(genai.list_models())
+    encontrados = [m.name for m in modelos if 'gemini' in m.name]
+    
+    if encontrados:
+        st.success(f"✅ TU CLAVE FUNCIONA. Modelos que puedes usar: {encontrados}")
+    else:
+        st.error("❌ TU CLAVE CONECTA, PERO NO VE NINGÚN MODELO. (Problema de permisos/región)")
+except Exception as e:
+    st.error(f"❌ LA CLAVE ESTÁ ROTA O MAL COPIADA. Error: {e}")
+# ------------------------------------------------------------
 # --- GENERADORES RÁPIDOS (FREE) ---
 st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
 col_b1, col_b2, col_b3 = st.columns(3)
@@ -801,6 +814,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
