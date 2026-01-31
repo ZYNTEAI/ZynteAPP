@@ -653,89 +653,69 @@ def app_principal():
 
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
-    with tab_train:
-        # --- GENERADORES RÁPIDOS ---
+   with tab_train:
         st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
         c1, c2, c3 = st.columns(3)
         prompt_rapido = None
-        if c1.button("🔥 HIIT 20'", key="hiit_btn"): prompt_rapido = "Genera rutina HIIT de 20 min"
-        if c2.button("🧘 Estirar", key="est_btn"): prompt_rapido = "Dame tabla de estiramientos"
-        if c3.button("💪 Flexiones", key="flex_btn"): prompt_rapido = "Plan flexiones 30 días"
+        if c1.button("🔥 HIIT 20'", key="hiit_v3"): prompt_rapido = "Rutina HIIT intensa"
+        if c2.button("🧘 Estirar", key="est_v3"): prompt_rapido = "Tabla estiramientos"
+        if c3.button("💪 Flexiones", key="flex_v3"): prompt_rapido = "Reto flexiones 30 días"
 
         if prompt_rapido:
-            with st.spinner("Zynte preparando rutina..."):
-                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                try:
-                    res = requests.post(url, json={"contents": [{"parts": [{"text": prompt_rapido}]}]}, timeout=30)
-                    if res.status_code == 200:
-                        txt = res.json()['candidates'][0]['content']['parts'][0]['text']
-                        if "history" not in st.session_state: st.session_state.history = []
-                        st.session_state.history.append({"role": "user", "content": prompt_rapido})
-                        st.session_state.history.append({"role": "model", "content": txt})
-                        st.rerun()
-                except: st.error("Error de conexión rápida")
+            url_v1 = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+            res = requests.post(url_v1, json={"contents": [{"parts": [{"text": prompt_rapido}]}]}, timeout=30)
+            if res.status_code == 200:
+                st.session_state.history.append({"role": "user", "content": prompt_rapido})
+                st.session_state.history.append({"role": "model", "content": res.json()['candidates'][0]['content']['parts'][0]['text']})
+                st.rerun()
 
         st.divider()
         imc = peso / ((altura/100)**2)
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("IMC", f"{imc:.1f}")
-        m2.metric("Peso", f"{peso} kg")
+        m2.metric("Peso", f"{peso}kg")
         m3.metric("Meta", objetivo)
         m4.metric("Nivel", nivel)
 
-  with tab_train:
-        # Todo el contenido de entrenamiento aquí...
-        st.write("Contenido de entrenamiento")
-
-    # ESTA ES LA LÍNEA 686: Debe estar alineada con 'with tab_train'
     with tab_nutri:
         st.subheader("🥗 Plan Nutricional Avanzado")
         
-        # Lógica de macros (Integrada para evitar NameError)
-        def calcular_macros_v2(p, a, e, g, obj, niv):
+        # Cálculo de macros integrado para evitar NameError
+        def calc_macros(p, a, e, g, obj, niv):
             if g == "Hombre": tmb = 88.36 + (13.4 * p) + (4.8 * a) - (5.7 * e)
             else: tmb = 447.6 + (9.2 * p) + (3.1 * a) - (4.3 * e)
-            f_act = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
-            tdee = tmb * f_act.get(niv, 1.2)
-            if "Grasa" in obj: kcal = tdee - 450; prot_g = p * 2.2; gras_g = p * 0.8
-            elif "Hipertrofia" in obj: kcal = tdee + 350; prot_g = p * 2.0; gras_g = p * 1.0
-            else: kcal = tdee; prot_g = p * 1.8; gras_g = p * 0.9
-            carb_g = (kcal - (prot_g * 4) - (gras_g * 9)) / 4
-            return int(kcal), int(prot_g), int(carb_g), int(gras_g)
+            fact = {"Principiante": 1.2, "Intermedio": 1.55, "Avanzado": 1.725}
+            tdee = tmb * fact.get(niv, 1.2)
+            if "Grasa" in obj: kcal = tdee - 450; p_g = p * 2.2; g_g = p * 0.8
+            elif "Hipertrofia" in obj: kcal = tdee + 350; p_g = p * 2.0; g_g = p * 1.0
+            else: kcal = tdee; p_g = p * 1.8; g_g = p * 0.9
+            c_g = (kcal - (p_g * 4) - (g_g * 9)) / 4
+            return int(kcal), int(p_g), int(c_g), int(g_g)
 
-        kcal, p_g, c_g, g_g = calcular_macros_v2(peso, altura, edad, "Hombre", objetivo, nivel)
+        kcal, prot, carb, gras = calc_macros(peso, altura, edad, "Hombre", objetivo, nivel)
         
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Kcal", kcal)
-        c2.metric("Proteína", f"{p_g}g")
-        c3.metric("Carbos", f"{c_g}g")
-        c4.metric("Grasas", f"{g_g}g")
+        n1, n2, n3, n4 = st.columns(4)
+        n1.metric("Kcal", kcal); n2.metric("Prot", f"{prot}g"); n3.metric("Carb", f"{carb}g"); n4.metric("Grasa", f"{gras}g")
         
         st.divider()
-
-        st.markdown("### 🍳 Menú Diario Sugerido")
-        if st.button("✨ GENERAR DIETA ESPECÍFICA", key="btn_nutri_ia_final"):
-            with st.spinner("Zynte calculando raciones..."):
-                try:
-                    url_ia = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    prompt_diet = f"Menú de un día para {objetivo}: {kcal}kcal, {p_g}g P, {c_g}g CH, {g_g}g G."
-                    res = requests.post(url_ia, json={"contents": [{"parts": [{"text": prompt_diet}]}]}, timeout=30)
-                    if res.status_code == 200:
-                        menu_txt = res.json()['candidates'][0]['content']['parts'][0]['text']
-                        st.session_state.current_diet = menu_txt
-                        st.markdown(menu_txt)
-                    else:
-                        st.error(f"Error {res.status_code}: Revisa la URL y API Key")
-                except Exception as e:
-                    st.error(f"Fallo de conexión: {e}")
+        if st.button("✨ GENERAR DIETA CON IA", key="nutri_ia_final"):
+            with st.spinner("Zynte diseñando menú..."):
+                url_diet = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                prompt_diet = f"Crea dieta de 1 día: {kcal}kcal, {prot}g P, {carb}g CH, {gras}g G para {objetivo}."
+                res_d = requests.post(url_diet, json={"contents": [{"parts": [{"text": prompt_diet}]}]}, timeout=30)
+                if res_d.status_code == 200:
+                    st.session_state.current_diet = res_d.json()['candidates'][0]['content']['parts'][0]['text']
+                    st.markdown(st.session_state.current_diet)
+                else: st.error("Error de conexión (404/IA)")
         elif "current_diet" in st.session_state:
             st.markdown(st.session_state.current_diet)
+
     with tab_prog:
-        st.subheader("📈 Tu Evolución")
-        df_h = obtener_historial_df(email_actual)
-        if df_h is not None and not df_h.empty:
-            st.line_chart(df_h.set_index('fecha'))
-        else: st.info("Guarda tu perfil para iniciar el historial.")
+        st.subheader("📈 Historial de Progreso")
+        df_p = obtener_historial_df(email_actual)
+        if df_p is not None and not df_p.empty:
+            st.line_chart(df_p.set_index('fecha'), color="#33ffaa")
+        else: st.info("Guarda tu perfil para ver tu evolución.")
 
     # 4. CHAT PRINCIPAL (Al final de todo)
     st.write("---")
@@ -783,6 +763,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
