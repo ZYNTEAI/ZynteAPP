@@ -321,11 +321,11 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         height: 100%;
     }
-    .price-card:hover {
-        border-color: #33ffaa;
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(51, 255, 170, 0.2);
-        background-color: rgba(30, 30, 30, 0.8);
+  .price-card h3 {
+        font-size: 1.3rem !important; /* Reduce el tamaño del texto */
+        word-wrap: normal !important; /* Evita que parta las palabras */
+        margin-bottom: 10px;
+    }
     }
     
     /* INPUTS MEJORADOS */
@@ -948,6 +948,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
