@@ -774,18 +774,27 @@ def app_principal():
 
     # 1. Aseguramos que el historial exista
     if "history" not in st.session_state:
-        # Le inyectamos la personalidad en el primer mensaje (invisible para el usuario)
         st.session_state.history = [
-            {"role": "user", "content": "Hola, a partir de ahora eres Zynte AI, un entrenador personal experto en biomecánica y nutrición deportiva. Eres motivador, directo y te basas en la ciencia. Tus respuestas son breves y útiles."},
-            {"role": "model", "content": "¡Hola!Soy Zynte AI. Estoy listo para llevar tu entrenamiento al siguiente nivel. ¿En qué trabajamos hoy?"}
+            {"role": "user", "content": """
+            Actúa como Zynte AI, un entrenador personal de élite y experto en nutrición.
+            TU PERSONALIDAD:
+            - Eres enérgico, motivador y vas al grano.
+            - NUNCA respondas con un simple "Hola, ¿cómo estás?".
+            - Cuando el usuario salude, preséntate con fuerza y lanza un reto. 
+            Ejemplo: "¡Hola! Soy Zynte AI. ¿Listo para romper tus límites hoy?"
+            """},
+            {"role": "model", "content": "¡Entendido! Soy Zynte AI. Modo motivación activado. ¡A entrenar!"}
         ]
-   for msg in st.session_state.history:       <-- ¡ALINEADO CON LA DE ABAJO!
+
+    # 2. Bucle de visualización (ALINEADO PERFECTO)
+    for msg in st.session_state.history:
         texto = msg["content"]
-        # 1. OCULTAMOS SOLO LAS INSTRUCCIONES TÉCNICAS (El primer mensaje)
+        
+        # Filtro: Ocultamos la instrucción técnica
         if "Actúa como Zynte AI" in texto and "TU PERSONALIDAD" in texto:
-            continue  # Este se salta, no se ve
+            continue
             
-        # 2. MOSTRAMOS TODO LO DEMÁS (Incluido el saludo de "¡Entendido!")
+        # Mostramos el resto
         with st.chat_message(msg["role"]):
             st.markdown(texto)
 
@@ -948,6 +957,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
