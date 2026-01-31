@@ -760,75 +760,113 @@ def app_principal():
                 
         return pdf.output(dest="S").encode("latin-1", "replace")
 
-    # --- SIDEBAR ---
+   # --- BARRA LATERAL INTELIGENTE ---
     with st.sidebar:
-        try: st.image("logo.png", width=180)
-        except: st.header("ZYNTE")
-        
-        if st.session_state.get('is_premium'): st.success("🌟 PRO")
-        else: st.info("🌱 FREE"); st.button("⬆️ Mejorar", use_container_width=True, on_click=lambda: setattr(st.session_state, 'page', 'pricing'))
-        
-        st.write("---"); st.caption("PERFIL BIOMÉTRICO")
-        nombre = st.text_input("Alias", "Atleta")
-        peso = st.slider("Peso (kg)", 40.0, 150.0, float(datos_usuario['peso']), 0.5)
-        altura = st.slider("Altura (cm)", 120, 220, int(datos_usuario['altura']), 1)
-        edad = st.slider("Edad", 16, 80, int(datos_usuario['edad']))
-        genero = st.radio("Género:", ["Hombre", "Mujer"], horizontal=True)
-        
-        obj_ops = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
-        niv_ops = ["Principiante", "Intermedio", "Avanzado"]
-        try: idx_o = obj_ops.index(datos_usuario['objetivo'])
-        except: idx_o = 0
-        try: idx_n = niv_ops.index(datos_usuario['nivel'])
-        except: idx_n = 1
-        objetivo = st.selectbox("Objetivo:", obj_ops, index=idx_o)
-        nivel = st.select_slider("Experiencia:", options=niv_ops, value=niv_ops[idx_n])
-        
-        # --- NUEVO: DÍAS DISPONIBLES ---
-        dias_entreno = st.slider("Días disponibles/semana:", 1, 7, 4)
-        
-        if st.button("💾 Guardar Perfil", use_container_width=True):
-            with st.spinner("Guardando en la nube..."):
-                # Fíjate que ahora enviamos TODOS los datos nuevos
-                if guardar_perfil_db(st.session_state.email, nombre, peso, altura, edad, genero, objetivo, nivel, dias_entreno):
-                    st.toast("✅ Perfil actualizado en Google Sheets")
-                    
-                    # Actualizamos la memoria local también
-                    st.session_state.datos_usuario = {
-                        "nombre": nombre, "peso": peso, "altura": altura, 
-                        "edad": edad, "genero": genero, "objetivo": objetivo, 
-                        "nivel": nivel, "dias": dias_entreno
-                    }
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.toast("❌ Error al conectar con la base de datos")
+        # 1. LOGO Y ESTADO DE SUSCRIPCIÓN
+        try:
+            st.image("logo.png", use_container_width=True)
+        except:
+            st.header("💪 Zynte AI")
 
-        # --- NUEVO: BOTÓN PARA VACIAR CHAT ---
+        # Leemos el estado REAL del usuario desde la memoria
+        estado_actual = st.session_state.datos_usuario.get("status", "free")
+        
+        # --- CARTEL DINÁMICO (PRO vs FREE) ---
+        if estado_actual == "pro":
+            # Si es PRO: Cartel verde y sin botón de pagar
+            st.success(f"🌟 MIEMBRO PRO ACTIVO")
+            st.caption(f"Hola, **{st.session_state.datos_usuario.get('nombre', 'Atleta')}**")
+        else:
+            # Si es FREE: Cartel azul y botón de mejorar
+            st.info("🌱 PLAN GRATUITO")
+            if st.button("⬆️ Mejorar Plan", use_container_width=True):
+                st.session_state.page = "pricing"
+                st.rerun()
+
+        st.divider()
+
+        # 2. PERFIL BIOMÉTRICO (Con datos persistentes)
+        st.header("TUS DATOS")
+        
+        # Usamos los datos de la memoria como valor inicial ("value")
+        # Si no hay dato, usamos un valor seguro por defecto
+        db = st.session_state.datos_usuario
+        
+        # -- ALIAS --
+        nuevo_nombre = st.text_input("Alias", value=db.get("nombre", "Usuario"))
+        
+        # -- PESO --
+        nuevo_peso = st.slider("Peso (kg)", 40.0, 150.0, float(db.get("peso", 70.0)))
+        
+        # -- ALTURA --
+        nueva_altura = st.slider("Altura (cm)", 140, 220, int(db.get("altura", 170)))
+        
+        # -- EDAD --
+        nueva_edad = st.slider("Edad", 14, 90, int(db.get("edad", 25)))
+        
+        # -- GÉNERO --
+        gen_guardado = db.get("genero", "Hombre")
+        idx_gen = 0 if gen_guardado == "Hombre" else 1
+        nuevo_genero = st.radio("Género", ["Hombre", "Mujer"], index=idx_gen, horizontal=True)
+        
+        # -- OBJETIVO --
+        obj_ops = ["Hipertrofia", "Pérdida de Grasa", "Fuerza", "Resistencia"]
+        obj_guardado = db.get("objetivo", "Hipertrofia")
+        try: idx_obj = obj_ops.index(obj_guardado)
+        except: idx_obj = 0
+        nuevo_objetivo = st.selectbox("Objetivo", obj_ops, index=idx_obj)
+        
+        # -- EXPERIENCIA --
+        niv_ops = ["Principiante", "Intermedio", "Avanzado", "Atleta"]
+        niv_guardado = db.get("nivel", "Intermedio")
+        try: idx_niv = niv_ops.index(niv_guardado)
+        except: idx_niv = 1
+        nuevo_nivel = st.select_slider("Experiencia", options=niv_ops, value=niv_ops[idx_niv])
+        
+        # -- DÍAS --
+        dias_guardado = int(db.get("dias", 4))
+        nuevos_dias = st.slider("Días/semana", 1, 7, dias_guardado)
+
+        # 3. BOTÓN DE GUARDAR (Que actualiza todo)
         st.write("---")
-        if st.button("🗑️ Limpiar Conversación", use_container_width=True):
-            # Reiniciamos el historial pero MANTENIENDO la personalidad de Zynte
-            st.session_state.history = [
-                {"role": "user", "content": """
-                Actúa como Zynte AI, un entrenador personal de élite y experto en nutrición.
-                TU PERSONALIDAD:
-                - Eres enérgico, motivador y vas al grano.
-                - NUNCA respondas con un simple "Hola, ¿cómo estás?".
-                - Cuando el usuario salude, preséntate con fuerza y lanza un reto. 
-                Ejemplo: "¡Hola! Soy Zynte AI. ¿Listo para romper tus límites hoy?"
-                """},
-                {"role": "model", "content": "¡Entendido! Soy Zynte AI. Modo motivación activado. ¡A entrenar!"}
+        if st.button("💾 Guardar Cambios", use_container_width=True):
+            with st.spinner("Actualizando perfil..."):
+                # Guardamos en Google Sheets
+                if guardar_perfil_db(st.session_state.email, nuevo_nombre, nuevo_peso, nueva_altura, nueva_edad, nuevo_genero, nuevo_objetivo, nuevo_nivel, nuevos_dias):
+                    
+                    # ¡IMPORTANTE! Actualizamos la memoria local INMEDIATAMENTE
+                    # Así los sliders no "saltan" hacia atrás al recargar
+                    st.session_state.datos_usuario.update({
+                        "nombre": nuevo_nombre,
+                        "peso": nuevo_peso,
+                        "altura": nueva_altura,
+                        "edad": nueva_edad,
+                        "genero": nuevo_genero,
+                        "objetivo": nuevo_objetivo,
+                        "nivel": nuevo_nivel,
+                        "dias": nuevos_dias
+                    })
+                    
+                    st.toast("✅ Perfil guardado correctamente")
+                    time.sleep(1)
+                    st.rerun() # Recargamos para asentar cambios visuales
+                else:
+                    st.error("Error al conectar con la base de datos.")
+
+        # 4. BOTONES EXTRA (Limpiar chat y Admin)
+        if st.button("🗑️ Limpiar Chat", use_container_width=True):
+             st.session_state.history = [
+                {"role": "user", "content": "Actúa como Zynte AI... TU PERSONALIDAD..."},
+                {"role": "model", "content": "¡Entendido! Soy Zynte AI..."}
             ]
-            st.rerun()
-        # --- BOTÓN SECRETO DE RETORNO (Solo para el Admin) ---
-        # Asegúrate de poner aquí TU email de administrador exacto
-        if st.session_state.email == "admin@zynte.com": 
+             st.rerun()
+             
+        # Botón secreto de Admin (si eres tú)
+        if st.session_state.email == "admin@zynte.com": # <--- Tu email de admin
             st.write("---")
-            st.caption("🔧 Controles de Admin")
             if st.button("👮‍♂️ Volver a God Mode", type="primary", use_container_width=True):
                 st.session_state.page = 'admin'
                 st.rerun()
-
         # ==========================================
 
         st.write("---")
@@ -1215,6 +1253,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
