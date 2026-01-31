@@ -735,29 +735,6 @@ def app_principal():
 
         st.divider()
 
-       # --- BOTONES RÁPIDOS CORREGIDOS (V2) ---
-        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
-        col_b1, col_b2, col_b3 = st.columns(3)
-        prompt_rapido = None
-
-        if col_b1.button("🔥 Rutina HIIT 20'", use_container_width=True):
-            prompt_rapido = "Créame una rutina de HIIT de 20 minutos intensa para hacer en casa ahora mismo."
-        if col_b2.button("🧘 Estiramientos", use_container_width=True):
-            prompt_rapido = "Dame una tabla de estiramientos de espalda y cuello para después de trabajar."
-        if col_b3.button("💪 Reto de Flexiones", use_container_width=True):
-            prompt_rapido = "Dime un reto de flexiones para hacer hoy según mi nivel."
-
-        # Inicializar historial si está vacío
-        if "history" not in st.session_state: 
-            st.session_state.history = [{"role": "model", "content": f"Hola. Perfil cargado: {peso}kg, {objetivo}."}]
-        
-  # --- LÓGICA DE ENVÍO DE RUTINAS RÁPIDAS ---
-    if prompt_rapido:
-        if "history" not in st.session_state:
-            st.session_state.history = []
-        st.session_state.history.append({"role": "user", "content": prompt_rapido})
-        # Aquí puedes añadir la llamada a la IA si quieres que los botones respondan
-
 # --- SECCIÓN DE CHAT PRINCIPAL ---
     st.write("---") 
     st.subheader("💬 Chat con Zynte AI")
@@ -872,6 +849,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
