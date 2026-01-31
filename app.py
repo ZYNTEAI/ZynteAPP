@@ -333,7 +333,7 @@ try:
     )
 except:
     # Si estás en local sin secrets:
-    genai.configure(api_key="TU_CLAVE_AQUI")
+    genai.configure(api_key="AIzaSyC2q_babdKS2vKE0VJX5XijEfYzymlsIKE")
 
 # Usamos el nombre sin el prefijo "models/" para que la librería lo gestione
 MODELO_USADO = "gemini-1.5-flash-001"
@@ -585,13 +585,19 @@ def mostrar_pricing():
                     st.error("❌ Código incorrecto.")
 
 def app_principal():
-    # --- CONFIGURACIÓN DEL JEFE ---
-    EMAIL_JEFE = "pablonavarrorui@gmail.com" # <--- ¡PON AQUÍ TU EMAIL EXACTO!
-    
+    # --- 1. CONFIGURACIÓN INICIAL Y SEGURIDAD ---
+    try:
+        api_key = st.secrets["GOOGLE_API_KEY"]
+    except Exception:
+        st.error("Error: No se encontró 'GOOGLE_API_KEY' en los Secrets de Streamlit.")
+        st.stop()
+
+    EMAIL_JEFE = "pablonavarrorui@gmail.com" 
     email_actual = st.session_state.get('user_email', 'invitado')
     datos_usuario = cargar_perfil(email_actual)
+    error_ocurrido = False 
 
-    # ... (Resto de lógica nutricional y PDF igual que antes) ...
+    # --- 2. FUNCIONES INTERNAS (MACROS Y PDF) ---
     def calcular_macros(peso, altura, edad, genero, objetivo, nivel):
         if genero == "Hombre": tmb = 88.36 + (13.4 * peso) + (4.8 * altura) - (5.7 * edad)
         else: tmb = 447.6 + (9.2 * peso) + (3.1 * altura) - (4.3 * edad)
@@ -608,181 +614,125 @@ def app_principal():
             self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME', 0, 0, 'C'); self.ln(20)
 
     def crear_pdf(historial, nombre, peso, objetivo):
-        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12); pdf.set_fill_color(200, 220, 255)
-        pdf.cell(0, 10, txt=f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}", ln=1, align='L', fill=True)
-        pdf.cell(0, 10, txt=f"PERFIL: {peso}kg | META: {objetivo}", ln=1, align='L', fill=True)
+        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12)
+        pdf.cell(0, 10, txt=f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}", ln=1, align='L')
         pdf.ln(10); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1); pdf.set_font("Arial", size=11)
         for mensaje in historial:
-            if mensaje["role"] == "model": pdf.multi_cell(0, 7, txt=mensaje["content"].replace("**", "").replace("*", "-")); pdf.ln(5)
+            if mensaje["role"] == "model":
+                pdf.multi_cell(0, 7, txt=mensaje["content"].replace("**", "").replace("*", "-"))
+                pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
 
-    # --- SIDEBAR ---
+    # --- 3. SIDEBAR (MENÚ LATERAL) ---
     with st.sidebar:
         try: st.image("logo.png", width=180)
         except: st.header("ZYNTE")
         
         if st.session_state.get('is_premium'): st.success("🌟 PRO")
-        else: st.info("🌱 FREE"); st.button("⬆️ Mejorar", use_container_width=True, on_click=lambda: setattr(st.session_state, 'page', 'pricing'))
+        else: 
+            st.info("🌱 FREE")
+            if st.button("⬆️ Mejorar Plan", use_container_width=True):
+                st.session_state.page = 'pricing'
+                st.rerun()
         
-        st.write("---"); st.caption("PERFIL BIOMÉTRICO")
+        st.write("---")
+        st.caption("PERFIL BIOMÉTRICO")
         nombre = st.text_input("Alias", "Atleta")
         peso = st.slider("Peso (kg)", 40.0, 150.0, float(datos_usuario['peso']), 0.5)
         altura = st.slider("Altura (cm)", 120, 220, int(datos_usuario['altura']), 1)
         edad = st.slider("Edad", 16, 80, int(datos_usuario['edad']))
         genero = st.radio("Género:", ["Hombre", "Mujer"], horizontal=True)
+        objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"], index=0)
+        nivel = st.select_slider("Experiencia:", options=["Principiante", "Intermedio", "Avanzado"], value="Intermedio")
         
-        obj_ops = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
-        niv_ops = ["Principiante", "Intermedio", "Avanzado"]
-        try: idx_o = obj_ops.index(datos_usuario['objetivo'])
-        except: idx_o = 0
-        try: idx_n = niv_ops.index(datos_usuario['nivel'])
-        except: idx_n = 1
-        objetivo = st.selectbox("Objetivo:", obj_ops, index=idx_o)
-        nivel = st.select_slider("Experiencia:", options=niv_ops, value=niv_ops[idx_n])
-        
-        if st.button("💾 Guardar Perfil", use_container_width=True):
-            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel): st.toast("Datos Guardados")
-            else: st.toast("Error")
-        
-        # ==========================================
-        # 👑 PANEL DE CONTROL TOTAL (GOD MODE)
-        # ==========================================
-        if email_actual == EMAIL_JEFE:
-            st.write("---")
-            with st.expander("🔐 PANEL DE CONTROL"):
-                accion = st.radio("Acción:", ["Dar VIP 🌟", "Quitar VIP 💀", "Borrar Usuario ❌"])
-                email_target = st.text_input("Email objetivo:").strip().lower()
-                
-                if st.button("EJECUTAR ORDEN ⚡", type="primary"):
-                    if not email_target:
-                        st.error("Escribe un email.")
-                    else:
-                        if accion == "Dar VIP 🌟":
-                            if activar_plan_pro(email_target): st.success(f"{email_target} ahora es PRO.")
-                            else: st.error("No encontrado.")
-                        
-                        elif accion == "Quitar VIP 💀":
-                            if revocar_plan_pro(email_target): st.warning(f"{email_target} vuelve a ser FREE.")
-                            else: st.error("Error o no existe.")
-                            
-                        elif accion == "Borrar Usuario ❌":
-                            if eliminar_usuario_total(email_target): st.error(f"{email_target} ha sido ELIMINADO.")
-                            else: st.error("No se pudo borrar.")
-        # ==========================================
-        # ==========================================
+        if st.button("💾 Guardar Datos", use_container_width=True):
+            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel):
+                st.toast("Perfil actualizado correctamente")
 
         st.write("---")
         if "history" in st.session_state and len(st.session_state.history) > 1 and st.session_state.get('is_premium'):
-             pdf = crear_pdf(st.session_state.history, nombre, peso, objetivo)
-             st.download_button("📥 PDF", pdf, "Rutina.pdf")
-        st.write("---"); st.button("Cerrar Sesión", on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'))
+             pdf_bytes = crear_pdf(st.session_state.history, nombre, peso, objetivo)
+             st.download_button("📥 Descargar Rutina PDF", pdf_bytes, "Rutina_Zynte.pdf", use_container_width=True)
+        
+        st.button("Cerrar Sesión", on_click=lambda: setattr(st.session_state, 'logged_in', False) or setattr(st.session_state, 'page', 'landing'), use_container_width=True)
 
-    # MAIN TABS (Igual que antes)
-    try: st.image("banner.jpg", use_column_width=True)
-    except: st.title("ZYNTE COACH")
-    
+    # --- 4. PANEL PRINCIPAL (TABS) ---
     tab_train, tab_nutri, tab_prog = st.tabs(["🏋️ ENTRENAMIENTO", "🥗 NUTRICIÓN", "📈 PROGRESO"])
 
     with tab_train:
+        # Métricas rápidas
         imc = peso / ((altura/100)**2)
-        col1, col2, col3, col4 = st.columns([0.8, 1.2, 1.8, 1.5])
-        with col1: st.metric("IMC", f"{imc:.1f}", "Normal" if 18.5 < imc < 25 else "Atención")
-        with col2: st.metric("Peso", f"{peso} kg")
-        with col3: st.metric("Meta", objetivo)
-        with col4: st.metric("Nivel", nivel)
+        m1, m2, m3 = st.columns(3)
+        m1.metric("IMC", f"{imc:.1f}")
+        m2.metric("Objetivo", objetivo)
+        m3.metric("Nivel", nivel)
         st.divider()
 
-        st.divider()
-
-       # --- BOTONES RÁPIDOS CORREGIDOS (V2) ---
-        st.caption("⚡ Generadores Rápidos (Pruébalos gratis)")
+        # Generadores Rápidos
+        st.caption("⚡ Generadores Rápidos")
         col_b1, col_b2, col_b3 = st.columns(3)
-        prompt_rapido = None
+        prompt_ejecutar = None
 
         if col_b1.button("🔥 Rutina HIIT 20'", use_container_width=True):
-            prompt_rapido = "Créame una rutina de HIIT de 20 minutos intensa para hacer en casa ahora mismo."
+            prompt_ejecutar = "Genera una rutina HIIT de 20 minutos para hacer en casa sin material."
         if col_b2.button("🧘 Estiramientos", use_container_width=True):
-            prompt_rapido = "Dame una tabla de estiramientos de espalda y cuello para después de trabajar."
-        if col_b3.button("💪 Reto de Flexiones", use_container_width=True):
-            prompt_rapido = "Dime un reto de flexiones para hacer hoy según mi nivel."
+            prompt_ejecutar = "Dame una rutina de estiramientos para mejorar la postura y espalda."
+        if col_b3.button("💪 Reto Flexiones", use_container_width=True):
+            prompt_ejecutar = f"Crea un reto de flexiones para un nivel {nivel}."
 
-        # Inicializar historial si está vacío
-        if "history" not in st.session_state: 
-            st.session_state.history = [{"role": "model", "content": f"Hola. Perfil cargado: {peso}kg, {objetivo}."}]
-        
-  # --- LÓGICA DE ENVÍO DE RUTINAS RÁPIDAS ---
-    if prompt_rapido:
+        # Inicializar historial
         if "history" not in st.session_state:
             st.session_state.history = []
-        st.session_state.history.append({"role": "user", "content": prompt_rapido})
-        # Aquí puedes añadir la llamada a la IA si quieres que los botones respondan
 
-# --- SECCIÓN DE CHAT PRINCIPAL CORREGIDA ---
-with st.chat_message("assistant"):
-    with st.spinner("Zynte está pensando..."):
-        try:
-            # Obtenemos la key de los secrets
-            api_key = st.secrets["GOOGLE_API_KEY"]
-            url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+        # Mostrar chat
+        for msg in st.session_state.history:
+            st.chat_message(msg["role"]).markdown(msg["content"])
+
+        # Lógica de Chat e IA
+        prompt_chat = st.chat_input("Escribe tu duda o pide una rutina...")
+        
+        # Unificamos el prompt (sea por botón o por texto)
+        final_prompt = prompt_chat if prompt_chat else prompt_ejecutar
+
+        if final_prompt:
+            st.session_state.history.append({"role": "user", "content": final_prompt})
+            st.chat_message("user").markdown(final_prompt)
             
-            res = requests.post(url_estable, json=payload, timeout=30)
+            with st.chat_message("assistant"):
+                with st.spinner("Zynte AI está procesando..."):
+                    try:
+                        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                        payload = {"contents": [{"parts": [{"text": final_prompt}]}]}
+                        res = requests.post(url, json=payload, timeout=30)
+                        
+                        if res.status_code == 200:
+                            respuesta_ia = res.json()['candidates'][0]['content']['parts'][0]['text']
+                            st.markdown(respuesta_ia)
+                            st.session_state.history.append({"role": "model", "content": respuesta_ia})
+                        else:
+                            st.error(f"Error de Google API: {res.status_code}")
+                            error_ocurrido = True
+                    except Exception as e:
+                        st.error(f"Error de conexión: {e}")
+                        error_ocurrido = True
             
-            if res.status_code == 200:
-                datos = res.json()
-                respuesta_texto = datos['candidates'][0]['content']['parts'][0]['text']
-                st.markdown(respuesta_texto)
-                st.session_state.history.append({"role": "model", "content": respuesta_texto})
-                # Eliminamos la condición de 'error_ocurrido' si no la usas
-                st.rerun() 
-            else:
-                st.error(f"Error de Google: {res.status_code}")
-        except Exception as e:
-            st.error(f"Error de conexión: {e}")
-            
-            # El rerun debe ir SIEMPRE fuera del try/except
             if not error_ocurrido:
                 st.rerun()
 
-        for msg in st.session_state.history: 
-            st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        # -------------------------------------------------------
     with tab_nutri:
         st.header("Plan Nutricional")
-        c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
-        nc1, nc2, nc3, nc4 = st.columns(4)
-        nc1.metric("Kcal", c); nc2.metric("Prot", f"{p}g"); nc3.metric("Carb", f"{ch}g"); nc4.metric("Grasa", f"{g}g")
-        st.divider()
-        col_d1, col_d2 = st.columns([1, 2])
-        with col_d1:
-            dieta = st.selectbox("Tipo", ["Omnívora", "Vegetariana", "Vegana", "Keto"])
-            if st.button("🥑 GENERAR DIETA", type="primary"):
-                with st.spinner("Creando menú..."):
-                    try:
-                        model = genai.GenerativeModel(MODELO_USADO)
-                        res = model.generate_content(f"Crea dieta {dieta} de {c}kcal para {objetivo}. Incluye lista compra.")
-                        st.session_state.plan_nutri = res.text
-                    except: st.error("Error IA")
-        with col_d2:
-            if "plan_nutri" in st.session_state: st.markdown(st.session_state.plan_nutri)
-            else: st.info("Configura y genera tu plan.")
+        kcal, prot, carb, gras = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
+        n1, n2, n3, n4 = st.columns(4)
+        n1.metric("Kcal", kcal); n2.metric("Proteína", f"{prot}g"); n3.metric("Carbos", f"{carb}g"); n4.metric("Grasas", f"{gras}g")
+        st.info("Utiliza el chat en la pestaña de Entrenamiento para pedir recetas basadas en estos macros.")
 
     with tab_prog:
         st.header("📈 Tu Evolución")
-        st.write("Visualiza cómo te acercas a tu objetivo sesión tras sesión.")
         df_progreso = obtener_historial_df(email_actual)
         if df_progreso is not None and not df_progreso.empty:
-            peso_inicial = df_progreso.iloc[0]['peso']
-            peso_actual = df_progreso.iloc[-1]['peso']
-            delta = peso_actual - peso_inicial
-            pc1, pc2, pc3 = st.columns(3)
-            pc1.metric("Peso Inicial", f"{peso_inicial} kg")
-            pc2.metric("Peso Actual", f"{peso_actual} kg")
-            pc3.metric("Cambio Total", f"{delta:.1f} kg", delta, delta_color="inverse" if "Grasa" in objetivo else "normal")
-            st.write(""); st.area_chart(df_progreso.set_index('fecha'), color="#33ffaa")
-            with st.expander("Ver historial detallado"): st.dataframe(df_progreso, use_container_width=True)
+            st.area_chart(df_progreso.set_index('fecha'), color="#33ffaa")
         else:
-            st.info("👋 Guarda tu perfil hoy para ver tu primer punto en la gráfica.")
+            st.info("Registra tu peso en el perfil para ver tu progreso aquí.")
 
 # ==============================================================================
 # 🚀 ROUTER
