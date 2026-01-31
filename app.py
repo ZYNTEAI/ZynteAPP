@@ -835,7 +835,7 @@ def app_principal():
                 try:
                     # Configuración IA
                     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-                    model = genai.GenerativeModel("gemini-1.5-flash")
+                    model = genai.GenerativeModel("gemini-flash-latest")
                     
                     # Contexto actualizado al segundo
                     ctx = f"Cliente {peso_new}kg, {altura_new}cm. Meta: {objetivo_new}."
@@ -894,7 +894,7 @@ def app_principal():
                         try:
                             # Configuración de IA
                             genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-                            model = genai.GenerativeModel("gemini-1.5-flash")
+                            model = genai.GenerativeModel("gemini-flash-latest")
                             
                             # Prompt Avanzado con Alergias
                             texto_alergias = f"EVITAR ESTRICTAMENTE: {alergias}" if alergias else "Sin alergias."
@@ -1194,6 +1194,7 @@ def main():
             st.rerun()
 if __name__ == "__main__":
     main()
+
 
 
 
