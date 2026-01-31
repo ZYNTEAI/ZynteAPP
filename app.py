@@ -701,7 +701,7 @@ def app_principal():
         # 3. Lógica de ejecución (Indentación corregida)
         if prompt_seleccionado:
             # Usamos la URL v1 para evitar el error 404 detectado anteriormente
-            url_endpoint = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={llave_api_zynte}"
+            url_endpoint = f"f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={llave_api_zynte}"
             payload_data = {"contents": [{"parts": [{"text": prompt_seleccionado}]}]}
             
             with st.spinner("Zynte está preparando tu rutina..."):
@@ -872,6 +872,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
