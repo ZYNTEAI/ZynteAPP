@@ -703,33 +703,32 @@ def app_principal():
 
         st.divider()
 
-# --- SECCIÓN DE CHAT PRINCIPAL ---
-    # --- SECCIÓN DE CHAT PRINCIPAL ---
+# --- SECCIÓN DE CHAT ÚNICA ---
     st.write("---") 
     st.subheader("💬 Chat con Zynte AI")
 
-    # Inicializar historial si no existe
+    # 1. Inicializar historial
     if "history" not in st.session_state:
         st.session_state.history = []
 
-    # Mostrar mensajes previos
+    # 2. Mostrar mensajes previos una sola vez
     for msg in st.session_state.history: 
         st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
 
-    # Input del chat
-    prompt = st.chat_input("¿En qué puedo ayudarte hoy?")
+    # 3. UN SOLO input con una clave (key) única
+    prompt_chat = st.chat_input("¿En qué puedo ayudarte hoy?", key="chat_input_principal")
 
-    if prompt:
-        st.session_state.history.append({"role": "user", "content": prompt})
+    if prompt_chat:
+        st.session_state.history.append({"role": "user", "content": prompt_chat})
         with st.chat_message("user"):
-            st.markdown(prompt)
+            st.markdown(prompt_chat)
 
         with st.chat_message("assistant"):
             with st.spinner("Zynte está pensando..."):
                 try:
-                    # Usamos requests para máxima compatibilidad y evitar errores 404 de la librería
+                    # Usamos la api_key definida al inicio de app_principal
                     url_estable = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+                    payload = {"contents": [{"parts": [{"text": prompt_chat}]}]}
                     
                     res = requests.post(url_estable, json=payload, timeout=30)
                     
@@ -738,25 +737,11 @@ def app_principal():
                         respuesta_texto = datos['candidates'][0]['content']['parts'][0]['text']
                         st.markdown(respuesta_texto)
                         st.session_state.history.append({"role": "model", "content": respuesta_texto})
-                        st.rerun()
+                        st.rerun() 
                     else:
-                        st.error(f"Error de Google: {res.status_code}. Revisa tu API Key.")
+                        st.error(f"Error de Google: {res.status_code}")
                 except Exception as e:
                     st.error(f"Error de conexión: {e}")
-
-        for msg in st.session_state.history: 
-            st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        # -------------------------------------------------------
-
-        for msg in st.session_state.history: 
-            st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        for msg in st.session_state.history: st.chat_message("assistant" if msg["role"] == "model" else "user").markdown(msg["content"])
-        if prompt := st.chat_input("Pregunta al coach..."):
-            st.chat_message("user").markdown(prompt)
-            st.session_state.history.append({"role": "user", "content": prompt})
-    
-        except Exception as e:
-            st.error(f"Error: {e}")
     with tab_nutri:
         st.header("Plan Nutricional")
         c, p, ch, g = calcular_macros(peso, altura, edad, genero, objetivo, nivel)
@@ -814,6 +799,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
