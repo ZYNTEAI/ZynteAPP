@@ -9,6 +9,14 @@ import sqlite3
 import re
 import pandas as pd  
 import requests
+import traceback
+
+try:
+    # tu lógica
+    resultado = generar_con_ia(datos)
+except Exception as e:
+    st.error(f"Error detectado: {e}")
+    st.sidebar.code(traceback.format_exc()) # Esto te dirá la línea exacta del fallo
 
 
 # --- 2. GESTIÓN DE BASE DE DATOS, SEGURIDAD Y PAGOS (V11.0 - EXPANDIDO) ---
@@ -794,6 +802,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
