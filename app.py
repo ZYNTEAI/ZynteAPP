@@ -203,47 +203,48 @@ def cargar_perfil(email):
         sheet = get_db_sheet()
         cell = sheet.find(email, in_column=1)
         if cell:
-            # Leemos toda la fila para sacar los datos (Devuelve una lista de textos)
             row_values = sheet.row_values(cell.row)
-            
-            # Mapeamos las columnas (Ten cuidado, las listas en Python empiezan en 0)
-            # Col E (Peso) es índice 4, F (Altura) es 5...
+            # Mapa de columnas (La lista empieza en 0):
+            # 0:Email, 1:Pass, 2:Fecha, 3:Nombre, 4:Peso, 5:Altura, 6:Edad, 7:Genero, 8:Obj, 9:Nivel
             datos = {
+                "nombre": row_values[3] if len(row_values) > 3 else "Usuario", # <--- NUEVO: Lee el nombre
                 "peso": float(row_values[4]) if len(row_values) > 4 else 70.0,
                 "altura": int(row_values[5]) if len(row_values) > 5 else 170,
                 "edad": int(row_values[6]) if len(row_values) > 6 else 25,
+                "genero": row_values[7] if len(row_values) > 7 else "Hombre",
                 "objetivo": row_values[8] if len(row_values) > 8 else "Hipertrofia",
-                "nivel": row_values[9] if len(row_values) > 9 else "Intermedio"
+                "nivel": row_values[9] if len(row_values) > 9 else "Intermedio",
+                "dias": int(row_values[10]) if len(row_values) > 10 and row_values[10].isdigit() else 4 # (Opcional si usas dias)
             }
             return datos
-    except:
-        pass
-    # Si falla, devolvemos valores por defecto
-    return {"peso": 70.0, "altura": 170, "edad": 25, "objetivo": "Hipertrofia", "nivel": "Intermedio"}
+    except Exception as e:
+        print(f"Error cargando perfil: {e}")
+    # Valores por defecto si falla
+    return {"nombre": "Usuario", "peso": 70.0, "altura": 170, "edad": 25, "genero": "Hombre", "objetivo": "Hipertrofia", "nivel": "Intermedio", "dias": 4}
 
-def guardar_perfil_db(email, peso, altura, edad, objetivo, nivel):
+def guardar_perfil_db(email, nombre, peso, altura, edad, genero, objetivo, nivel, dias):
     try:
         sheet = get_db_sheet()
         cell = sheet.find(email, in_column=1)
         if cell:
             r = cell.row
-            # Actualizamos las celdas específicas (Columna, Valor)
-            sheet.update_cell(r, 5, peso)      # E: Peso
-            sheet.update_cell(r, 6, altura)    # F: Altura
-            sheet.update_cell(r, 7, edad)      # G: Edad
-            sheet.update_cell(r, 9, objetivo)  # I: Objetivo
-            sheet.update_cell(r, 10, nivel)    # J: Nivel
+            # Actualizamos CADA columna correctamente
+            sheet.update_cell(r, 4, nombre)    # Col D: Nombre (CORREGIDO)
+            sheet.update_cell(r, 5, peso)      # Col E: Peso
+            sheet.update_cell(r, 6, altura)    # Col F: Altura
+            sheet.update_cell(r, 7, edad)      # Col G: Edad
+            sheet.update_cell(r, 8, genero)    # Col H: Genero
+            sheet.update_cell(r, 9, objetivo)  # Col I: Objetivo
+            sheet.update_cell(r, 10, nivel)    # Col J: Nivel
+            # (Opcional: Si quieres guardar los días en la Columna K, cambia el índice 11)
             
-            # --- LOGICA DE HISTORIAL DE PESO (Guardado en una sola celda 'L') ---
+            # Historial de peso (Columna L / 12)
             fecha_hoy = str(datetime.date.today())
             nuevo_dato = f"{fecha_hoy}:{peso}|"
-            
-            # Leemos lo que había antes en la Columna L (12)
             historial_actual = sheet.cell(r, 12).value
             if not historial_actual: historial_actual = ""
-            
-            # Añadimos el nuevo dato al final
             sheet.update_cell(r, 12, historial_actual + nuevo_dato)
+            
             return True
     except Exception as e:
         st.error(f"Error guardando: {e}")
@@ -1024,6 +1025,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
