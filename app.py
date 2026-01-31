@@ -579,149 +579,106 @@ def mostrar_pricing():
                     st.error("❌ Código incorrecto.")
 
 def app_principal():
-    # Recuperamos los datos del usuario actual
+    # 1. Recuperación de datos
     email_actual = st.session_state.get('user_email', 'invitado')
     datos_usuario = cargar_perfil(email_actual)
 
+    # --- Lógica de PDF ---
     class PDF(FPDF):
         def header(self):
             try: self.image('logo.png', 10, 8, 33)
             except: pass
-            self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME DE ENTRENAMIENTO', 0, 0, 'C'); self.ln(20)
-        def footer(self):
-            self.set_y(-15); self.set_font('Arial', 'I', 8); self.cell(0, 10, f'Pagina {self.page_no()} - Zynte Elite Performance', 0, 0, 'C')
+            self.set_font('Arial', 'B', 15); self.cell(80); self.cell(30, 10, 'ZYNTE | INFORME', 0, 0, 'C'); self.ln(20)
 
     def crear_pdf(historial, nombre, peso, objetivo):
-        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12); pdf.set_fill_color(200, 220, 255)
-        pdf.cell(0, 10, txt=f"CLIENTE: {nombre} | FECHA: {datetime.date.today()}", ln=1, align='L', fill=True)
-        pdf.cell(0, 10, txt=f"PERFIL: {peso}kg | META: {objetivo}", ln=1, align='L', fill=True)
-        pdf.ln(10); pdf.set_font("Arial", "B", 14); pdf.cell(0, 10, txt="PLAN PERSONALIZADO:", ln=1); pdf.set_font("Arial", size=11)
+        pdf = PDF(); pdf.add_page(); pdf.set_font("Arial", size=12)
+        pdf.set_fill_color(200, 220, 255)
+        pdf.cell(0, 10, txt=f"CLIENTE: {nombre} | META: {objetivo}", ln=1, align='L', fill=True)
+        pdf.ln(10)
         for mensaje in historial:
             if mensaje["role"] == "model":
-                texto_limpio = mensaje["content"].replace("**", "").replace("*", "-")
-                pdf.multi_cell(0, 7, txt=texto_limpio); pdf.ln(5); pdf.line(10, pdf.get_y(), 200, pdf.get_y()); pdf.ln(5)
+                texto = mensaje["content"].replace("**", "").replace("*", "-")
+                pdf.multi_cell(0, 7, txt=texto); pdf.ln(5)
         return pdf.output(dest="S").encode("latin-1", "replace")
 
-
-    st.divider(); st.caption("⚠️ **Aviso:** Zynte es una herramienta de soporte. Consulta siempre con un médico antes de iniciar actividad física.")
-
-    if "history" not in st.session_state:
-        st.session_state.history = []
-        # Mensaje personalizado
-        st.session_state.history.append({"role": "model", "content": f"Hola. Veo que pesas {peso}kg y buscas {objetivo}. He cargado tu perfil. ¿Qué entrenamos hoy?"})
-        
-    if prompt := st.chat_input("Describe tu necesidad o equipamiento..."):
-        st.chat_message("user").markdown(prompt)
-        st.session_state.history.append({"role": "user", "content": prompt})
-        with st.chat_message("assistant", avatar="logo.png"):
-            placeholder = st.empty(); placeholder.markdown("...")
-            try:
-                ctx = f"Eres Zynte, entrenador de élite. Hablas con un atleta de {peso}kg, {altura}cm, nivel {nivel}. Objetivo: {objetivo}. Responde con autoridad técnica pero cercano."
-                model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
-                chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
-                chat = model.start_chat(history=chat_history)
-                try: response = chat.send_message(prompt)
-                except Exception as e:
-                    if "429" in str(e):
-                        placeholder.warning("⏳ Alta demanda en el servidor. Re-calculando ruta..."); time.sleep(6); response = chat.send_message(prompt)
-                    else: raise e
-                placeholder.markdown(response.text); st.session_state.history.append({"role": "model", "content": response.text})
-            except Exception as e: placeholder.error(f"Error: {e}")
-
-    # --- Sidebar ---
+    # 2. SIDEBAR ÚNICO
     with st.sidebar:
         try: st.image("logo.png", width=180)
         except: st.header("ZYNTE")
         
-        if st.session_state.get('is_premium', False):
-            st.success("🌟 MIEMBRO PRO")
-        else:
+        if st.session_state.get('is_premium', False): st.success("🌟 MIEMBRO PRO")
+        else: 
             st.info("🌱 CUENTA GRATUITA")
-            if st.button("⬆️ Mejorar Plan", use_container_width=True):
-                st.session_state.page = 'pricing'
-                st.rerun()
+            if st.button("⬆️ Mejorar Plan"):
+                st.session_state.page = 'pricing'; st.rerun()
+        
+        st.write("---"); st.caption("PERFIL BIOMÉTRICO")
+        nombre = st.text_input("Alias", "Atleta")
+        peso = st.slider("Peso (kg)", 40.0, 150.0, float(datos_usuario['peso']), 0.5)
+        altura = st.slider("Altura (cm)", 120, 220, int(datos_usuario['altura']), 1)
+        edad = st.slider("Edad", 16, 80, int(datos_usuario['edad']))
+        
+        obj_options = ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"]
+        niv_options = ["Principiante", "Intermedio", "Avanzado"]
+        idx_obj = obj_options.index(datos_usuario['objetivo']) if datos_usuario['objetivo'] in obj_options else 0
+        idx_niv = niv_options.index(datos_usuario['nivel']) if datos_usuario['nivel'] in niv_options else 1
 
-        st.write("---")
-        st.caption("CONFIGURACIÓN DE ATLETA")
-        nombre = st.text_input("Nombre", "Atleta")
-        with st.expander("Datos Biométricos", expanded=True):
-            peso = st.slider("Peso (kg)", 40.0, 150.0, 72.5, 0.5)
-            altura = st.slider("Altura (cm)", 120, 220, 176, 1)
-            edad = st.slider("Edad", 16, 80, 25)
-        with st.expander("Objetivos", expanded=True):
-            objetivo = st.selectbox("Objetivo:", ["Hipertrofia", "Pérdida de Grasa", "Fuerza Máxima", "Resistencia"])
-            nivel = st.select_slider("Experiencia:", options=["Principiante", "Intermedio", "Avanzado"])
+        objetivo = st.selectbox("Objetivo:", obj_options, index=idx_obj)
+        nivel = st.select_slider("Experiencia:", options=niv_options, value=niv_options[idx_niv])
+        
+        if st.button("💾 Guardar Perfil", use_container_width=True):
+            if guardar_perfil_db(email_actual, peso, altura, edad, objetivo, nivel):
+                st.toast("✅ Guardado")
+            else: st.toast("❌ Error")
 
         st.write("---")
         if "history" in st.session_state and len(st.session_state.history) > 1:
             if st.session_state.get('is_premium', False):
                 pdf_bytes = crear_pdf(st.session_state.history, nombre, peso, objetivo)
-                st.download_button("📥 DESCARGAR INFORME", pdf_bytes, f"Plan_{nombre}.pdf", "application/pdf", use_container_width=True)
-            else:
-                st.warning("🔒 DESCARGA BLOQUEADA (PRO)")
-        
+                st.download_button("📥 DESCARGAR INFORME", pdf_bytes, f"Plan_{nombre}.pdf", use_container_width=True)
+            else: st.warning("🔒 PDF BLOQUEADO (PRO)")
+            
         st.write("---")
         if st.button("Cerrar Sesión", use_container_width=True):
-            st.session_state.page = 'landing'
-            st.session_state.logged_in = False
-            st.rerun()
-            
-        st.caption("© 2026 Zynte Performance")
+            st.session_state.update({"logged_in": False, "page": "landing"}); st.rerun()
 
-    # --- Dashboard ---
-    imc = peso / ((altura/100)**2)
-    estado_imc = "Normal"
-    if imc >= 25: estado_imc = "Sobrepeso"
-    if imc < 18.5: estado_imc = "Bajo peso"
-
+    # 3. DASHBOARD PRINCIPAL
     try: st.image("banner.jpg", use_column_width=True)
     except: st.title("ZYNTE COACH")
 
+    imc = peso / ((altura/100)**2)
     col1, col2, col3, col4 = st.columns([1, 0.7, 2, 1.3])
-    with col1: st.metric("IMC", f"{imc:.1f}", estado_imc)
-    with col2: st.metric("Peso", f"{peso} kg")
-    with col3: st.metric("Meta", objetivo)
-    with col4: st.metric("Nivel", nivel)
+    col1.metric("IMC", f"{imc:.1f}")
+    col2.metric("Peso", f"{peso} kg")
+    col3.metric("Meta", objetivo)
+    col4.metric("Nivel", nivel)
     st.divider()
-    st.caption("⚠️ **Aviso:** Zynte es una herramienta de soporte. Consulta siempre con un médico antes de iniciar actividad física.")
 
-    # --- Chat ---
+    # 4. CHAT ÚNICO
     if "history" not in st.session_state:
-        st.session_state.history = []
-        st.session_state.history.append({"role": "model", "content": f"Hola {nombre}. He analizado tus datos ({peso}kg, {nivel}). Estoy listo para diseñar tu plan de {objetivo}. ¿Comenzamos?"})
+        st.session_state.history = [{"role": "model", "content": f"Hola {nombre}. Estoy listo para tu plan de {objetivo}. ¿Qué entrenamos?"}]
 
     for msg in st.session_state.history:
         role = "assistant" if msg["role"] == "model" else "user"
-        avatar = "logo.png" if role == "assistant" else None
-        try: st.chat_message(role, avatar=avatar).markdown(msg["content"])
-        except: st.chat_message(role).markdown(msg["content"])
+        st.chat_message(role).markdown(msg["content"])
 
-    if prompt := st.chat_input("Describe tu necesidad o equipamiento..."):
+    if prompt := st.chat_input("¿Qué equipamiento tienes hoy?"):
         st.chat_message("user").markdown(prompt)
         st.session_state.history.append({"role": "user", "content": prompt})
         
-        with st.chat_message("assistant", avatar="logo.png"):
-            placeholder = st.empty()
-            placeholder.markdown("...")
+        with st.chat_message("assistant"):
             try:
-                ctx = f"Eres Zynte, entrenador de élite. Hablas con {nombre}. Datos: {peso}kg, {objetivo}. Responde con autoridad técnica pero cercano."
+                ctx = f"Eres Zynte, entrenador de élite. Usuario: {peso}kg, {objetivo}."
                 model = genai.GenerativeModel(MODELO_USADO, system_instruction=ctx)
-                chat_history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
-                chat = model.start_chat(history=chat_history)
-                
-                try:
-                    response = chat.send_message(prompt)
-                except Exception as e:
-                    if "429" in str(e):
-                        placeholder.warning("⏳ Alta demanda en el servidor. Re-calculando ruta...")
-                        time.sleep(6)
-                        response = chat.send_message(prompt)
-                    else: raise e
-                
-                placeholder.markdown(response.text)
+                # Formatear historial para Gemini
+                h_ia = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.history[:-1]]
+                chat = model.start_chat(history=h_ia)
+                response = chat.send_message(prompt)
+                st.markdown(response.text)
                 st.session_state.history.append({"role": "model", "content": response.text})
+                st.rerun()
             except Exception as e:
-                placeholder.error(f"Error: {e}")
+                st.error(f"Error: {e}")
 
 # ==============================================================================
 # 🚀 ROUTER
@@ -743,6 +700,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
