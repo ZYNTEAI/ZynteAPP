@@ -389,18 +389,18 @@ def mostrar_info_velocidad():
         <h3>Tu tiempo es para entrenar, no para esperar.</h3>
         <hr style="border-color:#333;">
         <div style="display:flex; justify-content:space-around; align-items:center; margin-top:20px;">
-            <div>
-                <h1 style="color:#a0aaba; font-size:3rem;">48h</h1>
-                <p>Espera Media (Entrenador Humano)</p>
+            <div style="text-align:center;">
+                <h1 style="color:#a0aaba; font-size:2.5rem;">48h</h1>
+                <p>Espera Media</p>
             </div>
-            <div style="font-size:3rem; color:#555;">VS</div>
-            <div>
-                <h1 style="color:#33ffaa; font-size:4rem;">Instantáneo</h1>
+            <div style="font-size:2rem; color:#555; margin: 0 10px;">VS</div>
+            <div style="text-align:center;">
+                <h1 style="color:#33ffaa; font-size:2.8rem;">Instantáneo</h1>
                 <p>Zynte System</p>
             </div>
         </div>
         <br>
-        <p style="color:#ccc;">Genera, modifica y regenera tu plan tantas veces como necesites. Sin citas previas.</p>
+        <p style="color:#ccc;">Genera, modifica y regenera tu plan tantas veces como necesites.</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -948,6 +948,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
