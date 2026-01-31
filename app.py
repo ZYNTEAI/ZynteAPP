@@ -369,33 +369,44 @@ def mostrar_info_ia():
         st.rerun()
 
 def mostrar_info_velocidad():
-    """Detalle: Velocidad"""
-    st.markdown("## ⚡ Eficiencia Absoluta")
-    st.write("")
-    
-    st.markdown("""
-    <div class="price-card">
-        <h3>Tu tiempo es para entrenar, no para esperar.</h3>
-        <hr style="border-color:#333;">
-        <div style="display:flex; justify-content:space-around; align-items:center; margin-top:20px;">
-            <div>
-                <h1 style="color:#a0aaba; font-size:3rem;">48h</h1>
-                <p>Espera Media (Entrenador Humano)</p>
-            </div>
-            <div style="font-size:3rem; color:#555;">VS</div>
-            <div>
-                <h1 style="color:#33ffaa; font-size:4rem;">Instantáneo</h1>
-                <p>Zynte System</p>
-            </div>
-        </div>
-        <br>
-        <p style="color:#ccc;">Genera, modifica y regenera tu plan tantas veces como necesites. Sin citas previas.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    """Página de Detalle: Velocidad Extrema"""
+    st.markdown('<p class="hero-title" style="font-size: 2.5rem;">Tu tiempo es para entrenar,<br>no para esperar.</p>', unsafe_allow_html=True)
     
     st.write("")
-    if st.button("⬅️ Volver"):
-        st.session_state.page = 'landing'
+    st.write("---")
+    st.write("")
+
+    # Usamos 5 columnas para dar aire y separar el 'Instantáneo' del 'VS'
+    # [Humano] [Espacio] [VS] [Espacio] [Zynte]
+    c1, c2, c3, c4, c5 = st.columns([1.5, 0.5, 1, 0.5, 2.5])
+
+    with c1:
+        st.markdown("""
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 25px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.2);">
+                <h1 style="margin:0; color: white; font-size: 3rem;">48h</h1>
+                <p style="color: #a0aaba; margin:0;">Espera Media</p>
+            </div>
+        """, unsafe_allow_html=True)
+        st.caption("Entrenador Humano")
+
+    with c3:
+        st.markdown('<h1 style="text-align: center; margin-top: 25px; color: #a0aaba; font-size: 1.5rem;">VS</h1>', unsafe_allow_html=True)
+
+    with c5:
+        st.markdown("""
+            <div style="background: #33ffaa; padding: 20px 10px; border-radius: 15px; text-align: center; box-shadow: 0px 0px 20px rgba(51, 255, 170, 0.3);">
+                <h1 style="margin:0; color: #000; font-size: 1.8rem; font-weight: 800;">Instantáneo</h1>
+                <p style="color: #000; margin:0; font-weight: 600;">Zynte System</p>
+            </div>
+        """, unsafe_allow_html=True)
+        st.caption("Tecnología Gemini 1.5 Flash")
+
+    st.write("")
+    st.write("")
+    st.info("Genera, modifica y regenera tu plan tantas veces como necesites. Sin citas previas ni esperas de días.")
+
+    if st.button("⬅️ Volver al Inicio", use_container_width=True):
+        st.session_state.page = "landing"
         st.rerun()
 
 def mostrar_info_pdf():
@@ -850,6 +861,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
