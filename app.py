@@ -661,26 +661,45 @@ def app_principal():
             st.session_state.history.append({"role": "user", "content": final_prompt})
             st.chat_message("user").markdown(final_prompt)
             
-            with st.chat_message("assistant"):
-                with st.spinner("Zynte AI está procesando..."):
-                    try:
-                        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-                        payload = {"contents": [{"parts": [{"text": final_prompt}]}]}
-                        res = requests.post(url, json=payload, timeout=30)
-                        
-                        if res.status_code == 200:
-                            respuesta_ia = res.json()['candidates'][0]['content']['parts'][0]['text']
-                            st.markdown(respuesta_ia)
-                            st.session_state.history.append({"role": "model", "content": respuesta_ia})
-                        else:
-                            st.error(f"Error de Google API: {res.status_code}")
-                            error_ocurrido = True
-                    except Exception as e:
-                        st.error(f"Error de conexión: {e}")
-                        error_ocurrido = True
+           with st.chat_message("assistant"):
+    with st.spinner("Zynte AI está procesando..."):
+        try:
+            # 1. Definimos el modelo exacto que declaraste al inicio del archivo
+            modelo_nombre = "gemini-1.5-flash-001" 
             
-            if not error_ocurrido:
-                st.rerun()
+            # 2. Usamos la URL de la v1beta que es más flexible para modelos flash
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo_nombre}:generateContent?key={api_key}"
+            
+            payload = {
+                "contents": [{
+                    "parts": [{"text": final_prompt}]
+                }]
+            }
+            
+            res = requests.post(url, json=payload, timeout=30)
+            
+            if res.status_code == 200:
+                respuesta_ia = res.json()['candidates'][0]['content']['parts'][0]['text']
+                st.markdown(respuesta_ia)
+                st.session_state.history.append({"role": "model", "content": respuesta_ia})
+            elif res.status_code == 404:
+                st.error("Error 404: El modelo no se encontró. Intentando con URL alternativa...")
+                # Intento alternativo con URL estándar si falla la beta
+                url_alt = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                res_alt = requests.post(url_alt, json=payload, timeout=30)
+                if res_alt.status_code == 200:
+                    respuesta_ia = res_alt.json()['candidates'][0]['content']['parts'][0]['text']
+                    st.markdown(respuesta_ia)
+                    st.session_state.history.append({"role": "model", "content": respuesta_ia})
+                else:
+                    st.error(f"Error definitivo de Google: {res_alt.status_code}")
+                    error_ocurrido = True
+            else:
+                st.error(f"Error de Google API: {res.status_code} - {res.text}")
+                error_ocurrido = True
+        except Exception as e:
+            st.error(f"Error de conexión: {e}")
+            error_ocurrido = True
 
     with tab_nutri:
         st.header("Plan Nutricional")
@@ -717,6 +736,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
