@@ -148,25 +148,50 @@ def verificar_login(email, password):
     return False
 
 def registrar_usuario_sql(email, password):
+    """
+    Registra usuario alineado EXACTAMENTE con las columnas de tu imagen.
+    """
     try:
         sheet = get_db_sheet()
-        # Verificamos si ya existe
-        try:
-            cell = sheet.find(email, in_column=1)
-            if cell: return False # Ya existe
-        except gspread.exceptions.CellNotFound:
-            pass # No existe, podemos continuar
-
-        # Preparamos la fila nueva. 
-        # Estructura: Email, Pass, Fecha, Nombre, Peso, Altura, Edad, Genero, Obj, Nivel, Plan, Historial
-        fecha = str(datetime.date.today())
-        # Valores por defecto para que no falle al principio
-        nueva_fila = [email, password, fecha, "Usuario", 70, 170, 25, "Hombre", "Hipertrofia", "Intermedio", "", ""]
+        email_limpio = email.strip().lower()
         
+        # 1. Comprobamos si existe (Búsqueda segura)
+        emails = sheet.col_values(1)
+        # Filtramos vacíos y normalizamos
+        lista_emails = [e.strip().lower() for e in emails if e]
+        
+        if email_limpio in lista_emails:
+            return False # De verdad existe
+            
+        # 2. Preparamos la fila EXACTA según tu imagen
+        # A: email | B: pass | C: fecha | D: nombre | E-J: perfil | K: plan | L: historial | M: status
+        
+        fecha = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        nueva_fila = [
+            email_limpio,      # A: email
+            password.strip(),  # B: Password
+            fecha,             # C: fecha_registro
+            "Usuario",         # D: nombre (por defecto)
+            0,                 # E: peso (0 inicial)
+            0,                 # F: altura (0 inicial)
+            0,                 # G: edad
+            "",                # H: genero
+            "",                # I: objetivo
+            "",                # J: nivel
+            "{}",              # K: plan_nutri (JSON vacío)
+            "[]",              # L: historial_pesos (Lista vacía)
+            "free",            # M: status
+            ""                 # N: activation_code (Columna extra para lo de los pagos)
+        ]
+        
+        # 3. Guardamos
         sheet.append_row(nueva_fila)
         return True
+
     except Exception as e:
-        st.error(f"Error registrando en Google Sheets: {e}")
+        # Esto nos chivará si hay otro error real en vez de decir "ya registrado"
+        st.error(f"Error CRÍTICO al guardar en Google Sheets: {e}")
         return False
 
 # --- FUNCIONES DE PERFIL E HISTORIAL ---
@@ -1269,6 +1294,7 @@ def main():
 if __name__ == "__main__":
     init_db() # Iniciamos base de datos
     main()    # Arrancamos la app
+
 
 
 
